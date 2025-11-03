@@ -15,8 +15,14 @@ ugh <- dplyr::ungroup(ugh)
 
 ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds"))
 
+
 {
   class_collapse <- function(x, sep = ", ") stringr::str_c(class(x), collapse = sep)
+  set_attrs <- function(x, ...) {
+    dots <- rlang::list2(...)
+    for (nm in names(dots)) attr(x, nm) <- dots[[nm]]
+    x
+  }
   missing_string <- function(dat) {
     n_miss <- sapply(dat, \(x) sum(is.na(x)))
     p_miss <- sapply(dat, \(x) mean(is.na(x)))
@@ -36,7 +42,7 @@ ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds
     lb <- if (combine_multiple) "(\n|\r)+" else "\n|\r"
     stringr::str_replace_all(x, lb, replace)
   }
-  val_labels_from_string <- function(val_labels, names, sep1, sep2) {
+  lookups_from_string <- function(val_labels, names, sep1, sep2) {
     fx_inner <- function(x, nm, sep1) {
       if (!all(stringr::str_detect(x, sep1))) {
         # vals_print <- stringr::str_c('"', stringr::str_c(x, collapse = '"; "'), '"')
@@ -57,10 +63,10 @@ ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds
       purrr::map2(names, fx_inner, sep1) |>
       setNames(names)
   }
-  string_from_val_labels <- function(val_labels, names, sep1 = " = ", sep2 = "; ") {
-    val_labels <- val_labels |>
+  string_from_lookups <- function(lookups, names, sep1 = " = ", sep2 = "; ") {
+    lookups <- lookups |>
       sapply(\(x)stringr::str_c(names(x), x, sep = sep1, collapse = sep2))
-    unname(val_labels[names])
+    unname(lookups[names])
   }
 
   meta_select_fields <- function(meta, 
@@ -89,25 +95,23 @@ ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds
                                 sep1, 
                                 sep2, 
                                 sep1_out = " = ", 
-                                sep2_out = "; ", 
-                                include_lookups = TRUE) {
-    lookups <- val_labels_from_string(
+                                sep2_out = "; ") {
+    lookups <- lookups_from_string(
       meta$value_labels, meta$name,
       sep1 = sep1, sep2 = sep2
     )
-    meta$value_labels <- string_from_val_labels(
-        lookups, meta$name,
-        sep1 = sep1_out, sep2 = sep2_out
-      ) |>
+    meta$value_labels <- string_from_lookups(
+      lookups, meta$name,
+      sep1 = sep1_out, sep2 = sep2_out
+    ) |>
       unname()
-    if (include_lookups) {
-      meta$..lookups <- lookups[meta$name]
-    }
+    
+    attr(meta, "lookups") <- lookups
     meta
   }
   meta_parse_checkbox_rc <- function(name,
                                     label,
-                                    ..lookups,
+                                    .lookups,
                                     ...,
                                     datanames,
                                     user_missing,
@@ -122,70 +126,120 @@ ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds
       stringr::str_extract("(?<=___).+") |>
       stringr::str_replace("_", "-")
     miss_idx <- vals %in% user_missing
-    missings <- ..lookups[miss_idx]
+    missings <- .lookups[miss_idx]
     if (any(miss_idx) && label_vals == "none") {
       cli::cli_abort(c(
         "!" = "Failed to process checkbox values for {.code {name}}.",
         "i" = '{.code label_vals = "none"} is not supported when value labels include a user-missing value.'
       ))
     }
-    opts <- setNames(..lookups[vals], vars)
+    opts <- setNames(.lookups[vals], vars)
     label_out <- stringr::str_c(label, opts, sep = " - ")
-    lookups_out <- switch(
-      label_vals,
+    lookups_out <- switch(label_vals,
       none = NA,
       yes_no = rep(list(c("0" = "No", "1" = "Yes", missings)), length(opts)),
       meta = lapply(opts, \(opt) c("0" = "Not selected", "1" = opt, missings))
     )
-    lookups_out[miss_idx] <- lookups_out[miss_idx] |>
-      lapply(\(x) x[setdiff(names(x), "1")])
-    miss_flag <- if (any(miss_idx)) dplyr::if_else(miss_idx, vals, NA) else NULL
-    flag_stem <- if (any(miss_idx)) name else NULL
+    # lookups_out[miss_idx] <- lookups_out[miss_idx] |>
+    #   lapply(\(x) x[setdiff(names(x), "1")])
+    lookups_out[miss_idx] <- mapply(
+      \(lkup, val) lkup[setdiff(names(lkup), val)],
+      lookups_out[miss_idx],
+      vals[miss_idx],
+      SIMPLIFY = FALSE
+    )
+    miss_propagate <- mapply(
+      \(flag, val) list(flag = flag, val = val, vars = setdiff(vars, flag)),
+      vars[miss_idx], vals[miss_idx],
+      SIMPLIFY = FALSE
+    )
     val_labels_out <- lookups_out |>
-      string_from_val_labels(names = vars, sep1 = sep1_out, sep2 = sep2_out)
-    tibble::tibble(
-      name = vars, 
-      label = label_out, 
-      value_labels = val_labels_out, 
-      ..., 
-      ..lookups = lookups_out,
-      ..miss_flg = miss_flag,
-      ..miss_flag_stem = flag_stem
+      string_from_lookups(names = vars, sep1 = sep1_out, sep2 = sep2_out)
+    out <- codebook(
+        name = vars,
+        label = label_out,
+        value_labels = val_labels_out,
+        ...,
+        .lookups = lookups_out,
+        .miss_propagate = miss_propagate
     )
   }
 
   meta_parse_checkboxes_rc <- function(meta,
-                                      datanames,
-                                      user_missing = NULL,
-                                      sep1_out = " = ",
-                                      sep2_out = "; ",
-                                      label_vals = c("none", "yes_no", "meta")) {
-    out <- meta |>
+                                       datanames,
+                                       user_missing = NULL,
+                                       sep1_out = " = ",
+                                       sep2_out = "; ",
+                                       label_vals = c("none", "yes_no", "meta")) {
+    meta |>
+      dplyr::mutate(.lookups = attr(meta, "lookups")[name]) |>
       dplyr::filter(rc_type == "checkbox") |>
       dplyr::select(!value_labels) |>
-      purrr::pmap_dfr(
+      purrr::pmap(
         meta_parse_checkbox_rc,
-        datanames = datanames, user_missing = user_missing, sep1_out = sep1_out, 
+        datanames = datanames, user_missing = user_missing, sep1_out = sep1_out,
         sep2_out = sep2_out, label_vals = label_vals
-      )
-      dplyr::bind_rows(out, meta)
+      ) |>
+      cb_bind_rows() |> 
+      cb_bind_rows(meta)
   }
-
+  cb_attributes <- c("lookups", "miss_propagate")
+  
+  bind_attrs <- function(which, objs) {
+    attrs <- lapply(objs, attr, which)
+    out <- unlist(attrs, recursive = FALSE)
+    dups <- duplicated(names(out))
+    if (any(dups)) {
+      cli::cli_abort(c(
+        "!" = "Values for attribute {.code {which}} are not unique across codebooks.",
+        "i" = "Duplicated values: {toString(names(out)[dups])}"
+      ))
+    }
+    out
+  }
+  
+  cb_bind_rows <- function(..., .id = NULL) {
+    out <- dplyr::bind_rows(..., .id = .id)
+    dots <- list(...)
+    if (length(dots) == 1 && rlang::is_bare_list(dots[[1]])) {
+        dots <- dots[[1]]
+    }
+    cbs <- purrr::keep(dots, is_codebook)
+    attr_out <- lapply(setNames(nm = cb_attributes), bind_attrs, objs = cbs)
+    set_attrs(out, !!!attr_out)
+  }
 
   meta_parse_complete_rc <- function(meta, sep1_out = " = ", sep2_out = "; ") {
     form <- na.omit(unique(meta$form))
     name <- stringr::str_c(form, "_complete")
-    label <- stringr::str_c(form, "completion status")
+    label <- stringr::str_c(form, " completion status")
     lookups <- c("0" = "Incomplete", "1" = "Unverified", "2" = "Complete") |>
       list() |> 
       rep(length(form)) |>
       setNames(name)
     value_labels <- lookups |> 
-      string_from_val_labels(names = name, sep1 = sep1_out, sep2 = sep2_out)
-    out <- tibble::tibble(name, form, label, value_labels, ..lookups = lookups)
-    dplyr::bind_rows(out, meta)
+      string_from_lookups(names = name, sep1 = sep1_out, sep2 = sep2_out)
+    out <- codebook(name, form, label, value_labels, .lookups = lookups)
+    cb_bind_rows(out, meta)
   }
-
+  as_codebook <- function(x,
+                          .lookups = NULL, 
+                          .miss_propagate = NULL) {
+    x_class <- class(x)
+    if (!("data.frame" %in% x_class)) {
+      cli::cli_abort(c(
+        "!" = "{.code x} must be a data frame or data frame extension.",
+        "i" = "{.code x} is of class {x_class}."
+      ))
+    }
+    class(x) <- c("li_codebook", x_class)
+    set_attrs(x, lookups = .lookups, miss_propagate = .miss_propagate)
+  }
+  is_codebook <- function(x) "li_codebook" %in% class(x)
+  codebook <- function(...,  .lookups = NULL, .miss_propagate = NULL) {
+    tibble::tibble(...) |>
+      as_codebook(.lookups = .lookups, .miss_propagate = .miss_propagate)
+  }
 
   process_metadata <- function(.meta,
                               name = name,
@@ -198,9 +252,9 @@ ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds
                               .sep1_out = " = ",
                               .sep2_out = "; ",
                               .rmv_html = !name,
-                              .rmv_line_breaks = !name,
-                              .include_lookups = TRUE) {
+                              .rmv_line_breaks = !name) {
     out <- .meta |>
+      as_codebook() |>
       meta_select_fields(
         name = {{ name }},
         type = {{ type }},
@@ -212,17 +266,16 @@ ugh_codebook <- readRDS(file.path(dataset_dir, "UGH", "_xSample_UGH_Codebook.rds
         rmv_html = {{ .rmv_html }}, rmv_line_breaks = {{ .rmv_line_breaks }}
       ) |>
       meta_parse_val_labels(
-        sep1 = .sep1, sep2 = .sep2, sep1_out = .sep1_out, sep2_out = .sep2_out,
-        include_lookups = .include_lookups
+        sep1 = .sep1, sep2 = .sep2, sep1_out = .sep1_out, sep2_out = .sep2_out
       )
   }
 
   write_codebook <- function(x, 
-                            file, 
-                            dataset_name = NULL, 
-                            # add optional dimensions to output
-                            incl_date = TRUE, 
-                            overwrite = TRUE) {
+                             file, 
+                             dataset_name = NULL, 
+                             # add optional dimensions to output
+                             incl_date = TRUE, 
+                             overwrite = TRUE) {
     if (!is.null(dataset_name)) {
       dataset_name <- stringr::str_c("Dataset: ", dataset_name)
     }
@@ -320,9 +373,9 @@ generate_codebook <- function(data,
 
 
 # # to be passed as arg
-# user_missing <- -99
+user_missing <- -99
 # # then as.character in Fx
-# user_missing <- as.character(user_missing)
+user_missing <- as.character(user_missing)
 
 meta <- process_metadata(
     ugh_codebook,
@@ -334,15 +387,16 @@ meta <- process_metadata(
     .sep1 = ", ",
     .sep2 = "\\|"
   ) |>
-  # meta_parse_checkboxes_rc(datanames = names(ugh), user_missing = user_missing, label_vals = "meta") |> 
-    meta_parse_checkboxes_rc(datanames = names(ugh), label_vals = "meta") |> 
-    meta_parse_complete_rc()
+  meta_parse_checkboxes_rc(datanames = names(ugh), user_missing = user_missing, label_vals = "meta") |> 
+    # meta_parse_checkboxes_rc(datanames = names(ugh), label_vals = "meta") |> 
+  meta_parse_complete_rc()
 
-codebook <- generate_codebook(ugh, meta)
-codebook
+cb <- generate_codebook(ugh, meta)
+cb |> in_excel()
+
 codebook_out <- codebook |>
   dplyr::relocate(type, .after = name) |>
-  dplyr::select(!tidyselect::any_of(c("rc_type", "..lookups"))) |>
+  dplyr::select(!tidyselect::any_of(c("rc_type"))) |>
   dplyr::relocate(form, .after = name) |> 
   dplyr::rename_with(
     \(x) stringr::str_to_title(stringr::str_replace_all(x, "_", " "))
