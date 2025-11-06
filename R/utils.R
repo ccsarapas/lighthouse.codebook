@@ -18,12 +18,23 @@ strip_line_breaks <- function(x, replace = " / ", combine_multiple = TRUE) {
   lb <- if (combine_multiple) "(\n|\r)+" else "\n|\r"
   stringr::str_replace_all(x, lb, replace)
 }
-
+names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
+is_num_chr <- function(x) {
+  rlang::is_bare_numeric(x) || rlang::is_bare_character(x)
+}
+check_num_chr <- function(x, 
+                          return = c("type", "class"),
+                          msg = "Classes other than numeric and character are not supported."
+                          ) {
+  if (!is_num_chr(x)) cli::cli_abort(msg)
+  out <- if (match.arg(return) == "type") typeof(x) else class(x)
+  invisible(out)
+}
 labelled_cast <- function(x, to) {
   stopifnot("haven_labelled" %in% class(x))
   if (!(rlang::is_bare_character(to) || rlang::is_bare_numeric(to))) {
     cli::cli_abort(
-      "Only casting between base character and numeric types is supported."
+      "Only casting between character and numeric classes is supported."
     )
   }
   type_x <- typeof(x)
@@ -41,12 +52,16 @@ labelled_cast <- function(x, to) {
   out
 }
 
-retype_label <- function(x, 
-                         to, 
-                         not_found = c("error", "drop", "keep"), 
+retype_label <- function(x,
+                         to,
+                         not_found = c("error", "drop", "keep"),
                          bad_type = c("error", "drop", "keep")) {
   err_drop_keep <- function(x, msg, do = c("error", "drop", "keep")) {
-    switch(match.arg(do), error = cli::cli_abort(msg), drop = NULL, keep = x)
+    switch(match.arg(do),
+      error = cli::cli_abort(msg),
+      drop = NULL,
+      keep = x
+    )
   }
   if (is.null(to)) {
     return(err_drop_keep(
@@ -60,6 +75,7 @@ retype_label <- function(x,
   }
   labelled_cast(x, to)
 }
+as_named <- function(x, class) setNames(as(x, class), names(x))
 
 retype_labels <- function(codebook,
                           data,
@@ -83,6 +99,8 @@ val_lookups.data.frame <- function(x, prefixed = FALSE) {
   lapply(x, val_lookups, prefixed = prefixed)
 }
 get_value_lookups <- val_lookups
+has_val_labels <- function(x) !is.null(labelled::val_labels(x))
+
 remove_user_na_spec <- function(x, ...) {
   labelled::set_na_values(x, setdiff(labelled::na_values(x), ...))
 }
