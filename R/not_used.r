@@ -34,3 +34,41 @@ cb_add_hists <- function(cb, max_bins = 8, separate = TRUE) {
     hist = sapply(data, inline_hist2, max_bins = max_bins, separate = separate)
   )
 }
+
+
+retype_label <- function(x,
+                         to,
+                         not_found = c("error", "drop", "keep"),
+                         bad_type = c("error", "drop", "keep")) {
+  err_drop_keep <- function(x, msg, do = c("error", "drop", "keep")) {
+    switch(match.arg(do),
+      error = cli::cli_abort(msg),
+      drop = NULL,
+      keep = x
+    )
+  }
+  if (is.null(to)) {
+    return(err_drop_keep(
+      x, "Variable {.code {nm}} not found in {.code data}", not_found
+    ))
+  }
+  if (!(is.character(to) || is.numeric(to))) {
+    return(err_drop_keep(
+      x, "Can't cast {.code {nm}} to {class(to)}", bad_type
+    ))
+  }
+  labelled_cast(x, to)
+}
+
+retype_labels <- function(codebook,
+                          data,
+                          not_found = c("error", "drop", "keep"),
+                          bad_type = c("error", "drop", "keep")) {
+  lookups <- attr(codebook, "lookups")
+  user_missing <- attr(codebook, "user_missing")
+  lookups <- names(lookups) |>
+    lapply(\(nm) retype_label(lookups[[nm]], data[[nm]]))
+  user_missing <- names(user_missing) |>
+    lapply(\(nm) retype_label(user_missing[[nm]], data[[nm]]))
+  user_missing
+}

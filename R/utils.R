@@ -52,43 +52,20 @@ labelled_cast <- function(x, to) {
   out
 }
 
-retype_label <- function(x,
-                         to,
-                         not_found = c("error", "drop", "keep"),
-                         bad_type = c("error", "drop", "keep")) {
-  err_drop_keep <- function(x, msg, do = c("error", "drop", "keep")) {
-    switch(match.arg(do),
-      error = cli::cli_abort(msg),
-      drop = NULL,
-      keep = x
-    )
-  }
-  if (is.null(to)) {
-    return(err_drop_keep(
-      x, "Variable {.code {nm}} not found in {.code data}", not_found
-    ))
-  }
-  if (!(is.character(to) || is.numeric(to))) {
-    return(err_drop_keep(
-      x, "Can't cast {.code {nm}} to {class(to)}", bad_type
-    ))
-  }
-  labelled_cast(x, to)
-}
 as_named <- function(x, class) setNames(as(x, class), names(x))
 
-retype_labels <- function(codebook,
-                          data,
-                          not_found = c("error", "drop", "keep"),
-                          bad_type = c("error", "drop", "keep")) {
-  lookups <- attr(codebook, "lookups")
-  user_missing <- attr(codebook, "user_missing")
-  lookups <- names(lookups) |>
-    lapply(\(nm) retype_label(lookups[[nm]], data[[nm]]))
-  user_missing <- names(user_missing) |>
-    lapply(\(nm) retype_label(user_missing[[nm]], data[[nm]]))
-  user_missing
+val_labels_valid <- function(x, prefixed = FALSE) {
+  UseMethod("val_labels_valid")
 }
+val_labels_valid.haven_labelled <- function(x, prefixed = FALSE) {
+  out <- labelled::val_labels(x, prefixed = prefixed)
+  out[!(out %in% labelled::na_values(x))]
+}
+val_labels_valid.default <- function(x, prefixed = FALSE) NULL
+val_labels_valid.data.frame <- function(x, prefixed = FALSE) {
+  lapply(x, val_labels_valid, prefixed = prefixed)
+}
+
 val_lookups <- function(x, prefixed = FALSE) UseMethod("val_lookups")
 val_lookups.default <- function(x, prefixed = FALSE) NULL
 val_lookups.haven_labelled <- function(x, prefixed = FALSE) {

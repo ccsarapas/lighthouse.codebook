@@ -192,7 +192,7 @@ cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) 
   missings <- labelled::na_values(data)
   separate_missings <- separate_missings == "yes" ||
     (separate_missings == "if_any" & !rlang::is_empty(missings))
-
+  # could edit to use `val_labels_valid()`
   if (separate_missings) {
     val_labs <- mapply(\(v, m) v[!(v %in% m)], v = val_labs, m = missings)
     missings <- string_from_lookups(missings)
@@ -212,25 +212,4 @@ cb_add_types <- function(cb) {
 cb_add_missing <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
   dplyr::mutate(cb, missing = sapply(data, \(x) mean(is.na(x))))
-}
-
-## methods for dates, datetimes, etc?
-cb_summarize_numeric <- function(cb) {
-  out <- cb |>
-    dplyr::filter(type == "numeric") |>
-    dplyr::select(name, label)
-  nms_num <- out$name
-  data <- attr(cb, "data_zapped")
-
-  res <- summary_table(
-    data,
-    `valid n` = n_valid, `valid %` = pct_valid,
-    mean, SD = sd,
-    median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
-    skew = moments::skewness, kurt = moments::kurtosis,
-    na.rm = TRUE,
-    .vars = tidyselect::all_of(nms_num)
-  )
-  dplyr::left_join(out, res, dplyr::join_by(name == Variable)) |>
-    nan_to_na()
 }

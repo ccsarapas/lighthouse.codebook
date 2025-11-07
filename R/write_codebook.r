@@ -97,32 +97,32 @@ cb_write_sheet <- function(wb,
   wb
 }
 
-incl_date = TRUE 
-incl_dims = TRUE
-dataset_name = "UGH sus REDCap"
-file = file.path("..", "Tests", "summary_num2.xlsx")
-overwrite = TRUE
+# incl_date = TRUE 
+# incl_dims = TRUE
+# dataset_name = "UGH sus REDCap"
+# file = file.path("..", "Tests", "summary_num2.xlsx")
+# overwrite = TRUE
 
-cb_name <- cb_dims <- cb_date <- NULL
-if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
-if (incl_dims) {
-  cb_dims <- cli::pluralize(
-    "{attr(cb, 'n_obs')} record{?s} x {attr(cb, 'n_vars')} variable{?s}"
-  )
-}
-cb_date <- if (incl_date) glue_chr("Codebook generated {Sys.Date()}")
-h_dict <- c(dataset_name, cb_dims, cb_date)
-h_summ <- c(dataset_name, "Numeric variables summary")
+# cb_name <- cb_dims <- cb_date <- NULL
+# if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
+# if (incl_dims) {
+#   cb_dims <- cli::pluralize(
+#     "{attr(cb, 'n_obs')} record{?s} x {attr(cb, 'n_vars')} variable{?s}"
+#   )
+# }
+# cb_date <- if (incl_date) glue_chr("Codebook generated {Sys.Date()}")
+# h_dict <- c(dataset_name, cb_dims, cb_date)
+# h_summ <- c(dataset_name, "Numeric variables summary")
 
-openxlsx2::wb_workbook() |> 
-  cb_write_sheet(codebook_out, "Overview", header = h_dict, cols_pct = missing) |> 
-  cb_write_sheet(
-    summ_num, "Summary - Numeric Vars", header = h_summ, format_names = FALSE, 
-    cols_pct = `valid %`, cols_int = `valid n`
-  ) |> 
-  openxlsx2::wb_save(file, overwrite = overwrite)
-# invisible(file)
+# openxlsx2::wb_workbook() |> 
+#   cb_write_sheet(codebook_out, "Overview", header = h_dict, cols_pct = missing) |> 
+#   cb_write_sheet(
+#     summ_num, "Summary - Numeric Vars", header = h_summ, format_names = FALSE, 
+#     cols_pct = `valid %`, cols_int = `valid n`
+#   ) |> 
+#   openxlsx2::wb_save(file, overwrite = overwrite)
+# # invisible(file)
 
-lighthouse::open_file(file)
+# lighthouse::open_file(file)
 
 
