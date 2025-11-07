@@ -4,7 +4,7 @@ cb_init <- function(data,
                     meta_var_label = NULL, 
                     meta_val_labels = NULL,
                     ...) {
-  tibble::tibble(name = datanames) |>
+  tibble::tibble(name = names(data)) |>
     dplyr::left_join(meta, dplyr::join_by(name == {{ meta_var_name }})) |>
     dplyr::select(
       name, label = {{ meta_var_label }}, value_labels = {{ meta_val_labels }},
@@ -169,6 +169,11 @@ cb_zap_data <- function(cb) {
   set_attrs(cb, data_zapped = data)
 }
 
+cb_add_dims <- function(cb) {
+  data <- attr(cb, "data")
+  set_attrs(cb, n_obs = nrow(data), n_vars = ncol(data))
+}
+
 string_from_lookups <- function(lookups) {
   sapply(lookups, \(x) {
     if (is.null(x)) return(NA_character_)
@@ -207,4 +212,25 @@ cb_add_types <- function(cb) {
 cb_add_missing <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
   dplyr::mutate(cb, missing = sapply(data, \(x) mean(is.na(x))))
+}
+
+## methods for dates, datetimes, etc?
+cb_summarize_numeric <- function(cb) {
+  out <- cb |>
+    dplyr::filter(type == "numeric") |>
+    dplyr::select(name, label)
+  nms_num <- out$name
+  data <- attr(cb, "data_zapped")
+
+  res <- summary_table(
+    data,
+    `valid n` = n_valid, `valid %` = pct_valid,
+    mean, SD = sd,
+    median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
+    skew = moments::skewness, kurt = moments::kurtosis,
+    na.rm = TRUE,
+    .vars = tidyselect::all_of(nms_num)
+  )
+  dplyr::left_join(out, res, dplyr::join_by(name == Variable)) |>
+    nan_to_na()
 }

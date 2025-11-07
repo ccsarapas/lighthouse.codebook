@@ -119,3 +119,16 @@ c_labels <- function(x, y, conflict = c("error", "warn", "ignore")) {
     }
   )
 }
+
+spread_if_any <- function(..., na.rm = TRUE) {
+  max_if_any(..., na.rm = na.rm) - min_if_any(..., na.rm = na.rm)
+}
+
+nan_to_na.default <- function(x) dplyr::if_else(is.nan(x), NA, x)
+nan_to_na.list <- function(x) lapply(x, nan_to_na)
+nan_to_na.data.frame <- function(x) {
+  x[] <- lapply(x, nan_to_na)
+  x
+}
+nan_to_na <- function(x) UseMethod("nan_to_na")
+
