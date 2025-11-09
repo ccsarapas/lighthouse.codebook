@@ -131,31 +131,34 @@ cb_label_data <- function(cb, conflict = c("value_label", "missing_label")) {
   conflict <- match.arg(conflict)
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
+  factors <- setdiff(names(data)[sapply(data, is.factor)], names(vals_by_label))
   user_missing <- attr(cb, "user_missing")
-  label_vars <- union(names(vals_by_label), names(user_missing))
+  label_vars <- unique(c(names(vals_by_label), factors, names(user_missing)))
   for (nm in label_vars) {
-    val_labs <- vals_by_label[[nm]]
-    missings <- user_missing[[nm]]
-    if (!is.null(val_labs) && !is.null(missings)) {
-      vals <- reconcile_missing_labels(
-        val_labs = val_labs,
-        missings = missings,
-        conflict = conflict
-      )
-      missings <- sort(vals$missings)
-      val_labs <- vals$val_labs[
-        order(vals$val_labs %in% vals$missings, vals$val_labs)
-      ]
+    missings <- sort(user_missing[[nm]])
+    if (nm %in% factors) {
+      data[[nm]] <- to_labelled_chr(data[[nm]], na_values = missings)
     } else {
-      missings <- sort(missings)
-      val_labs <- sort(val_labs)
+      val_labs <- sort(vals_by_label[[nm]])
+      if (!is.null(val_labs) && !is.null(missings)) {
+        vals <- reconcile_missing_labels(
+          val_labs = val_labs,
+          missings = missings,
+          conflict = conflict
+        )
+        missings <- sort(vals$missings)
+        val_labs <- vals$val_labs[
+          order(vals$val_labs %in% vals$missings, vals$val_labs)
+        ]
+      }
+      data[[nm]] <- haven::labelled_spss(
+        data[[nm]], labels = val_labs, na_values = missings
+      )
     }
-    data[[nm]] <- haven::labelled_spss(
-      data[[nm]], labels = val_labs, na_values = missings
-    )
   }
-  set_attrs(cb, data_labelled = data)
+  set_attrs(cb, data_labelled = data, factors = factors)
 }
+
 
 cb_zap_data <- function(cb) {
   data <- attr(cb, "data_labelled")
@@ -174,12 +177,16 @@ cb_add_dims <- function(cb) {
   set_attrs(cb, n_obs = nrow(data), n_vars = ncol(data))
 }
 
-string_from_lookups <- function(lookups) {
-  sapply(lookups, \(x) {
+string_from_lookups <- function(lookups, no_prefix = NULL) {
+  sapply(names(lookups), \(var) {
+    x <- lookups[[var]]
     if (is.null(x)) return(NA_character_)
-    nms <- names(x)
-    if (is.null(nms)) labs <- "" 
-    else labs <- stringr::str_c(" ", tidyr::replace_na(names(x), ""))
+    if (var %in% no_prefix) return(stringr::str_c(x, collapse = "; "))
+    labs <- names(x) %||% ""
+    labs[is.na(labs)] <- ""
+    labs <- ifelse(labs != "", stringr::str_c(" ", labs), labs)
+    # labs <- names(x)
+    # labs <- if (is.null(labs)) "" else stringr::str_c(" ", tidyr::replace_na(labs, ""))
     stringr::str_c(glue_chr("[{x}]{labs}"), collapse = "; ")
   })
 }
@@ -199,7 +206,7 @@ cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) 
   } else {
     missings <- NULL
   }
-  val_labs <- string_from_lookups(val_labs)
+  val_labs <- string_from_lookups(val_labs, no_prefix = attr(cb, "factors"))
   dplyr::mutate(cb, value_labels = val_labs, user_missings = missings)
 }
 

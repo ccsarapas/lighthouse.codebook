@@ -78,6 +78,16 @@ val_lookups.data.frame <- function(x, prefixed = FALSE) {
 get_value_lookups <- val_lookups
 has_val_labels <- function(x) !is.null(labelled::val_labels(x))
 
+to_labelled_chr <- function(x, 
+                            labels = setNames(nm = levels(x)), 
+                            na_values = NULL,
+                            label = NULL) {
+  stopifnot(is.factor(x))
+  haven::labelled_spss(
+    as.character(x), labels = labels, na_values = na_values, label = label
+  )
+}
+
 remove_user_na_spec <- function(x, ...) {
   labelled::set_na_values(x, setdiff(labelled::na_values(x), ...))
 }

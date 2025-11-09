@@ -1,21 +1,37 @@
 
 ## methods for dates, datetimes, etc?
-cb_summarize_numeric <- function(cb) {
+cb_summarize_numeric <- function(cb, group_cols = NULL) {
   out <- cb |>
-    dplyr::filter(type == "numeric") |>
+    dplyr::filter(type %in% c("numeric", "integer")) |>
     dplyr::select(name, label)
   nms_num <- out$name
   data <- attr(cb, "data_zapped")
 
-  res <- summary_table(
-    data,
-    `Valid n` = n_valid, valid_pct = pct_valid,
-    mean, SD = sd,
-    median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
-    skew = moments::skewness, kurt = moments::kurtosis,
-    na.rm = TRUE,
-    .vars = tidyselect::all_of(nms_num)
-  )
+  # should be able to just pass `group_cols` directly, but due to bug in
+  # `summary_table()`, have to do this for now
+  # (see https://github.com/ccsarapas/lighthouse/issues/41)
+  if (is.null(group_cols)) {
+    res <- summary_table(
+      data,
+      `Valid n` = n_valid, valid_pct = pct_valid,
+      mean, SD = sd,
+      median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
+      skew = moments::skewness, kurt = moments::kurtosis,
+      na.rm = TRUE,
+      .vars = tidyselect::all_of(nms_num)
+    )
+  } else {
+    res <- summary_table(
+      data,
+      `Valid n` = n_valid, valid_pct = pct_valid,
+      mean, SD = sd,
+      median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
+      skew = moments::skewness, kurt = moments::kurtosis,
+      na.rm = TRUE,
+      .vars = tidyselect::all_of(nms_num),
+      .cols_group_by = {{ group_cols }}
+    )
+  }
   dplyr::left_join(out, res, dplyr::join_by(name == Variable)) |>
     nan_to_na()
 }
@@ -72,12 +88,16 @@ cb_count_multiple <- function(data,
                               ..., 
                               .prefixed = TRUE, 
                               .detail_missing = FALSE, 
-                              .detail_na_label = "NA") {
+                              .detail_na_label = "NA",
+                              .no_prefix = NULL) {
   dots <- rlang::list2(...)
-  purrr::map_dfr(
-    dots, cb_count, data = data, prefixed = .prefixed,
-    detail_missing = .detail_missing, detail_na_label = .detail_na_label
-  )
+  .prefixed <- .prefixed & !(as.character(dots) %in% .no_prefix)
+  purrr::map2_dfr(dots, .prefixed, \(v, p) {
+    cb_count(
+      data, var = {{ v }}, prefixed = p, 
+      detail_missing = .detail_missing, detail_na_label = .detail_na_label
+    )
+  })
 }
 
 
@@ -89,10 +109,12 @@ cb_summarize_categorical <- function(cb,
     dplyr::filter(type %in% c("factor", "logical")) |>
     dplyr::select(name, label)
   nms_cat <- summary_cat$name
+  factors <- attr(cb, "factors")
   data <- attr(cb, "data_labelled")
   cb_count_multiple(
-    data, !!!rlang::syms(nms_cat), .prefixed = prefixed, 
+    data, !!!rlang::syms(nms_cat), .prefixed = prefixed, .no_prefix = factors,
     .detail_missing = detail_missing, .detail_na_label = detail_na_label
   )
 }
+
 

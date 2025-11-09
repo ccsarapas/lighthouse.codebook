@@ -33,29 +33,29 @@ cb_write_sheet <- function(wb,
       dplyr::mutate(idx = {{ var }} != dplyr::lag({{ var }}, default = "")) |>
       dplyr::pull(idx)
   }
-  block_bottoms <- function(var_change, rows) {
-    c(rows$dat[which(var_change)][-1] - 1, max(rows$dat))
+  block_bottoms <- function(chg_rows, rows) {
+    c(rows$dat[which(chg_rows)] - 1, max(rows$dat))
   }
   if (variable_bands || variable_borders || !missing(sub_borders)) {
-    var_change <- index_repeats(data, Name)
+    chg_rows <- index_repeats(data, Name)
     if (variable_bands) {
       rows$bands <- rows$dat[
         dplyr::near(dplyr::consecutive_id(data$Name) %% 2, 1)
       ]
     }
     if (variable_borders) {
-      rows$var_borders <- block_bottoms(var_change, rows)
+      rows$var_borders <- block_bottoms(chg_rows, rows)[-1]
       cols$var_borders <- cols$all
     }
-    if (variable_bands || variable_borders) data$Name[!var_change] <- ""
+    if (variable_bands || variable_borders) data$Name[!chg_rows] <- ""
     if (!missing(sub_borders)) {
       sub_var_chr <- as.character(rlang::ensym(sub_borders))
-      var_change_sub <- index_repeats(data, {{ sub_borders }})
-      rows$sub_borders <- block_bottoms(var_change_sub, rows)
+      chg_rows_sub <- index_repeats(data, {{ sub_borders }}) & !chg_rows
+      rows$sub_borders <- block_bottoms(chg_rows_sub, rows)
       cols$sub_borders <- seq(match(sub_var_chr, names(data)), max(cols$all))
       data <- data |>
         dplyr::mutate("{sub_var_chr}" := ifelse(
-          var_change_sub | var_change, 
+          chg_rows_sub | chg_rows, 
           {{ sub_borders }}, 
           ""
         ))
@@ -90,11 +90,12 @@ cb_write_sheet <- function(wb,
       )
   }
   for (nm in intersect(names(cols), c("var_borders", "sub_borders"))) {
+    colors <- list(var_borders = "404040", sub_borders = "808080")
     for (r in rows[[nm]]) {
       wb <- wb |>
         openxlsx2::wb_add_border(
           sheet_name, openxlsx2::wb_dims(r, cols[[nm]]),
-          bottom_color = openxlsx2::wb_color("black"),
+          bottom_color = openxlsx2::wb_color(hex = colors[[nm]]),
           top_border = NULL, left_border = NULL, right_border = NULL
         )
     }
@@ -142,49 +143,3 @@ cb_write_sheet <- function(wb,
 }
   
 
-
-
-# incl_date = TRUE 
-# incl_dims = TRUE
-# dataset_name = "UGH sus REDCap"
-# file = file.path("..", "Tests", "summary.xlsx")
-# overwrite = TRUE
-
-# cb_name <- cb_dims <- cb_date <- NULL
-# if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
-# if (incl_dims) {
-#   cb_dims <- cli::pluralize(
-#     "{attr(cb, 'n_obs')} record{?s} x {attr(cb, 'n_vars')} variable{?s}"
-#   )
-# }
-# cb_date <- if (incl_date) glue_chr("Codebook generated {Sys.Date()}")
-# h_dict <- c(dataset_name, cb_dims, cb_date)
-# h_summ_num <- c(dataset_name, "Numeric variables summary")
-# h_summ_cat <- c(dataset_name, "Categorical variables summary")
-
-
-# codebook_out <- cb |>
-#   dplyr::relocate(form, type, .after = name) |>
-#   dplyr::select(!tidyselect::any_of(c("rc_type"))) |>
-#   cb_format_names()
-# summ_num <- cb_summarize_numeric(cb) |>
-#   cb_format_names(!c(`Valid n`, SD, MAD))
-# summ_cat <- cb_summarize_categorical(cb) |>
-#   cb_format_names(!n)
-
-
-# openxlsx2::wb_workbook() |>
-#   cb_write_sheet(codebook_out, "Overview", header = h_dict, cols_pct = Missing) |>
-#   cb_write_sheet(
-#     summ_num, "Summary - Numeric Vars",
-#     header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
-#   ) |>
-#   cb_write_sheet(
-#     summ_cat, "Summary - Categorical Vars",
-#     header = h_summ_cat, cols_pct = tidyselect::starts_with("%"), cols_int = n,
-#     variable_borders = TRUE, sub_borders = `Valid / Missing`
-#   ) |> 
-#   openxlsx2::wb_save(file, overwrite = overwrite)
-# # invisible(file)
-
-# lighthouse::open_file(file)
