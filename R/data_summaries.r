@@ -55,10 +55,7 @@ cb_summarize_numeric <- function(cb, group_cols = NULL) {
     .vars = tidyselect::all_of(nms_num),
     .rows_group_by = {{ group_cols }}
   )
-  
-  out <- out |> 
-    dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    nan_to_na()
+  dplyr::left_join(out, res, dplyr::join_by(name == Variable))
 }
 
 
@@ -78,12 +75,12 @@ cb_count <- function(data,
       as.character() |> 
       tidyr::replace_na(na_label)
   }
-  # if (detail_missing && !missing(.by)) {
-  #   cli::cli_abort(c(
-  #     "Detailed missing value information is not currently supported for multiple groups.",
-  #     "i" = "{.code detail_missing} cannot be {.code TRUE} when {.code .by} is specified."      
-  #   ))
-  # }
+  if (detail_missing && !rlang::quo_is_null(rlang::enquo(.by))) {
+    cli::cli_abort(c(
+      "Detailed missing value information is not currently supported for multiple groups.",
+      "i" = "{.code detail_missing} cannot be {.code TRUE} when {.code .by} is specified."      
+    ))
+  }
   levels <- if (prefixed) "prefixed" else "labels"
   data <- dplyr::rename(data, value = {{ var }})
   if (!detail_missing) data$value <- labelled::user_na_to_na(data$value)
@@ -168,7 +165,7 @@ cb_count_multiple <- function(data,
 cb_summarize_categorical <- function(cb, 
                                      group_cols = NULL,
                                      prefixed = TRUE, 
-                                     detail_missing = TRUE, 
+                                     detail_missing = missing(group_cols), 
                                      detail_na_label = "NA") {
   summary_cat <- cb |>
     dplyr::filter(type %in% c("factor", "logical")) |>
@@ -178,12 +175,14 @@ cb_summarize_categorical <- function(cb,
   data <- attr(cb, "data_labelled")
   group_chr <- untidyselect(data, {{ group_cols }})
   vars <- rlang::syms(setdiff(nms_cat, group_chr))
-  cb_count_multiple(
+  res <- cb_count_multiple(
     data, !!!vars, .prefixed = prefixed, .no_prefix = factors,
     .detail_missing = detail_missing, .detail_na_label = detail_na_label, 
     .by = {{ group_cols }}
   )
+  dplyr::left_join(summary_cat, res, by = "name")
 }
+
 
 
 

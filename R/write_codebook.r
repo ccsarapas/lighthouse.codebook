@@ -1,54 +1,68 @@
-row_divisions <- function(wb, sheet_name, data, rows, cols, variable_bands, variable_borders, sub_borders, sub_borders_var) {
-  index_repeats <- function(data, var) {
+
+wb_banded_fill_by <- function(wb,
+                              sheet = openxlsx2::current_sheet(),
+                              dims,
+                              by,
+                              data,
+                              color = openxlsx2::wb_color(hex = "EEEEEE"),
+                              pattern = "solid",
+                              gradient_fill = "",
+                              every_nth_col = 1,
+                              bg_color = NULL,
+                              ...) {
+  rowcol <- openxlsx2::dims_to_rowcol(dims, as_integer = TRUE)
+  bands <- data |>
+    dplyr::mutate(bands = dplyr::consecutive_id(dplyr::pick({{ by }}))) |>
+    with(dplyr::near(bands %% 2, 1))
+  rows <- rowcol$row[bands]
+  cols <- seq(min(rowcol$col), max(rowcol$col))
+  openxlsx2::wb_add_fill(
+    wb, sheet, dims = openxlsx2::wb_dims(rows, cols),
+    color = color, pattern = pattern, gradient_fill = gradient_fill,
+    every_nth_col = every_nth_col, bg_color = bg_color, ...
+  )
+}
+
+
+wb_row_borders_by <- function(wb,
+                              sheet = openxlsx2::current_sheet(),
+                              dims,
+                              by,
+                              start_col = NULL,
+                              data,
+                              skip_first = TRUE,
+                              color = openxlsx2::wb_color(hex = "404040"),
+                              border = "thin",
+                              update = FALSE,
+                              ...) {
+  index_repeats <- function(data, by) {
     data |>
-      dplyr::mutate(idx = {{ var }} != dplyr::lag({{ var }}, default = "")) |>
+      dplyr::mutate(
+        idx = dplyr::if_any({{ by }}, \(x) x != dplyr::lag(x, default = ""))
+      ) |>
       dplyr::pull(idx)
   }
   block_bottoms <- function(chg_rows, rows) {
-    c(rows$dat[which(chg_rows)] - 1, max(rows$dat))
+    c(rows[which(chg_rows)] - 1, max(rows))
   }
-    if (variable_bands || variable_borders || sub_borders) {
-    chg_rows <- index_repeats(data, Name)
-    if (variable_bands) {
-      rows$bands <- rows$dat[
-        dplyr::near(dplyr::consecutive_id(data$Name) %% 2, 1)
-      ]
-    }
-    if (variable_borders) {
-      rows$var_borders <- block_bottoms(chg_rows, rows)[-1]
-      cols$var_borders <- cols$all
-    }
-    if (variable_bands || variable_borders) data$Name[!chg_rows] <- ""
-    if (sub_borders) {
-      sub_var_chr <- as.character(rlang::ensym(sub_borders_var))
-      chg_rows_sub <- index_repeats(data, {{ sub_borders_var }}) & !chg_rows
-      rows$sub_borders <- block_bottoms(chg_rows_sub, rows)
-      cols$sub_borders <- seq(match(sub_var_chr, names(data)), max(cols$all))
-      data <- data |>
-        dplyr::mutate("{sub_var_chr}" := ifelse(
-          chg_rows_sub | chg_rows, 
-          {{ sub_borders_var }}, 
-          ""
-        ))
-    }
+  rowcol <- openxlsx2::dims_to_rowcol(dims, as_integer = TRUE)
+  chg_rows <- index_repeats(data, {{ by }})
+  rows <- block_bottoms(chg_rows, rowcol$row)
+  if (skip_first) rows <- rows[-1]
+  cols <- seq(min(rowcol$col), max(rowcol$col))
+  start_quo <- rlang::enquo(start_col)
+  if (!rlang::quo_is_null(start_quo)) {
+    idx <- seq(tidyselect::eval_select(start_quo, data), ncol(data))
+    cols <- cols[idx]
   }
-  if (variable_bands) {
-  wb <- wb |>
-    openxlsx2::wb_add_fill(
-      sheet_name, openxlsx2::wb_dims(rows$bands, cols$all),
-      openxlsx2::wb_color(hex = "EEEEEE")
-    )
-  }
-  for (nm in intersect(names(cols), c("var_borders", "sub_borders"))) {
-    colors <- list(var_borders = "404040", sub_borders = "808080")
-    for (r in rows[[nm]]) {
-      wb <- wb |>
-        openxlsx2::wb_add_border(
-          sheet_name, openxlsx2::wb_dims(r, cols[[nm]]),
-          bottom_color = openxlsx2::wb_color(hex = colors[[nm]]),
-          top_border = NULL, left_border = NULL, right_border = NULL
-        )
-    }
+  for (r in rows) {
+    wb <- wb |>
+      openxlsx2::wb_add_border(
+        sheet, openxlsx2::wb_dims(r, cols),
+        bottom_color = color, bottom_border = border,
+        top_border = NULL, left_border = NULL, right_border = NULL,
+        update = update, ...
+      )
   }
   wb
 }
@@ -62,95 +76,81 @@ cb_write_sheet <- function(wb,
                            group_cols = NULL,
                            id_cols = NULL,
                            incl_group_col_names = TRUE,
-                           variable_bands = TRUE,
-                           variable_borders = FALSE,
-                           sub_borders = NULL) {
+                           rows_banded_by = NULL,
+                           rows_border_by = NULL,
+                           rows_sub_border_by = NULL, 
+                           clear_repeats = NULL) {
   # init sheet
   wb <- wb |>
-    openxlsx2::wb_add_worksheet(sheet_name)  
+    openxlsx2::wb_add_worksheet(sheet_name)
+  data_nms <- names(data)
+  num_nms <- data_nms[sapply(data, is.numeric)]
   pct_nms <- untidyselect(data, {{cols_pct}})
   int_nms <- untidyselect(data, {{ cols_int }})
   group_var_nms <- NULL
   decked <- NULL
   if (!missing(group_cols)) {
     group_var_nms <- untidyselect(data, {{ group_cols }})
-    id_var_nms <- untidyselect(data, {{ id_cols }})
-    group_lvls <- lapply(
-      setNames(nm = group_var_nms),
-      \(x) as.character(sort(unique(data[[x]])))
-    )
-    stat_var_nms <- setdiff(names(data), c(id_var_nms, group_var_nms))
-    cols_decked <- tidyr::expand_grid(!!!c(group_lvls, list(cols = stat_var_nms)))
-    if (incl_group_col_names) {
-      cols_decked <- cols_decked |>
-        dplyr::mutate(
-          dplyr::across(!cols, \(x) stringr::str_c(dplyr::cur_column(), " = ", x))
-        )
-    }
-    cols_decked <- cols_decked |>
-      dplyr::mutate(
-        dplyr::across(!cols, dplyr::consecutive_id, .names = "{.col}_set")
-      )
-    sets_lowest <- cols_decked[[ncol(cols_decked)]]
-    breaks_at <- which(diff(sets_lowest) == 1)
-    cols_decked <- cols_decked |>
-      add_empty_rows(.after = breaks_at) |>
-      dplyr::mutate(
-        # fill values only if prev and following match
-        dplyr::across(!cols, \(x) {
-          dplyr::coalesce(
-            x,
-            ifelse(dplyr::lag(x) == dplyr::lead(x), dplyr::lag(x), x)
-          )
-        })
-      )
-
-    cols_id_decked <- tibble::tibble(cols = id_var_nms) |>
-      dplyr::bind_rows(cols_decked) |>
-      dplyr::mutate(cols = ifelse(is.na(cols), "_empty_", cols))
-
+    val_cols <- rlang::quo(!c({{ group_cols }}, {{ id_cols }}))    
     data <- data |>
-      dplyr::mutate(..spacer = NA) |>
+      dplyr::mutate(..spacer = NA_character_) |>
+      # needed to ensure correct column order when >1 group var
+      dplyr::arrange(dplyr::pick({{ group_cols }})) |> 
       tidyr::pivot_wider(
         id_cols = {{ id_cols }},
-        names_from = {{ group_cols }},
-        values_from = tidyselect::all_of(c("..spacer", stat_var_nms)),
+        names_from = tidyselect::all_of(rev(group_var_nms)),
+        values_from = c(..spacer, {{ val_cols }}),
+        names_sep = "_SEP_",
         names_vary = "slowest"
-      ) |>
-      as.data.frame()
+      )
+    
     first_spacer <- grep("^\\.\\.spacer", names(data))[[1]]
     data[, first_spacer] <- NULL
+    
+    decked <- strsplit(names(data), "_SEP_")
+    decked <- do.call(cbind, lighthouse::pad_vectors(!!!decked))
 
-    names(data) <- cols_id_decked$cols
+    data_nms <- decked[1, ]
+    data_nms[data_nms == "..spacer"] <- ""
+    
+    decked <- decked[-1, ]
+    decked <- decked[rev(seq(nrow(decked))), ]
+    if (incl_group_col_names) {
+      decked <- apply(decked, 2, \(x) stringr::str_c(group_var_nms, " = ", x))
+    }
+    decked_grp <- decked[, -1]
+    decked_grp_lag <- decked[, -ncol(decked)]
+    decked0 <- decked
+    decked[, -1][decked_grp != decked_grp_lag] <- NA
 
-    decked <- cols_id_decked |>
-      dplyr::select({{ group_cols }}) |>
-      t() |>
-      unname()
-    # decked_sets <- cols_id_decked |>
-    #   dplyr::select(tidyselect::ends_with("_set"))
+    decked_fmt <- apply(decked, 1, \(r) {
+      loc_valid <- which(!is.na(r))
+      consec <- dplyr::consecutive_id(r[loc_valid])
+      merge <- unname(split(loc_valid, consec))
+      list(rule = loc_valid, merge = merge)
+    })
   }
   cols <- list(
     all = seq_along(data),
-    num = unname(which(sapply(data, is.numeric))),
-    pct = which(names(data) %in% pct_nms),
-    int = which(names(data) %in% int_nms)
+    num = which(data_nms %in% num_nms),
+    pct = which(data_nms %in% pct_nms),
+    int = which(data_nms %in% int_nms)
   )
   nrows <- nrow(data)
   rows <- tibble::lst(
     dat_start = length(header) + length(group_var_nms) + 1,
     decked_start = length(header) + 1,
-    decked = seq_along(group_var_nms) + decked_start,
+    decked = seq_along(group_var_nms) + length(header),
     header = seq_along(header),
     dat = seq_len(nrows) + dat_start,
     all = seq_len(nrows + dat_start)
   )
-  names(data) <- make.unique(names(data), sep = "_tmp_")
   
   num_fmts <- list(num = "0.00", pct = "0.0%", int = "0")
   
   ## prep data for writing
   data <- data |>
+    nan_to_na() |>
     dplyr::mutate(
       dplyr::across(tidyselect::where(is.character), \(x) tidyr::replace_na(x, ""))
     )
@@ -158,91 +158,131 @@ cb_write_sheet <- function(wb,
   ## Apply styles
   wb <- wb |>
     openxlsx2::wb_add_font(
-      sheet_name, openxlsx2::wb_dims(rows$all, cols$all), "Aptos Narrow"
+      dims = openxlsx2::wb_dims(rows$all, cols$all), name = "Aptos Narrow"
     ) |>
     openxlsx2::wb_add_font(
-      sheet_name, openxlsx2::wb_dims(rows$dat_start, cols$all),
-      italic = TRUE
+      dims = openxlsx2::wb_dims(rows$dat_start, cols$all), italic = TRUE
     ) |>
     openxlsx2::wb_add_fill(
-      sheet_name, openxlsx2::wb_dims(rows$all, cols$all),
-      openxlsx2::wb_color("white")
+      dims = openxlsx2::wb_dims(rows$all, cols$all),
+      color = openxlsx2::wb_color("white")
     ) |>
     openxlsx2::wb_add_border(
-      sheet_name, openxlsx2::wb_dims(max(rows$header), cols$all),
+      dims = openxlsx2::wb_dims(max(rows$header), cols$all),
       bottom_color = openxlsx2::wb_color(hex = "808080"), 
       top_border = NULL, left_border = NULL, right_border = NULL
     ) |> 
     openxlsx2::wb_add_border(
-      sheet_name, openxlsx2::wb_dims(rows$dat_start, cols$all), 
-      # bottom_color = openxlsx2::wb_color("black"), 
+      dims = openxlsx2::wb_dims(rows$dat_start, cols$all), 
       bottom_border = "double",
       top_border = NULL, left_border = NULL, right_border = NULL
     )
-
-  wb <- row_divisions(
-    wb, sheet_name, data, rows, cols, variable_bands, variable_borders, 
-    sub_borders = !missing(sub_borders), sub_borders_var = {{ sub_borders }}
-  )
-
+  rows_banded_by <- rlang::enquo(rows_banded_by)
+  rows_border_by <- rlang::enquo(rows_border_by)
+  rows_sub_border_by <- rlang::enquo(rows_sub_border_by)
+  if (!rlang::quo_is_null(rows_banded_by)) {
+    wb <- wb |>
+      wb_banded_fill_by(
+        dims = openxlsx2::wb_dims(rows$dat, cols$all), by = !!rows_banded_by, 
+        data = data
+      )
+  }
+    if (!rlang::quo_is_null(rows_sub_border_by)) {
+    by <- rlang::expr(c(!!rows_border_by, !!rows_sub_border_by))
+    wb <- wb |>
+      wb_row_borders_by(
+        dims = openxlsx2::wb_dims(rows$dat, cols$all), by = !!by, data = data,
+        start_col = !!rows_sub_border_by, 
+        color = openxlsx2::wb_color(hex = "808080"),
+      )
+  }
+  if (!rlang::quo_is_null(rows_border_by)) {
+    wb <- wb |>
+      wb_row_borders_by(
+        dims = openxlsx2::wb_dims(rows$dat, cols$all), by = !!rows_banded_by, 
+        data = data
+      )
+  }
+  clear_repeats <- untidyselect(data, {{ clear_repeats }})
+  if (length(clear_repeats)) {
+    for (i in seq(length(clear_repeats), 1)) {
+      var <- clear_repeats[[i]]
+      grp <- clear_repeats[seq(length.out = i - 1)]
+      data <- data |>
+        dplyr::mutate(
+          "{var}" := repeats_to_blank(.data[[var]]),
+          .by = tidyselect::all_of(grp)
+        )
+    }
+  }
   if (length(cols$num)) {
     wb <- wb |>
       openxlsx2::wb_add_cell_style(
-        sheet_name, 
-        openxlsx2::wb_dims(c(rows$dat_start, rows$dat), cols$num),
+        dims = openxlsx2::wb_dims(c(rows$dat_start, rows$dat), cols$num),
         horizontal = "right"
       )
+      
     for (nm in names(num_fmts)) {
       wb <- wb |>
         openxlsx2::wb_add_numfmt(
-          sheet_name, openxlsx2::wb_dims(rows$dat, cols[[nm]]), 
+          dims = openxlsx2::wb_dims(rows$dat, cols[[nm]]), 
           numfmt = num_fmts[[nm]]
         )
     }
   }
   
-  names(data) <- gsub("_tmp_.+", "", names(data))
-  names(data) <- gsub("_empty_", "", names(data))
+  data <- as.data.frame(data)
+  names(data) <- data_nms
   ## Write data
   wb <- wb |>
     openxlsx2::wb_add_data(
-      sheet_name, data,
-      start_row = rows$dat_start, start_col = 1,
-      na.strings = "-"
-    )
+      x = data, start_row = rows$dat_start, start_col = 1, na.strings = "-"
+    )  
+  
   if (!is.null(decked)) {
     wb <- wb |>
       openxlsx2::wb_add_data(
-        sheet_name, decked, start_row = rows$decked_start, 
-        start_col = 1, col_names = FALSE, na.strings = ""
-      )
-    for (i in seq_along(rows$decked)) {
-      wb <- openxlsx2::wb_add_border(
-        wb, sheet_name, openxlsx2::wb_dims(
-          i, which(!is.na(decked[i, ])), from_row = rows$decked_start
-        ),
-        top_border = NULL, left_border = NULL, right_border = NULL
-      )
+        x = decked, start_row = rows$decked_start, start_col = 1, 
+        col_names = FALSE, na.strings = ""
+      ) |> 
+      openxlsx2::wb_add_cell_style(
+        dims = openxlsx2::wb_dims(rows$decked, cols$all), horizontal = "center"
+      ) |> 
+      openxlsx2::wb_add_font(
+        dims = openxlsx2::wb_dims(rows$decked, cols$all),
+        bold = TRUE, italic = TRUE
+      )      
+    for (i in seq_along(decked_fmt)) {
+      fmt <- decked_fmt[[i]]
+      wb <- wb |> 
+        openxlsx2::wb_add_border(
+          dims = openxlsx2::wb_dims(i, fmt$rule, from_row = rows$decked_start),
+          top_border = NULL, left_border = NULL, right_border = NULL
+        )
+      for (cells in fmt$merge) {
+        wb <- wb |>
+          openxlsx2::wb_merge_cells(
+            dims = openxlsx2::wb_dims(i, cells, from_row = rows$decked_start)
+          )
+      }
     }
   }
   if (length(header)) {
     wb <- wb |>
       openxlsx2::wb_add_data(
-        sheet_name, header, start_row = 1, start_col = 1, na.strings = ""
+        x = header, start_row = 1, start_col = 1, na.strings = ""
       ) |>
       openxlsx2::wb_add_font(
-        sheet_name, openxlsx2::wb_dims(rows$header, 1), bold = TRUE
+        dims = openxlsx2::wb_dims(rows$header, 1), bold = TRUE
       )
   }
   # Set column widths and freeze panes
   wb <- wb |>
-    openxlsx2::wb_set_col_widths(sheet_name, cols$all, widths = "auto") |>
+    openxlsx2::wb_set_col_widths(cols = cols$all, widths = "auto") |>
     openxlsx2::wb_freeze_pane(
-      sheet_name, first_active_row = rows$dat_start + 1,  first_active_col = 2
+      first_active_row = rows$dat_start + 1,  first_active_col = 2
     )
   
   wb
 }
-  
-
 

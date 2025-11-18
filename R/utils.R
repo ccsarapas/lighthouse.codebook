@@ -22,6 +22,12 @@ names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 is_num_chr <- function(x) {
   rlang::is_bare_numeric(x) || rlang::is_bare_character(x)
 }
+
+repeats_to_blank <- function(x, replace = c("", "NA")) {
+  replace <- if (match.arg(replace) == "NA") NA else ""
+  dplyr::if_else(x == dplyr::lag(x, default = replace), replace, x)
+}
+
 check_num_chr <- function(x, 
                           return = c("type", "class"),
                           msg = "Classes other than numeric and character are not supported."
