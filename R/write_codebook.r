@@ -73,13 +73,13 @@ cb_write_sheet <- function(wb,
                            header = NULL,
                            cols_pct = NULL,
                            cols_int = NULL,
-                           group_cols = NULL,
-                           id_cols = NULL,
-                           incl_group_col_names = TRUE,
-                           rows_banded_by = NULL,
+                           rows_banded_by = Name,
                            rows_border_by = NULL,
                            rows_sub_border_by = NULL, 
-                           clear_repeats = NULL) {
+                           clear_repeats = NULL,
+                           id_cols = NULL,
+                           group_cols = NULL,
+                           incl_group_col_names = TRUE) {
   # init sheet
   wb <- wb |>
     openxlsx2::wb_add_worksheet(sheet_name)
@@ -223,11 +223,14 @@ cb_write_sheet <- function(wb,
       )
       
     for (nm in names(num_fmts)) {
-      wb <- wb |>
-        openxlsx2::wb_add_numfmt(
-          dims = openxlsx2::wb_dims(rows$dat, cols[[nm]]), 
-          numfmt = num_fmts[[nm]]
-        )
+      cols_nm <- cols[[nm]]
+      if (length(cols_nm)) {
+        wb <- wb |>
+          openxlsx2::wb_add_numfmt(
+            dims = openxlsx2::wb_dims(rows$dat, cols_nm), 
+            numfmt = num_fmts[[nm]]
+          )
+      }
     }
   }
   
@@ -282,7 +285,100 @@ cb_write_sheet <- function(wb,
     openxlsx2::wb_freeze_pane(
       first_active_row = rows$dat_start + 1,  first_active_col = 2
     )
+    
   
   wb
 }
 
+
+cb_write_codebook <- function(cb, 
+                              file, 
+                              dataset_name,
+                              incl_date = TRUE,
+                              incl_dims = TRUE,
+                              detail_missing = TRUE,
+                              group_by = NULL,
+                              overwrite = TRUE
+  ) {
+  # create headers
+  cb_name <- cb_dims <- cb_date <- NULL
+  if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
+  if (incl_dims) {
+    cb_dims <- cli::pluralize(
+      "{attr(cb, 'n_obs')} record{?s} x {attr(cb, 'n_vars')} variable{?s}"
+    )
+  }
+  cb_date <- if (incl_date) glue_chr("Codebook generated {Sys.Date()}")
+  h_overview <- c(dataset_name, cb_dims, cb_date)
+  h_summ_num <- c(dataset_name, "Numeric variables summary")
+  h_summ_cat <- c(dataset_name, "Categorical variables summary")
+
+  # prep sheet data
+  overview <- cb_format_names(cb)
+  summary_num <- cb |>
+    cb_summarize_numeric() |> 
+    cb_format_names(!c(`Valid n`, SD, MAD))
+  summary_cat <- cb |>
+    cb_summarize_categorical(detail_missing = detail_missing) |>
+    cb_format_names(!n)
+  
+  # write sheets
+  wb <- openxlsx2::wb_workbook() |>
+    cb_write_sheet(
+      overview, "Overview", header = h_overview, cols_pct = Missing
+    ) |>
+    cb_write_sheet(
+      summary_num, "Summary - Numeric Vars",
+      header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
+    )
+  if (detail_missing) {
+    wb <- wb |>
+      cb_write_sheet(
+        summary_cat, "Summary - Categorical", header = h_summ_cat,
+        cols_pct = tidyselect::starts_with("%"), cols_int = n,
+        rows_border_by = Name, rows_sub_border_by = `Valid / Missing`,
+        clear_repeats = c(Name, Label, `Valid / Missing`)
+      )
+  } else {
+    wb <- wb |>
+      cb_write_sheet(
+        summary_cat, "Summary - Categorical", header = h_summ_cat,
+        cols_pct = tidyselect::starts_with("%"), cols_int = n,
+        clear_repeats = c(Name, Label)
+      )
+  }
+  
+  # prep and write grouped sheets
+  group_by_chr <- untidyselect(attr(cb, "data_zapped"), {{ group_by }})
+  if (length(group_by_chr)) {
+    h_summ_num_grp <- c(h_summ_num, paste("By ", toString(group_by_chr)))
+    h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(group_by_chr)))
+    summary_num_grp <- cb |>
+      cb_summarize_numeric(group_cols = {{ group_cols }}) |>
+      cb_format_names(!c(`Valid n`, SD, MAD, {{ group_cols }}))
+    if (detail_missing) {
+      cli::cli_inform(c(
+        "i" = "Detailed missing value information is not currently supported for grouped summaries."
+      ))
+    }
+    summary_cat_grp <- cb |>
+      cb_summarize_categorical(
+        group_cols = {{ group_cols }}, detail_missing = FALSE
+      ) |>
+      cb_format_names(!c(n, {{ group_cols }}))
+    wb <- wb |>
+      cb_write_sheet(
+        summary_num_grp, "Grouped Summary - Numeric", header = h_summ_num_grp, 
+        cols_pct = `Valid %`, cols_int = `Valid n`,
+        id_cols = c(Name, Label), group_cols = {{ group_cols }}
+      ) |>
+      cb_write_sheet(
+        summary_cat_grp, "Grouped Summary - Categorical", header = h_summ_cat_grp,
+        cols_pct = tidyselect::starts_with("%"), cols_int = n,
+        id_cols = c(Name, Label, Value), group_cols = {{ group_cols }},  
+        clear_repeats = c(Name, Label)
+      )
+  }
+  openxlsx2::wb_save(wb, file, overwrite = overwrite)
+  invisible(file)
+}
