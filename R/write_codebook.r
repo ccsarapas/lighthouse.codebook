@@ -1,3 +1,15 @@
+cb_format_names <- function(cb, cols = tidyselect::everything()) {
+  dplyr::rename_with(
+    cb,
+    \(x) {
+      x |>
+        stringr::str_replace_all(c("_" = " ", "pct" = "%")) |>
+        stringr::str_to_title() |>
+        stringr::str_replace_all("\\bOf\\b", "of")
+    },
+    {{ cols }}
+  )
+}
 
 wb_banded_fill_by <- function(wb,
                               sheet = openxlsx2::current_sheet(),
@@ -67,6 +79,53 @@ wb_row_borders_by <- function(wb,
   wb
 }
 
+cb_prep_grouped_data <- function(data, group_by, id_cols) {
+  group_var_nms <- untidyselect(data, {{ group_by }})
+  val_cols <- rlang::quo(!c({{ group_by }}, {{ id_cols }}))
+  data <- data |>
+    dplyr::mutate(..spacer = NA_character_) |>
+    # needed to ensure correct column order when >1 group var
+    dplyr::arrange(dplyr::pick({{ group_by }})) |>
+    tidyr::pivot_wider(
+      id_cols = {{ id_cols }},
+      names_from = tidyselect::all_of(rev(group_var_nms)),
+      values_from = c(..spacer, {{ val_cols }}),
+      names_sep = "_SEP_",
+      names_vary = "slowest"
+    )
+  first_spacer <- grep("^\\.\\.spacer", names(data))[[1]]
+  data[, first_spacer] <- NULL
+  list(data, group_var_nms)
+}
+
+cb_prep_decked_cols <- function(data, group_var_nms, incl_group_col_names) {
+  decked <- strsplit(names(data), "_SEP_")
+  decked <- do.call(cbind, lighthouse::pad_vectors(!!!decked))
+
+  data_nms <- decked[1, ]
+  data_nms[data_nms == "..spacer"] <- ""
+
+  decked <- decked[-1, , drop = FALSE]
+  decked <- decked[rev(seq(nrow(decked))), , drop = FALSE]
+  if (incl_group_col_names) {
+    decked <- apply(decked, 2, \(x) stringr::str_c(group_var_nms, " = ", x))
+    # if decked has only one row, `apply` returns vector, so coerce back to matrix
+    if (!is.matrix(decked)) decked <- matrix(decked, nrow = 1)
+  }
+  decked_grp <- decked[, -1]
+  decked_grp_lag <- decked[, -ncol(decked)]
+  decked[, -1][decked_grp != decked_grp_lag] <- NA
+
+  decked_fmt <- apply(decked, 1, \(r) {
+    loc_valid <- which(!is.na(r))
+    consec <- dplyr::consecutive_id(r[loc_valid])
+    merge <- unname(split(loc_valid, consec))
+    list(rule = loc_valid, merge = merge)
+  })
+
+  list(decked, data_nms, decked_fmt)
+}
+
 cb_write_sheet <- function(wb,
                            data, 
                            sheet_name,
@@ -78,58 +137,26 @@ cb_write_sheet <- function(wb,
                            rows_sub_border_by = NULL, 
                            clear_repeats = NULL,
                            id_cols = NULL,
-                           group_cols = NULL,
+                           group_by = NULL,
                            incl_group_col_names = TRUE) {
   # init sheet
   wb <- wb |>
     openxlsx2::wb_add_worksheet(sheet_name)
   data_nms <- names(data)
   num_nms <- data_nms[sapply(data, is.numeric)]
-  pct_nms <- untidyselect(data, {{cols_pct}})
+  pct_nms <- untidyselect(data, {{ cols_pct }})
   int_nms <- untidyselect(data, {{ cols_int }})
-  group_var_nms <- NULL
-  decked <- NULL
-  if (!missing(group_cols)) {
-    group_var_nms <- untidyselect(data, {{ group_cols }})
-    val_cols <- rlang::quo(!c({{ group_cols }}, {{ id_cols }}))    
-    data <- data |>
-      dplyr::mutate(..spacer = NA_character_) |>
-      # needed to ensure correct column order when >1 group var
-      dplyr::arrange(dplyr::pick({{ group_cols }})) |> 
-      tidyr::pivot_wider(
-        id_cols = {{ id_cols }},
-        names_from = tidyselect::all_of(rev(group_var_nms)),
-        values_from = c(..spacer, {{ val_cols }}),
-        names_sep = "_SEP_",
-        names_vary = "slowest"
-      )
-    
-    first_spacer <- grep("^\\.\\.spacer", names(data))[[1]]
-    data[, first_spacer] <- NULL
-    
-    decked <- strsplit(names(data), "_SEP_")
-    decked <- do.call(cbind, lighthouse::pad_vectors(!!!decked))
-
-    data_nms <- decked[1, ]
-    data_nms[data_nms == "..spacer"] <- ""
-    
-    decked <- decked[-1, ]
-    decked <- decked[rev(seq(nrow(decked))), ]
-    if (incl_group_col_names) {
-      decked <- apply(decked, 2, \(x) stringr::str_c(group_var_nms, " = ", x))
-    }
-    decked_grp <- decked[, -1]
-    decked_grp_lag <- decked[, -ncol(decked)]
-    decked0 <- decked
-    decked[, -1][decked_grp != decked_grp_lag] <- NA
-
-    decked_fmt <- apply(decked, 1, \(r) {
-      loc_valid <- which(!is.na(r))
-      consec <- dplyr::consecutive_id(r[loc_valid])
-      merge <- unname(split(loc_valid, consec))
-      list(rule = loc_valid, merge = merge)
-    })
+  group_var_nms <- decked <- NULL  
+  if (!missing(group_by)) {
+    c(data, group_var_nms) %<-% cb_prep_grouped_data(
+      data = data, group_by = {{ group_by }}, id_cols = {{ id_cols }}
+    )
+    c(decked, data_nms, decked_fmt) %<-% cb_prep_decked_cols(
+      data = data, group_var_nms = group_var_nms, 
+      incl_group_col_names = incl_group_col_names
+    )
   }
+  
   cols <- list(
     all = seq_along(data),
     num = which(data_nms %in% num_nms),
@@ -290,16 +317,15 @@ cb_write_sheet <- function(wb,
   wb
 }
 
-
 cb_write_codebook <- function(cb, 
+                              summaries,
                               file, 
                               dataset_name,
                               incl_date = TRUE,
                               incl_dims = TRUE,
                               detail_missing = TRUE,
                               group_by = NULL,
-                              overwrite = TRUE
-  ) {
+                              overwrite = TRUE) {
   # create headers
   cb_name <- cb_dims <- cb_date <- NULL
   if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
@@ -315,12 +341,8 @@ cb_write_codebook <- function(cb,
 
   # prep sheet data
   overview <- cb_format_names(cb)
-  summary_num <- cb |>
-    cb_summarize_numeric() |> 
-    cb_format_names(!c(`Valid n`, SD, MAD))
-  summary_cat <- cb |>
-    cb_summarize_categorical(detail_missing = detail_missing) |>
-    cb_format_names(!n)
+  summaries$num <- cb_format_names(summaries$num, !c(`Valid n`, SD, MAD))
+  summaries$cat <- cb_format_names(summaries$cat, !n)
   
   # write sheets
   wb <- openxlsx2::wb_workbook() |>
@@ -328,13 +350,13 @@ cb_write_codebook <- function(cb,
       overview, "Overview", header = h_overview, cols_pct = Missing
     ) |>
     cb_write_sheet(
-      summary_num, "Summary - Numeric Vars",
+      summaries$num, "Summary - Numeric Vars",
       header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
     )
   if (detail_missing) {
     wb <- wb |>
       cb_write_sheet(
-        summary_cat, "Summary - Categorical", header = h_summ_cat,
+        summaries$cat, "Summary - Categorical", header = h_summ_cat,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
         rows_border_by = Name, rows_sub_border_by = `Valid / Missing`,
         clear_repeats = c(Name, Label, `Valid / Missing`)
@@ -342,40 +364,31 @@ cb_write_codebook <- function(cb,
   } else {
     wb <- wb |>
       cb_write_sheet(
-        summary_cat, "Summary - Categorical", header = h_summ_cat,
+        summaries$cat, "Summary - Categorical", header = h_summ_cat,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
         clear_repeats = c(Name, Label)
       )
   }
   
   # prep and write grouped sheets
-  group_by_chr <- untidyselect(attr(cb, "data_zapped"), {{ group_by }})
-  if (length(group_by_chr)) {
+  grouped <- summaries$grouped
+  if (!is.null(grouped)) {
+    group_by_chr <- untidyselect(attr(cb, "data_zapped"), {{ group_by }})
     h_summ_num_grp <- c(h_summ_num, paste("By ", toString(group_by_chr)))
     h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(group_by_chr)))
-    summary_num_grp <- cb |>
-      cb_summarize_numeric(group_cols = {{ group_cols }}) |>
-      cb_format_names(!c(`Valid n`, SD, MAD, {{ group_cols }}))
-    if (detail_missing) {
-      cli::cli_inform(c(
-        "i" = "Detailed missing value information is not currently supported for grouped summaries."
-      ))
-    }
-    summary_cat_grp <- cb |>
-      cb_summarize_categorical(
-        group_cols = {{ group_cols }}, detail_missing = FALSE
-      ) |>
-      cb_format_names(!c(n, {{ group_cols }}))
+    grouped$num <- grouped$num |>
+      cb_format_names(!c(`Valid n`, SD, MAD, {{ group_by }}))
+    grouped$cat <- cb_format_names(grouped$cat, !c(n, {{ group_by }}))
     wb <- wb |>
       cb_write_sheet(
-        summary_num_grp, "Grouped Summary - Numeric", header = h_summ_num_grp, 
+        grouped$num, "Grouped Summary - Numeric", header = h_summ_num_grp, 
         cols_pct = `Valid %`, cols_int = `Valid n`,
-        id_cols = c(Name, Label), group_cols = {{ group_cols }}
+        id_cols = c(Name, Label), group_by = {{ group_by }}
       ) |>
       cb_write_sheet(
-        summary_cat_grp, "Grouped Summary - Categorical", header = h_summ_cat_grp,
+        grouped$cat, "Grouped Summary - Categorical", header = h_summ_cat_grp,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        id_cols = c(Name, Label, Value), group_cols = {{ group_cols }},  
+        id_cols = c(Name, Label, Value), group_by = {{ group_by }},  
         clear_repeats = c(Name, Label)
       )
   }

@@ -1,45 +1,6 @@
-# think about whether / how to handle missing values in `group_cols`
+# think about whether / how to handle missing values in `group_by`
 
-## methods for dates, datetimes, etc?
-# cb_summarize_numeric_old <- function(cb, group_cols = NULL) {
-#   out <- cb |>
-#     dplyr::filter(type %in% c("numeric", "integer")) |>
-#     dplyr::select(name, label)
-#   nms_num <- out$name
-#   data <- attr(cb, "data_zapped")
-#   # should be able to just pass `group_cols` directly, but due to bug in
-#   # `summary_table()`, have to do this for now
-#   # (see https://github.com/ccsarapas/lighthouse/issues/41)
-#   if (missing(group_cols)) {
-#     res <- summary_table(
-#       data,
-#       `Valid n` = n_valid, valid_pct = pct_valid,
-#       mean, SD = sd,
-#       median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
-#       skew = moments::skewness, kurt = moments::kurtosis,
-#       na.rm = TRUE,
-#       .vars = tidyselect::all_of(nms_num)
-#     )
-#   } else {
-#     group_chr <- untidyselect(data, {{ group_cols }})
-#     group_glue <- paste0("{", c(group_chr, ".value"), "}", collapse = "|DECK|")
-#     res <- summary_table(
-#       data,
-#       `Valid n` = n_valid, valid_pct = pct_valid,
-#       mean, SD = sd,
-#       median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
-#       skew = moments::skewness, kurt = moments::kurtosis,
-#       na.rm = TRUE,
-#       .vars = tidyselect::all_of(nms_num),
-#       .cols_group_by = {{ group_cols }},
-#       .cols_group_glue = group_glue
-#     )
-#   }
-#   dplyr::left_join(out, res, dplyr::join_by(name == Variable)) |>
-#     nan_to_na()
-# }
-
-cb_summarize_numeric <- function(cb, group_cols = NULL) {
+cb_summarize_numeric <- function(cb, group_by = NULL) {
   out <- cb |>
     dplyr::filter(type %in% c("numeric", "integer")) |>
     dplyr::select(name, label)
@@ -53,12 +14,10 @@ cb_summarize_numeric <- function(cb, group_cols = NULL) {
     skew = moments::skewness, kurt = moments::kurtosis,
     na.rm = TRUE,
     .vars = tidyselect::all_of(nms_num),
-    .rows_group_by = {{ group_cols }}
+    .rows_group_by = {{ group_by }}
   )
   dplyr::left_join(out, res, dplyr::join_by(name == Variable))
 }
-
-
 
 cb_count <- function(data,
                      var,
@@ -107,21 +66,7 @@ cb_count <- function(data,
         na_label = na_label
       )
     ) |>
-    # dplyr::arrange(missing)
     dplyr::arrange(dplyr::pick({{ .by }}), missing)
-    # dplyr::mutate(name = as.character(rlang::ensym(var)), .before = value) |>
-    # dplyr::mutate(
-    #   missing = is.na(value),
-    #   value = as.character(labelled::to_factor(
-    #     value,
-    #     levels = levels, user_na_to_na = !detail_missing,
-    #     explicit_tagged_na = detail_missing
-    #   )),
-    #   value = tidyr::replace_na(value, na_label),
-    #   pct_of_all = n / sum(n),
-    #   pct_of_valid = ifelse(missing, NA, n / sum(n[!missing]))
-    # ) |>
-    # dplyr::arrange(missing)
   if (detail_missing) {
     out <- out |>
       dplyr::mutate(
@@ -163,26 +108,47 @@ cb_count_multiple <- function(data,
 
 
 cb_summarize_categorical <- function(cb, 
-                                     group_cols = NULL,
+                                     group_by = NULL,
                                      prefixed = TRUE, 
-                                     detail_missing = missing(group_cols), 
+                                     detail_missing = missing(group_by), 
                                      detail_na_label = "NA") {
-  summary_cat <- cb |>
-    dplyr::filter(type %in% c("factor", "logical")) |>
-    dplyr::select(name, label)
-  nms_cat <- summary_cat$name
   factors <- attr(cb, "factors")
   data <- attr(cb, "data_labelled")
-  group_chr <- untidyselect(data, {{ group_cols }})
-  vars <- rlang::syms(setdiff(nms_cat, group_chr))
+  group_chr <- untidyselect(data, {{ group_by }})
+  summary_cat <- cb |>
+    dplyr::filter(
+      type %in% c("factor", "logical"),
+      !(name %in% group_chr)
+    ) |>
+    dplyr::select(name, label)
+  vars <- summary_cat$name
   res <- cb_count_multiple(
     data, !!!vars, .prefixed = prefixed, .no_prefix = factors,
     .detail_missing = detail_missing, .detail_na_label = detail_na_label, 
-    .by = {{ group_cols }}
+    .by = {{ group_by }}
   )
   dplyr::left_join(summary_cat, res, by = "name")
 }
 
-
-
-
+cb_gen_summaries <- function(cb, detail_missing = TRUE, group_by = NULL) {
+  summaries <- list(
+    num = cb_summarize_numeric(cb),
+    cat = cb_summarize_categorical(cb, detail_missing = detail_missing)
+  )
+  group_by <- rlang::enquo(group_by)
+  if (!rlang::quo_is_null(group_by)) {
+    if (detail_missing) {
+      cli::cli_inform(c(
+        "i" = "Detailed missing value information is not currently supported for grouped summaries."
+      ))
+    }
+    summaries$grouped <- list(
+      num = cb_summarize_numeric(cb, group_by = !!group_by),
+      cat = cb_summarize_categorical(
+        cb,
+        group_by = !!group_by, detail_missing = FALSE
+      )
+    )
+  }
+  summaries
+}

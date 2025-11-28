@@ -221,15 +221,3 @@ cb_add_missing <- function(cb) {
   dplyr::mutate(cb, missing = sapply(data, \(x) mean(is.na(x))))
 }
 
-cb_format_names <- function(cb, cols = tidyselect::everything()) {
-  dplyr::rename_with(
-    cb,
-    \(x) {
-      x |>
-        stringr::str_replace_all(c("_" = " ", "pct" = "%")) |>
-        stringr::str_to_title() |>
-        stringr::str_replace_all("\\bOf\\b", "of")
-    },
-    {{ cols }}
-  )
-}
