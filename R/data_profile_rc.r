@@ -20,8 +20,17 @@ meta_expand_checkboxes_rc <- function(meta, data) {
     )
 }
 
+cb_coerce_integers_rc <- function(cb) {
+  data <- attr(cb, "data")
+  data
+  integers <- cb$name[cb$..rc_validate_type %in% "integer"]
+  data <- data |>
+    dplyr::mutate(dplyr::across(tidyselect::any_of(integers), as.integer))
+  cb$..rc_validate_type <- NULL
+  set_attrs(cb, data = data)
+}
 
-cb_relabel_checkboxes_rc <- function(cb, label_vals = c("yes_no", "meta")) {
+cb_relabel_checkboxes_rc <- function(cb, use_resp_values = FALSE) {
   chk_name_to_val <- function(name, sep = "___", neg_char = "_") {
     name |>
       stringr::str_extract(glue_chr("(?<={sep}).+")) |>
@@ -44,17 +53,13 @@ cb_relabel_checkboxes_rc <- function(cb, label_vals = c("yes_no", "meta")) {
     )
     list(flag = name, val = val, vars = vars)
   }
-  make_01_labs <- function(label_vals, source_1) {
-    if (label_vals == "yes_no") {
-      labs <- c("No", "Yes")
-    } else {
-      labs <- c("Not selected", source_1)
-    }
+  make_01_labs <- function(use_resp_values, source_1) {
+    if (use_resp_values) labs <- c("Not selected", source_1)
+    else labs <- c("No", "Yes")
     setNames(0:1, labs)
   }
-  label_vals <- match.arg(label_vals)
   cb_chk <- cb |>
-    dplyr::filter(rc_type == "checkbox") |>
+    dplyr::filter(..rc_type == "checkbox") |>
     dplyr::mutate(
       chk_value = chk_name_to_val(name),
       vals_by_label = attr(cb, "vals_by_label")[name],
@@ -68,19 +73,21 @@ cb_relabel_checkboxes_rc <- function(cb, label_vals = c("yes_no", "meta")) {
         name, chk_value, user_missing, vals_by_label
       )),
       chk_label = labs_by_value[chk_value],
-      lab01 = list(make_01_labs(label_vals, chk_label)),
+      user_missing = list(user_missing[user_missing != chk_value]),
+      lab01 = list(make_01_labs(use_resp_values, chk_label)),
       vals_by_label = list(c(
         lab01,
         vals_by_label[vals_by_label %in% user_missing]
       )),
       labs_by_value = list(setNames(names(vals_by_label), vals_by_label)),
-      user_missing = list(user_missing[user_missing != chk_value]),
+      
       label = stringr::str_c(label, chk_label, sep = " - ")
     ) |>
     dplyr::ungroup()
 
   cb <- cb |>
-    dplyr::rows_update(dplyr::select(cb_chk, name, label), by = "name")
+    dplyr::rows_update(dplyr::select(cb_chk, name, label), by = "name") |>
+    dplyr::select(!..rc_type)
 
   for (att in c("vals_by_label", "labs_by_value", "user_missing")) {
     att_out <- attr(cb, att)

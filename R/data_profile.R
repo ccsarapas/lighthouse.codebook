@@ -45,8 +45,8 @@ lookups_from_string <- function(val_labels, types, sep1, sep2) {
 }
 
 cb_user_missings_by_var <- function(cb, 
-                                     user_missing = list(), 
-                                     match_type = TRUE) {
+                                    user_missing = list(), 
+                                    match_type = TRUE) {
   user_missing_names <- names(user_missing)
   if (!rlang::is_bare_list(user_missing) || is.null(user_missing_names)) {
     cli::cli_abort(c(
@@ -76,13 +76,40 @@ cb_user_missings_by_var <- function(cb,
 }
 
 cb_user_missings_across <- function(cb, 
-                                     user_missing, 
-                                     vars = tidyselect::where(is_num_chr),
-                                     match_type = TRUE) {
+                                    user_missing, 
+                                    vars = tidyselect::where(is_num_chr),
+                                    match_type = TRUE) {
   data <- attr(cb, "data")
   vars <- setNames(nm = untidyselect(data, {{ vars }}))
   user_missing_list <- lapply(vars, \(x) user_missing)
-  cb_user_missings_by_var(cb, user_missing = user_missing_list)
+  cb_user_missings_by_var(
+    cb, user_missing = user_missing_list, match_type = match_type
+  )
+}
+
+um <- redcap_repeat_instance ~ c(Missing = -97)
+
+rlang::expr(!!rlang::f_lhs(um))
+
+
+rlang::f_rhs(um)
+
+cb_user_missings <- function(cb, user_missing, match_type = TRUE) {
+  if (is.null(user_missing)) return(set_attrs(cb, user_missing = list()))
+  if (rlang::is_formula(user_missing)) {
+    user_missing <- list(user_missing)
+  } else if (!(
+      is.list(user_missing) && all(sapply(user_missing, rlang::is_formula))
+    )) {
+    cli::cli_abort("{.code user_missing} must be a formula or list of formulas.")
+  }
+  for (um in user_missing) {
+    cb <- cb_user_missings_across(
+      cb, user_missing = eval(rlang::f_rhs(um)), vars = !!rlang::f_lhs(um), 
+      match_type = match_type
+    )
+  }
+  cb
 }
 
 cb_add_lookups <- function(cb, sep1, sep2) {
@@ -213,7 +240,7 @@ cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) 
 ## should maybe generalize this pattern of [get attr data] -> [sort by cb$name] -> [sapply fx]
 cb_add_types <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
-  dplyr::mutate(cb, type = sapply(data, class_collapse))
+  dplyr::mutate(cb, type = sapply(data, class_collapse), .after = name)
 }
 
 cb_add_missing <- function(cb) {
