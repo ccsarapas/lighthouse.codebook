@@ -104,12 +104,13 @@ cb_create_rc <- function(data,
 #' Summarize all numeric and categorical variables from a codebook object
 #' 
 cb_summaries <- function(cb, group_by = NULL, detail_missing = missing(group_by)) {
-    list(
-      num = cb_summarize_numeric(cb, group_by = {{ group_by }}),
-      cat = cb_summarize_categorical(
-        cb, group_by = {{ group_by }}, detail_missing = detail_missing
-      )
+  if (!is_codebook(cb)) stop('`cb` must be an object of class `"li_codebook"`.')
+  list(
+    num = cb_summarize_numeric(cb, group_by = {{ group_by }}),
+    cat = cb_summarize_categorical(
+      cb, group_by = {{ group_by }}, detail_missing = detail_missing
     )
+  )
 }
 
 #' Extract data from a codebook object
@@ -133,6 +134,7 @@ cb_write <- function(cb,
                      detail_missing = TRUE,
                      group_by = NULL,
                      overwrite = TRUE) {
+  if (!is_codebook(cb)) stop('`cb` must be an object of class `"li_codebook"`.')
   summaries <- cb_summaries(cb, detail_missing = detail_missing)
   group_by <- rlang::enquo(group_by)
   if (!rlang::quo_is_null(group_by)) {

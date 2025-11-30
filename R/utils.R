@@ -1,9 +1,11 @@
-class_collapse <- function(x, sep = ", ") stringr::str_c(class(x), collapse = sep)
+is_codebook <- function(x) "li_codebook" %in% class(x)
+
 set_attrs <- function(x, ...) {
   dots <- rlang::list2(...)
   for (nm in names(dots)) attr(x, nm) <- dots[[nm]]
   x
 }
+class_collapse <- function(x, sep = ", ") stringr::str_c(class(x), collapse = sep)
 strip_html <- function(x) {
   stopifnot(is.character(x))
   has_tags <- grepl("<[A-Za-z!/]", x)
@@ -22,6 +24,8 @@ names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 is_num_chr <- function(x) {
   rlang::is_bare_numeric(x) || rlang::is_bare_character(x)
 }
+
+
 
 repeats_to_blank <- function(x, replace = c("", "NA")) {
   replace <- if (match.arg(replace) == "NA") NA else ""
