@@ -4,13 +4,15 @@ cb_init <- function(data,
                     meta_var_label = NULL, 
                     meta_val_labels = NULL,
                     ...) {
-  tibble::tibble(name = names(data)) |>
+  out <- tibble::tibble(name = names(data)) |>
     dplyr::left_join(meta, dplyr::join_by(name == {{ meta_var_name }})) |>
     dplyr::select(
       name, label = {{ meta_var_label }}, value_labels = {{ meta_val_labels }},
       ...
     ) |> 
     set_attrs(data = data)
+  class(out) <- c("li_codebook", class(out))
+  out
 }
 
 cb_clean_fields <- function(cb, rmv_html = !name, rmv_line_breaks = !name) {
@@ -23,7 +25,9 @@ cb_clean_fields <- function(cb, rmv_html = !name, rmv_line_breaks = !name) {
 
 lookups_from_string <- function(val_labels, types, sep1, sep2) {
   fx_inner <- function(x, nm, type, sep1) {
-    if (length(x) == 1 && is.na(x)) return(NA)
+    if (length(x) == 1 && is.na(x)) {
+      return(NA)
+    }
     if (!all(stringr::str_detect(x, sep1))) {
       cli::cli_abort("Failed to parse value labels for {.code {nm}}")
     }
@@ -32,6 +36,7 @@ lookups_from_string <- function(val_labels, types, sep1, sep2) {
     labs <- x[, 2]
     setNames(vals, labs)
   }
+  stringr::fixed
   num_val <- "-?\\d{1,99}"
   sep2 <- glue_chr("{sep2}(?={num_val}{sep1})")
   sep1 <- glue_chr("(?<=^{num_val}){sep1}")
@@ -75,24 +80,18 @@ cb_user_missings_by_var <- function(cb,
   set_attrs(cb, user_missing = user_missing)
 }
 
-cb_user_missings_across <- function(cb, 
-                                    user_missing, 
+cb_user_missings_across <- function(cb,
+                                    user_missing,
                                     vars = tidyselect::where(is_num_chr),
                                     match_type = TRUE) {
   data <- attr(cb, "data")
   vars <- setNames(nm = untidyselect(data, {{ vars }}))
   user_missing_list <- lapply(vars, \(x) user_missing)
   cb_user_missings_by_var(
-    cb, user_missing = user_missing_list, match_type = match_type
+    cb,
+    user_missing = user_missing_list, match_type = match_type
   )
 }
-
-um <- redcap_repeat_instance ~ c(Missing = -97)
-
-rlang::expr(!!rlang::f_lhs(um))
-
-
-rlang::f_rhs(um)
 
 cb_user_missings <- function(cb, user_missing, match_type = TRUE) {
   if (is.null(user_missing)) return(set_attrs(cb, user_missing = list()))
@@ -125,7 +124,7 @@ cb_add_lookups <- function(cb, sep1, sep2) {
 
 reconcile_missing_labels <- function(val_labs, 
                                      missings, 
-                                     conflict = c("value_label", "missing_label")) {
+                                     conflict = c("metadata", "missing_label")) {
   conflict <- match.arg(conflict)
   
   labs_in_missing <- val_labs[match(missings, val_labs)]
@@ -146,7 +145,7 @@ reconcile_missing_labels <- function(val_labs,
   names(missings)[label_miss] <- lab_name[label_miss]
   ### if na is labelled and in vals and labels don't match
   # relabel based on `conflict`
-  if (conflict == "value_label") {
+  if (conflict == "metadata") {
     names(missings)[mismatch] <- lab_name[mismatch]
   } else if (conflict == "missing_label") {
     names(val_labs)[match(lab_val[mismatch], val_labs)] <- miss_name[mismatch]
@@ -154,7 +153,7 @@ reconcile_missing_labels <- function(val_labs,
   list(val_labs = val_labs, missings = missings)
 }
 
-cb_label_data <- function(cb, conflict = c("value_label", "missing_label")) {
+cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
   conflict <- match.arg(conflict)
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
