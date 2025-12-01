@@ -1,0 +1,9 @@
+url: https://ccsarapas.github.io/lighthouse.codebook/
+template:
+  bootstrap: 5
+  bootswatch: sandstone
+footer:
+  structure:
+    left: package
+    right: built_with
+
