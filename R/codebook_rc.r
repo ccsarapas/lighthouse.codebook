@@ -26,7 +26,6 @@ cb_coerce_integers_rc <- function(cb) {
   integers <- cb$name[cb$..rc_validate_type %in% "integer"]
   data <- data |>
     dplyr::mutate(dplyr::across(tidyselect::any_of(integers), as.integer))
-  cb$..rc_validate_type <- NULL
   set_attrs(cb, data = data)
 }
 
@@ -54,8 +53,11 @@ cb_relabel_checkboxes_rc <- function(cb, use_resp_values = FALSE) {
     list(flag = name, val = val, vars = vars)
   }
   make_01_labs <- function(use_resp_values, source_1) {
-    if (use_resp_values) labs <- c("Not selected", source_1)
-    else labs <- c("No", "Yes")
+    if (use_resp_values) {
+      labs <- c("Not selected", source_1)
+    } else {
+      labs <- c("No", "Yes")
+    }
     setNames(0:1, labs)
   }
   cb_chk <- cb |>
@@ -103,7 +105,6 @@ cb_relabel_checkboxes_rc <- function(cb, use_resp_values = FALSE) {
 
 cb_complete_label_rc <- function(cb) {
   stopifnot("form" %in% names(cb))
-  data <- attr(cb, "data")
   compl_info <- cb |>
     dplyr::distinct(form) |>
     tidyr::drop_na() |>

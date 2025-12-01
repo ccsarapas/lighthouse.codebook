@@ -82,6 +82,7 @@ wb_row_borders_by <- function(wb,
 cb_prep_grouped_data <- function(data, group_by, id_cols) {
   group_var_nms <- untidyselect(data, {{ group_by }})
   val_cols <- rlang::quo(!c({{ group_by }}, {{ id_cols }}))
+  data
   data <- data |>
     dplyr::mutate(..spacer = NA_character_) |>
     # needed to ensure correct column order when >1 group var
@@ -146,7 +147,7 @@ cb_write_sheet <- function(wb,
   num_nms <- data_nms[sapply(data, is.numeric)]
   pct_nms <- untidyselect(data, {{ cols_pct }})
   int_nms <- untidyselect(data, {{ cols_int }})
-  group_var_nms <- decked <- NULL  
+  group_var_nms <- decked <- NULL
   if (!missing(group_by)) {
     c(data, group_var_nms) %<-% cb_prep_grouped_data(
       data = data, group_by = {{ group_by }}, id_cols = {{ id_cols }}
@@ -317,14 +318,30 @@ cb_write_sheet <- function(wb,
   wb
 }
 
+cb_valid_miss_col <- function(summary) {
+  summary |>
+    dplyr::mutate(
+      `valid / missing` = ifelse(
+        is_missing,
+        sum(n[is_missing]) / sum(n),
+        sum(n[!is_missing]) / sum(n)
+      ),
+      `valid / missing` = glue_chr(
+        "{ifelse(is_missing, 'Missing', 'Valid')} ",
+        "({sprintf('%.1f%%', `valid / missing` * 100)})"
+      ),
+      is_missing = NULL,
+      .before = value,
+      .by = name
+    )
+}
+
 cb_write_codebook <- function(cb, 
                               summaries,
                               file, 
-                              dataset_name,
+                              dataset_name = NULL,
                               incl_date = TRUE,
                               incl_dims = TRUE,
-                              detail_missing = TRUE,
-                              group_by = NULL,
                               overwrite = TRUE) {
   # create headers
   cb_name <- cb_dims <- cb_date <- NULL
@@ -338,13 +355,10 @@ cb_write_codebook <- function(cb,
   h_overview <- c(dataset_name, cb_dims, cb_date)
   h_summ_num <- c(dataset_name, "Numeric variables summary")
   h_summ_cat <- c(dataset_name, "Categorical variables summary")
-
-  # prep sheet data
+    
+  # write overview and ungrouped numeric sheets
   overview <- cb_format_names(cb)
   summaries$num <- cb_format_names(summaries$num, !c(`Valid n`, SD, MAD))
-  summaries$cat <- cb_format_names(summaries$cat, !n)
-  
-  # write sheets
   wb <- openxlsx2::wb_workbook() |>
     cb_write_sheet(
       overview, "Overview", header = h_overview, cols_pct = Missing
@@ -353,6 +367,11 @@ cb_write_codebook <- function(cb,
       summaries$num, "Summary - Numeric Vars",
       header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
     )
+    
+  # write ungrouped categorical sheet 
+  detail_missing <- attr(summaries$cat, "detail_missing")
+  if (detail_missing) summaries$cat <- cb_valid_miss_col(summaries$cat)
+  summaries$cat <- cb_format_names(summaries$cat, !n)
   if (detail_missing) {
     wb <- wb |>
       cb_write_sheet(
@@ -370,25 +389,26 @@ cb_write_codebook <- function(cb,
       )
   }
   
-  # prep and write grouped sheets
+  # write grouped sheets
   grouped <- summaries$grouped
   if (!is.null(grouped)) {
-    group_by_chr <- untidyselect(attr(cb, "data_zapped"), {{ group_by }})
+    group_by <- attr(grouped$num, "group_by")
+    group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!group_by)
     h_summ_num_grp <- c(h_summ_num, paste("By ", toString(group_by_chr)))
     h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(group_by_chr)))
     grouped$num <- grouped$num |>
-      cb_format_names(!c(`Valid n`, SD, MAD, {{ group_by }}))
-    grouped$cat <- cb_format_names(grouped$cat, !c(n, {{ group_by }}))
+      cb_format_names(!c(`Valid n`, SD, MAD, !!group_by))
+    grouped$cat <- cb_format_names(grouped$cat, !c(n, !!group_by))
     wb <- wb |>
       cb_write_sheet(
         grouped$num, "Grouped Summary - Numeric", header = h_summ_num_grp, 
         cols_pct = `Valid %`, cols_int = `Valid n`,
-        id_cols = c(Name, Label), group_by = {{ group_by }}
+        id_cols = c(Name, Label), group_by = !!group_by
       ) |>
       cb_write_sheet(
         grouped$cat, "Grouped Summary - Categorical", header = h_summ_cat_grp,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        id_cols = c(Name, Label, Value), group_by = {{ group_by }},  
+        id_cols = c(Name, Label, Value), group_by = !!group_by,  
         clear_repeats = c(Name, Label)
       )
   }

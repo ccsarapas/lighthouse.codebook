@@ -1,5 +1,10 @@
 is_codebook <- function(x) "li_codebook" %in% class(x)
-
+check_codebook <- function(x) {
+  arg <- as.character(rlang::ensym(x))
+  if (!is_codebook(x)) {
+    cli::cli_abort('{.arg arg} must be an object of class `"li_codebook"`.')
+  }
+}
 set_attrs <- function(x, ...) {
   dots <- rlang::list2(...)
   for (nm in names(dots)) attr(x, nm) <- dots[[nm]]

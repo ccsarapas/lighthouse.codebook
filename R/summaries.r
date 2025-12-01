@@ -16,7 +16,9 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
     .vars = tidyselect::all_of(nms_num),
     .rows_group_by = {{ group_by }}
   )
-  dplyr::left_join(out, res, dplyr::join_by(name == Variable))
+  out |>
+    dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
+    set_attrs(group_by = rlang::enquo(group_by))
 }
 
 cb_count <- function(data,
@@ -50,9 +52,9 @@ cb_count <- function(data,
     dplyr::count(value) |>
     tidyr::complete(value = valid_labs, fill = list(n = 0)) |>
     dplyr::mutate(
-      missing = is.na(value),
+      is_missing = is.na(value),
       pct_of_all = n / sum(n),
-      pct_of_valid = ifelse(missing, NA, n / sum(n[!missing]))
+      pct_of_valid = ifelse(is_missing, NA, n / sum(n[!is_missing]))
     ) |>
     dplyr::ungroup() |> 
     dplyr::mutate(name = as.character(rlang::ensym(var)), .before = value) |>
@@ -66,27 +68,32 @@ cb_count <- function(data,
         na_label = na_label
       )
     ) |>
-    dplyr::arrange(dplyr::pick({{ .by }}), missing)
+    dplyr::arrange(dplyr::pick({{ .by }}), is_missing)
   if (detail_missing) {
     out <- out |>
+      # dplyr::mutate(
+      # # valid_missing = ifelse(is_missing, "Missing", "Valid"),
+      #   `valid / missing` = ifelse(
+      #     is_missing,
+      #     sum(n[is_missing]) / sum(n),
+      #     sum(n[!is_missing]) / sum(n)
+      #   ),
+      #   `valid / missing` = glue_chr(
+      #     "{ifelse(is_missing, 'Missing', 'Valid')} ",
+      #     "({sprintf('%.1f%%', `valid / missing` * 100)})"
+      #   ),
+      #   .before = value
+      # ) |>
       dplyr::mutate(
-        `valid / missing` = ifelse(
-          missing,
-          sum(n[missing]) / sum(n),
-          sum(n[!missing]) / sum(n)
-        ),
-        `valid / missing` = glue_chr(
-          "{ifelse(missing, 'Missing', 'Valid')} ",
-          "({sprintf('%.1f%%', `valid / missing` * 100)})"
-        ),
-        .before = value
-      ) |>
-      dplyr::mutate(
-        pct_of_missing = ifelse(missing, n / sum(n[missing]), NA),
+        pct_of_missing = ifelse(is_missing, n / sum(n[is_missing]), NA),
         .after = pct_of_valid
       )
+    # }
+  } else {
+    out$is_missing <- NULL
   }
-  dplyr::select(out, !missing)
+  out
+  # dplyr::select(out, !is_missing)
 }
 
 cb_count_multiple <- function(data, 
@@ -127,28 +134,7 @@ cb_summarize_categorical <- function(cb,
     .detail_missing = detail_missing, .detail_na_label = detail_na_label, 
     .by = {{ group_by }}
   )
-  dplyr::left_join(summary_cat, res, by = "name")
-}
-
-cb_gen_summaries <- function(cb, detail_missing = TRUE, group_by = NULL) {
-  summaries <- list(
-    num = cb_summarize_numeric(cb),
-    cat = cb_summarize_categorical(cb, detail_missing = detail_missing)
-  )
-  group_by <- rlang::enquo(group_by)
-  if (!rlang::quo_is_null(group_by)) {
-    if (detail_missing) {
-      cli::cli_inform(c(
-        "i" = "Detailed missing value information is not currently supported for grouped summaries."
-      ))
-    }
-    summaries$grouped <- list(
-      num = cb_summarize_numeric(cb, group_by = !!group_by),
-      cat = cb_summarize_categorical(
-        cb,
-        group_by = !!group_by, detail_missing = FALSE
-      )
-    )
-  }
-  summaries
+  summary_cat |>
+    dplyr::left_join(res, by = "name") |>
+    set_attrs(group_by = rlang::enquo(group_by), detail_missing = detail_missing)
 }
