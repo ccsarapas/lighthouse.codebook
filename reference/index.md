@@ -1,0 +1,14 @@
+# Package index
+
+## All functions
+
+- [`cb_create_rc()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_rc.md)
+  : Generate a codebook object from REDCap data
+- [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)
+  : Extract data from a codebook object
+- [`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md)
+  : Summarize categorical variables from a codebook object
+- [`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md)
+  : Summarize numeric variables from a codebook object
+- [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  : Write codebook and data summaries to an Excel workbook
