@@ -123,7 +123,7 @@ c_labels <- function(x, y, conflict = c("error", "warn", "ignore")) {
 }
 
 spread_if_any <- function(..., na.rm = TRUE) {
-  max_if_any(..., na.rm = na.rm) - min_if_any(..., na.rm = na.rm)
+  lighthouse::max_if_any(..., na.rm = na.rm) - lighthouse::min_if_any(..., na.rm = na.rm)
 }
 
 nan_to_na.default <- function(x) dplyr::if_else(is.nan(x), NA, x)

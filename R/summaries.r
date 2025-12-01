@@ -1,26 +1,5 @@
 # think about whether / how to handle missing values in `group_by`
 
-cb_summarize_numeric <- function(cb, group_by = NULL) {
-  out <- cb |>
-    dplyr::filter(type %in% c("numeric", "integer")) |>
-    dplyr::select(name, label)
-  nms_num <- out$name
-  data <- attr(cb, "data_zapped")
-  res <- summary_table(
-    data,
-    `Valid n` = n_valid, valid_pct = pct_valid,
-    mean, SD = sd,
-    median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
-    skew = moments::skewness, kurt = moments::kurtosis,
-    na.rm = TRUE,
-    .vars = tidyselect::all_of(nms_num),
-    .rows_group_by = {{ group_by }}
-  )
-  out |>
-    dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    set_attrs(group_by = rlang::enquo(group_by))
-}
-
 cb_count <- function(data,
                      var,
                      .by = NULL,
@@ -111,30 +90,4 @@ cb_count_multiple <- function(data,
       detail_na_label = .detail_na_label, .by = {{ .by }}
     )
   })
-}
-
-
-cb_summarize_categorical <- function(cb, 
-                                     group_by = NULL,
-                                     prefixed = TRUE, 
-                                     detail_missing = missing(group_by), 
-                                     detail_na_label = "NA") {
-  factors <- attr(cb, "factors")
-  data <- attr(cb, "data_labelled")
-  group_chr <- untidyselect(data, {{ group_by }})
-  summary_cat <- cb |>
-    dplyr::filter(
-      type %in% c("factor", "logical"),
-      !(name %in% group_chr)
-    ) |>
-    dplyr::select(name, label)
-  vars <- summary_cat$name
-  res <- cb_count_multiple(
-    data, !!!vars, .prefixed = prefixed, .no_prefix = factors,
-    .detail_missing = detail_missing, .detail_na_label = detail_na_label, 
-    .by = {{ group_by }}
-  )
-  summary_cat |>
-    dplyr::left_join(res, by = "name") |>
-    set_attrs(group_by = rlang::enquo(group_by), detail_missing = detail_missing)
 }

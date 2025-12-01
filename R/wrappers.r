@@ -4,7 +4,8 @@
 #' `cb_create_rc()` builds an object of class `"li_codebook"` from a dataset and
 #' corresponding codebook exported from REDCap. The resulting object can be used
 #' to write an Excel workbook with variable and data summaries (using [`cb_write()`]),
-#' extract processed data ([`cb_get_data()`]), or generate dataset summaries ([`cb_summaries()`]).
+#' extract processed data ([`cb_get_data()`]), or generate dataset summaries ([`cb_summarize_numeric()`]
+#' and [`cb_summarize_categorical()`]).
 #'
 #' This variant of `cb_create()` includes functionality specific to REDCap data
 #' and metadata, including:
@@ -18,14 +19,14 @@
 #' @param ... Additional columns from `metadata` to preserve in the final codebook.
 #'   New names can be assigned by passing named arguments. Columns for variable
 #'   name, form, variable label, and value labels are included by default.
-#' @param .name, .var_label, .val_labels Columns in `metadata` containing variable
+#' @param .name,.var_label,.val_labels Columns in `metadata` containing variable
 #'   name, variable label, and value labels, respectively.
 #' @param .form Column in `metadata` containing form names. (Set to `NULL` to omit.)
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
 #'   right-hand side. See "Specifying user missing values" below for examples.
-#' @param .val_labs_sep1, .val_labs_sep2 Regex patterns separating value labels
+#' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
 #'   in `metadata`. e.g., if value labels are in format `"1, First label|2, Second label"`,
 #'   set `.val_labs_sep1` to `","` and `.val_labs_sep2` to `"\\|"`.
 #' @param .rmv_html <[`tidy-select`][dplyr_tidy_select]> Codebook columns from which
@@ -64,10 +65,10 @@
 #'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
 #'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`
 #'
-#' @section Specifying user missing values
+#' @section Specifying user missing values:
 #' User missing values are defined by passing a formula or list of formulas to the
-#'   `.user_missing` argument. Formulas should specify variables on the left-hand
-#'   side and user missing values for those variables on the right-hand side:
+#' `.user_missing` argument. Formulas should specify variables on the left-hand
+#' side and user missing values for those variables on the right-hand side:
 #' \preformatted{
 #' cb <- cb_create_rc(data, metadata, .user_missing = var1 ~ 99)
 #' }
@@ -97,30 +98,30 @@
 #'   c(Declined = -97, "Don't know" = -98, "Not applicable" = -99)
 #' }
 #' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
-#'   controls which labels are used.
+#' controls which labels are used.
 #'
-#' @section Checkbox data handling
+#' @section Checkbox data handling:
 #' ## Value labels
 #' Data from REDCap checkboxes yields one variable in the dataset for each response
-#'   option. These will be labelled generically with `"Yes"` or `"No"`, unless `.checkbox_resp_values`
-#'   is `TRUE`, in which case response-specific labels from `metadata` will be used.
-#'   For example, if a checkbox group has options "In the past year," "More than
-#'   a year ago," and "Never," corresponding to variables `chk_var1___0`, `chk_var1___1`,
-#'   and `chk_var1___2`: if `.checkbox_resp_values` is `FALSE`, all of these will
-#'   have values "[0] No; [1] Yes." If `.checkbox_resp_values` is `TRUE`, each variable:
-#'   will have unique labels:
+#' option. These will be labelled generically with `"Yes"` or `"No"`, unless `.checkbox_resp_values`
+#' is `TRUE`, in which case response-specific labels from `metadata` will be used.
+#' For example, if a checkbox group has options "In the past year," "More than a
+#' year ago," and "Never," corresponding to variables `chk_var1___0`, `chk_var1___1`,
+#' and `chk_var1___2`: if `.checkbox_resp_values` is `FALSE`, all of these will
+#' have values "[0\] No; [1\] Yes." If `.checkbox_resp_values` is `TRUE`, each variable:
+#' will have unique labels:
 #'   - `chk_var1___0`: "[0] Not selected [1] In the past year"
 #'   - `chk_var1___1`: "[0] Not selected [1] More than a year ago"
 #'   - `chk_var1___2`: "[0] Not selected [1] Never"
 #'
 #' ## Missing value propagation
 #' If `.propagate_checkbox_missings` is `TRUE`, missing values in a checkbox group
-#'   variable will be propagated to all variables in the group. For example, given
-#'   a checkbox group with options "Pregnant," "Not pregnant," and "Not applicable,"
-#'   corresponding to variables `chk_preg_0___0`, `chk_preg_0___1`, and `chk_preg_0____9`,
-#'   and assuming that `-9` is specified as a user missing value. If `.propagate_checkbox_missings`
-#'   is `TRUE`, `chk_preg_0___0` and `chk_preg_0___1` will be set to `-9` if `chk_preg_0____9`
-#'   is `1`. Otherwise, these columns will remain as `0` where `chk_preg_0____9` is `1`.
+#' variable will be propagated to all variables in the group. For example, given
+#' a checkbox group with options "Pregnant," "Not pregnant," and "Not applicable,"
+#' corresponding to variables `chk_preg_0___0`, `chk_preg_0___1`, and `chk_preg_0____9`,
+#' and assuming that `-9` is specified as a user missing value. If `.propagate_checkbox_missings`
+#' is `TRUE`, `chk_preg_0___0` and `chk_preg_0___1` will be set to `-9` if `chk_preg_0____9`
+#' is `1`. Otherwise, these columns will remain as `0` where `chk_preg_0____9` is `1`.
 #'
 #' @export
 cb_create_rc <- function(data,
@@ -176,7 +177,7 @@ cb_create_rc <- function(data,
 }
 
 #' Summarize numeric variables from a codebook object
-#'
+#' 
 #' `cb_summarize_numeric()` generates a summary table for all numeric variables
 #' from a codebook object, optionally by group. Future releases will include options
 #' to specify the summary statistics used. Currently, summary statistics are valid
@@ -186,9 +187,9 @@ cb_create_rc <- function(data,
 #'   a variant.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
-#'
+#' 
 #' @return A tibble with summary statistics for each numeric variable.
-#'
+#' 
 #' @export
 cb_summarize_numeric <- function(cb, group_by = NULL) {
   check_codebook(cb)
@@ -197,11 +198,11 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
     dplyr::select(name, label)
   nms_num <- out$name
   data <- attr(cb, "data_zapped")
-  res <- summary_table(
+  res <- lighthouse::summary_table(
     data,
-    `Valid n` = n_valid, valid_pct = pct_valid,
+    `Valid n` = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
     mean, SD = sd,
-    median, MAD = mad, min = min_if_any, max = max_if_any, range = spread_if_any,
+    median, MAD = mad, min = lighthouse::min_if_any, max = lighthouse::max_if_any, range = spread_if_any,
     skew = moments::skewness, kurt = moments::kurtosis,
     na.rm = TRUE,
     .vars = tidyselect::all_of(nms_num),
@@ -263,7 +264,8 @@ cb_summarize_categorical <- function(cb,
 #' Codebook objects created by `cb_create()` and friends contain several transformed
 #' versions of the originally passed dataset. These can be extracted using `cb_get_data()`.
 #'
-#' @param cb An object of class `"li_codebook"` as produced by [`cb_create_rc()`].
+#' @param cb An object of class `"li_codebook"` as produced by `cb_create()` or
+#'   a variant.
 #' @param format Format of the returned data; see below for details.
 #'
 #' @return
@@ -289,10 +291,11 @@ cb_get_data <- function(cb, format = c("factors", "haven", "values")) {
 
 #' Write codebook and data summaries to an Excel workbook
 #' 
-#' @param cb An object of class `"li_codebook"` as produced by [`cb_create_rc()`].
+#' @param cb An object of class `"li_codebook"` as produced by `cb_create()` or
+#'   a variant.
 #' @param file Path to write to.
 #' @param dataset_name Name of the dataset to display in workbook headers.
-#' @param incl_date, incl_dims Should the date and/or dataset dimensions be included 
+#' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
 #'   in the Overview tab header?
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by. If specified, additional numeric and categorical summary tabs will be included
