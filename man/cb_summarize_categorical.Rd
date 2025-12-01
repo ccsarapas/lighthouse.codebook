@@ -20,7 +20,7 @@ a variant.}
 by.}
 
 \item{prefixed}{Should value labels be prefixed with the corresponding value?
-e.g., \code{TRUE} yields \verb{"[1] Value One"``; }FALSE\code{yields}"Value One"`.}
+e.g., \code{TRUE} yields \code{"[1] Value One"}; \code{FALSE} yields \code{"Value One"}.}
 
 \item{detail_missing}{Include detailed missing value information? Currently supported
 only when no grouping variables are specified.}

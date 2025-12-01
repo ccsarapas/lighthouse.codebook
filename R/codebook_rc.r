@@ -1,4 +1,3 @@
-
 ## `field_name` and `field_type` are hard-coded -- do they always have these names?
 meta_expand_checkboxes_rc <- function(meta, data) {
   datanames <- names(data)

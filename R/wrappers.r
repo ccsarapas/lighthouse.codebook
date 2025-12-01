@@ -108,11 +108,13 @@
 #' For example, if a checkbox group has options "In the past year," "More than a
 #' year ago," and "Never," corresponding to variables `chk_var1___0`, `chk_var1___1`,
 #' and `chk_var1___2`: if `.checkbox_resp_values` is `FALSE`, all of these will
-#' have values "[0\] No; [1\] Yes." If `.checkbox_resp_values` is `TRUE`, each variable:
-#' will have unique labels:
-#'   - `chk_var1___0`: "[0] Not selected [1] In the past year"
-#'   - `chk_var1___1`: "[0] Not selected [1] More than a year ago"
-#'   - `chk_var1___2`: "[0] Not selected [1] Never"
+#' have values:
+#'   - `chk_var1___0`, `chk_var1___1`, `chk_var1___2`: 0 = "No"; 1 =  "Yes". 
+#' 
+#' If `.checkbox_resp_values` is `TRUE`, each variable will have unique labels:
+#'   - `chk_var1___0`: 0 = "Not selected," 1 = "In the past year"
+#'   - `chk_var1___1`: 0 = "Not selected," 1 = "More than a year ago"
+#'   - `chk_var1___2`: 0 = "Not selected," 0 = "Never"
 #'
 #' ## Missing value propagation
 #' If `.propagate_checkbox_missings` is `TRUE`, missing values in a checkbox group
@@ -223,7 +225,7 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
 #' @param prefixed Should value labels be prefixed with the corresponding value?
-#'   e.g., `TRUE` yields `"[1] Value One"``; `FALSE` yields `"Value One"`.
+#'   e.g., `TRUE` yields `"[1] Value One"`; `FALSE` yields `"Value One"`.
 #' @param detail_missing Include detailed missing value information? Currently supported
 #'   only when no grouping variables are specified.
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.

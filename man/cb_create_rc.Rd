@@ -158,12 +158,16 @@ is \code{TRUE}, in which case response-specific labels from \code{metadata} will
 For example, if a checkbox group has options "In the past year," "More than a
 year ago," and "Never," corresponding to variables \code{chk_var1___0}, \code{chk_var1___1},
 and \code{chk_var1___2}: if \code{.checkbox_resp_values} is \code{FALSE}, all of these will
-have values "[0] No; [1] Yes." If \code{.checkbox_resp_values} is \code{TRUE}, each variable:
-will have unique labels:
+have values:
 \itemize{
-\item \code{chk_var1___0}: "[0] Not selected [1] In the past year"
-\item \code{chk_var1___1}: "[0] Not selected [1] More than a year ago"
-\item \code{chk_var1___2}: "[0] Not selected [1] Never"
+\item \code{chk_var1___0}, \code{chk_var1___1}, \code{chk_var1___2}: 0 = "No"; 1 =  "Yes".
+}
+
+If \code{.checkbox_resp_values} is \code{TRUE}, each variable will have unique labels:
+\itemize{
+\item \code{chk_var1___0}: 0 = "Not selected," 1 = "In the past year"
+\item \code{chk_var1___1}: 0 = "Not selected," 1 = "More than a year ago"
+\item \code{chk_var1___2}: 0 = "Not selected," 0 = "Never"
 }
 }
 
@@ -176,15 +180,6 @@ corresponding to variables \code{chk_preg_0___0}, \code{chk_preg_0___1}, and \co
 and assuming that \code{-9} is specified as a user missing value. If \code{.propagate_checkbox_missings}
 is \code{TRUE}, \code{chk_preg_0___0} and \code{chk_preg_0___1} will be set to \code{-9} if \code{chk_preg_0____9}
 is \code{1}. Otherwise, these columns will remain as \code{0} where \code{chk_preg_0____9} is \code{1}.
-
-[0]: R:0\%5C
-[1]: R:1\%5C
-[0]: R:0
-[1]: R:1
-[0]: R:0
-[1]: R:1
-[0]: R:0
-[1]: R:1
 }
 }
 
