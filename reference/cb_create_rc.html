@@ -228,10 +228,10 @@ is <code>TRUE</code>, in which case response-specific labels from <code>metadata
 For example, if a checkbox group has options "In the past year," "More than a
 year ago," and "Never," corresponding to variables <code>chk_var1___0</code>, <code>chk_var1___1</code>,
 and <code>chk_var1___2</code>: if <code>.checkbox_resp_values</code> is <code>FALSE</code>, all of these will
-have values "[0] No; [1] Yes." If <code>.checkbox_resp_values</code> is <code>TRUE</code>, each variable:
-will have unique labels:</p><ul><li><p><code>chk_var1___0</code>: "[0] Not selected [1] In the past year"</p></li>
-<li><p><code>chk_var1___1</code>: "[0] Not selected [1] More than a year ago"</p></li>
-<li><p><code>chk_var1___2</code>: "[0] Not selected [1] Never"</p></li>
+have values:</p><ul><li><p><code>chk_var1___0</code>, <code>chk_var1___1</code>, <code>chk_var1___2</code>: 0 = "No"; 1 =  "Yes".</p></li>
+</ul><p>If <code>.checkbox_resp_values</code> is <code>TRUE</code>, each variable will have unique labels:</p><ul><li><p><code>chk_var1___0</code>: 0 = "Not selected," 1 = "In the past year"</p></li>
+<li><p><code>chk_var1___1</code>: 0 = "Not selected," 1 = "More than a year ago"</p></li>
+<li><p><code>chk_var1___2</code>: 0 = "Not selected," 0 = "Never"</p></li>
 </ul></div>
 
 <div class="section">
@@ -245,14 +245,6 @@ corresponding to variables <code>chk_preg_0___0</code>, <code>chk_preg_0___1</co
 and assuming that <code>-9</code> is specified as a user missing value. If <code>.propagate_checkbox_missings</code>
 is <code>TRUE</code>, <code>chk_preg_0___0</code> and <code>chk_preg_0___1</code> will be set to <code>-9</code> if <code>chk_preg_0____9</code>
 is <code>1</code>. Otherwise, these columns will remain as <code>0</code> where <code>chk_preg_0____9</code> is <code>1</code>.</p>
-<p>[0]: R:0%5C
-[1]: R:1%5C
-[0]: R:0
-[1]: R:1
-[0]: R:0
-[1]: R:1
-[0]: R:0
-[1]: R:1</p>
 </div>
 
     </div>

@@ -9,6 +9,8 @@ Useful links:
 
 - <https://github.com/ccsarapas/lighthouse.codebook>
 
+- <https://ccsarapas.github.io/lighthouse.codebook/>
+
 - Report bugs at
   <https://github.com/ccsarapas/lighthouse.codebook/issues>
 

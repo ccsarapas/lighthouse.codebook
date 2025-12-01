@@ -209,14 +209,18 @@ response-specific labels from `metadata` will be used. For example, if a
 checkbox group has options "In the past year," "More than a year ago,"
 and "Never," corresponding to variables `chk_var1___0`, `chk_var1___1`,
 and `chk_var1___2`: if `.checkbox_resp_values` is `FALSE`, all of these
-will have values "\[0\] No; \[1\] Yes." If `.checkbox_resp_values` is
-`TRUE`, each variable: will have unique labels:
+will have values:
 
-- `chk_var1___0`: "\[0\] Not selected \[1\] In the past year"
+- `chk_var1___0`, `chk_var1___1`, `chk_var1___2`: 0 = "No"; 1 = "Yes".
 
-- `chk_var1___1`: "\[0\] Not selected \[1\] More than a year ago"
+If `.checkbox_resp_values` is `TRUE`, each variable will have unique
+labels:
 
-- `chk_var1___2`: "\[0\] Not selected \[1\] Never"
+- `chk_var1___0`: 0 = "Not selected," 1 = "In the past year"
+
+- `chk_var1___1`: 0 = "Not selected," 1 = "More than a year ago"
+
+- `chk_var1___2`: 0 = "Not selected," 0 = "Never"
 
 ### Missing value propagation
 
@@ -230,6 +234,3 @@ that `-9` is specified as a user missing value. If
 `chk_preg_0___1` will be set to `-9` if `chk_preg_0____9` is `1`.
 Otherwise, these columns will remain as `0` where `chk_preg_0____9` is
 `1`.
-
-\[0\]: R:0%5C \[1\]: R:1%5C \[0\]: R:0 \[1\]: R:1 \[0\]: R:0 \[1\]: R:1
-\[0\]: R:0 \[1\]: R:1

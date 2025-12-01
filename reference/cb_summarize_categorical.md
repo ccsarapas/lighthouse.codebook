@@ -30,7 +30,7 @@ cb_summarize_categorical(
 - prefixed:
 
   Should value labels be prefixed with the corresponding value? e.g.,
-  `TRUE` yields ``` "[1] Value One"``;  ```FALSE`yields`"Value One"\`.
+  `TRUE` yields `"[1] Value One"`; `FALSE` yields `"Value One"`.
 
 - detail_missing:
 
