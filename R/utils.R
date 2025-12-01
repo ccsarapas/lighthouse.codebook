@@ -26,6 +26,7 @@ strip_line_breaks <- function(x, replace = " / ", combine_multiple = TRUE) {
   stringr::str_replace_all(x, lb, replace)
 }
 names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
+
 is_num_chr <- function(x) {
   rlang::is_bare_numeric(x) || rlang::is_bare_character(x)
 }
@@ -72,25 +73,39 @@ as_named <- function(x, class) setNames(as(x, class), names(x))
 val_labels_valid <- function(x, prefixed = FALSE) {
   UseMethod("val_labels_valid")
 }
+
+#' @export
 val_labels_valid.haven_labelled <- function(x, prefixed = FALSE) {
   out <- labelled::val_labels(x, prefixed = prefixed)
   out[!(out %in% labelled::na_values(x))]
 }
+
+#' @export
 val_labels_valid.default <- function(x, prefixed = FALSE) NULL
+
+#' @export
 val_labels_valid.data.frame <- function(x, prefixed = FALSE) {
   lapply(x, val_labels_valid, prefixed = prefixed)
 }
 
 val_lookups <- function(x, prefixed = FALSE) UseMethod("val_lookups")
+
+#' @export
 val_lookups.default <- function(x, prefixed = FALSE) NULL
+
+#' @export
 val_lookups.haven_labelled <- function(x, prefixed = FALSE) {
   out <- labelled::val_labels(x, prefixed = prefixed)
   if (!is.null(out)) setNames(names(out), out) else NULL
 }
+
+#' @export
 val_lookups.data.frame <- function(x, prefixed = FALSE) {
   lapply(x, val_lookups, prefixed = prefixed)
 }
+
 get_value_lookups <- val_lookups
+
 has_val_labels <- function(x) !is.null(labelled::val_labels(x))
 
 to_labelled_chr <- function(x, 
@@ -126,11 +141,17 @@ spread_if_any <- function(..., na.rm = TRUE) {
   lighthouse::max_if_any(..., na.rm = na.rm) - lighthouse::min_if_any(..., na.rm = na.rm)
 }
 
+#' @export
 nan_to_na.default <- function(x) dplyr::if_else(is.nan(x), NA, x)
+
+#' @export
 nan_to_na.list <- function(x) lapply(x, nan_to_na)
+
+#' @export
 nan_to_na.data.frame <- function(x) {
   x[] <- lapply(x, nan_to_na)
   x
 }
+
 nan_to_na <- function(x) UseMethod("nan_to_na")
 

@@ -127,9 +127,6 @@ The same user missings can be applied to multiple variables using
 
 # for all numeric variables, plus `var6` and `var7`
 .user_missing = c(where(is.numeric), var6, var7) ~ c(-9, -8, -7)
-
-# for all variables
-.user_missing = everything() ~ c(-9, -8)
 }
 Different user missings can be applied to different variables using a list of
 formulas:
