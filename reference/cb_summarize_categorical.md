@@ -2,6 +2,8 @@
 
 `cb_summarize_categorical()` generates a frequencies table for all
 categorical variables from a codebook object, optionally by group.
+Variables with value labels, factors (including ordered factors), and
+logical variables are treated as categorical.
 
 ## Usage
 
@@ -19,8 +21,9 @@ cb_summarize_categorical(
 
 - cb:
 
-  An object of class `"li_codebook"` as produced by `cb_create()` or a
-  variant.
+  An object of class `"li_codebook"` as produced by
+  [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
+  or a variant.
 
 - group_by:
 

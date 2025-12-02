@@ -2,7 +2,9 @@
 
 ## All functions
 
-- [`cb_create_rc()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_rc.md)
+- [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
+  : Generate a codebook object
+- [`cb_create_redcap()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_redcap.md)
   : Generate a codebook object from REDCap data
 - [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)
   : Extract data from a codebook object

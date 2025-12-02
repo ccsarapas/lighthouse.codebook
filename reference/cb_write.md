@@ -1,6 +1,11 @@
 # Write codebook and data summaries to an Excel workbook
 
-Write codebook and data summaries to an Excel workbook
+`cb_write()` writes an Excel workbook to disk with tabs including a
+codebook; summary statistics for numeric variables; frequencies for
+categorical variables; and optional grouped data summaries. For data
+summaires, variables with value labels, factors (including ordered
+factors), and logical variables are treated as categorical, while
+numeric and integer variables are treated as numeric.
 
 ## Usage
 
@@ -21,8 +26,9 @@ cb_write(
 
 - cb:
 
-  An object of class `"li_codebook"` as produced by `cb_create()` or a
-  variant.
+  An object of class `"li_codebook"` as produced by
+  [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
+  or a variant.
 
 - file:
 
@@ -50,7 +56,7 @@ cb_write(
 
 - overwrite:
 
-  Overwrite existing file at `file`?
+  Overwrite existing file?
 
 ## Value
 

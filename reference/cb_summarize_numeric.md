@@ -16,8 +16,9 @@ cb_summarize_numeric(cb, group_by = NULL)
 
 - cb:
 
-  An object of class `"li_codebook"` as produced by `cb_create()` or a
-  variant.
+  An object of class `"li_codebook"` as produced by
+  [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
+  or a variant.
 
 - group_by:
 
