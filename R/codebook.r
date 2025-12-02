@@ -1,16 +1,29 @@
 cb_init <- function(data, 
-                    meta, 
-                    meta_var_name, 
+                    meta = NULL, 
+                    meta_var_name = NULL, 
                     meta_var_label = NULL, 
                     meta_val_labels = NULL,
                     ...) {
-  out <- tibble::tibble(name = names(data)) |>
-    dplyr::left_join(meta, dplyr::join_by(name == {{ meta_var_name }})) |>
-    dplyr::select(
-      name, label = {{ meta_var_label }}, value_labels = {{ meta_val_labels }},
-      ...
-    ) |> 
-    set_attrs(data = data)
+  out <- tibble::tibble(name = names(data))
+  if (!is.null(meta)) {
+    meta_var_name <- rlang::enquo(meta_var_name)
+    if (rlang::quo_is_null(meta_var_name)) {
+      cli::cli_abort(
+        "{.code meta_var_name} cannot be `NULL`if {.code meta} is provided."
+      )
+    }
+    out <- out |>
+      dplyr::left_join(meta, dplyr::join_by(name == !!meta_var_name)) |>
+      dplyr::select(
+        name,
+        label = {{ meta_var_label }}, value_labels = {{ meta_val_labels }},
+        ...
+      )
+  } else {
+    out <- out |>
+      dplyr::mutate(value_labels = NA_character_)
+  }
+  out <- set_attrs(out, data = data)
   class(out) <- c("li_codebook", class(out))
   out
 }
@@ -36,7 +49,6 @@ lookups_from_string <- function(val_labels, types, sep1, sep2) {
     labs <- x[, 2]
     setNames(vals, labs)
   }
-  stringr::fixed
   num_val <- "-?\\d{1,99}"
   sep2 <- glue_chr("{sep2}(?={num_val}{sep1})")
   sep1 <- glue_chr("(?<=^{num_val}){sep1}")
@@ -158,6 +170,7 @@ cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
   factors <- setdiff(names(data)[sapply(data, is.factor)], names(vals_by_label))
+  ordered <- setdiff(names(data)[sapply(data, is.ordered)], names(vals_by_label))
   user_missing <- attr(cb, "user_missing")
   label_vars <- unique(c(names(vals_by_label), factors, names(user_missing)))
   for (nm in label_vars) {
@@ -182,17 +195,20 @@ cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
       )
     }
   }
-  set_attrs(cb, data_labelled = data, factors = factors)
+  set_attrs(cb, data_labelled = data, factors = factors, ordered = ordered)
 }
 
 
 cb_zap_data <- function(cb) {
   data <- attr(cb, "data_labelled")
+  ordered <- attr(cb, "ordered")
   data <- data |>
-    dplyr::mutate(dplyr::across(
-      tidyselect::where(has_val_labels),
-      \(x) labelled::to_factor(x, user_na_to_na = TRUE, sort_levels = "values")
-    )) |>
+    dplyr::mutate(dplyr::across(tidyselect::where(has_val_labels), \(x) {
+      labelled::to_factor(
+        x, user_na_to_na = TRUE, ordered = dplyr::cur_column() %in% ordered, 
+        sort_levels = "values"
+      )
+    })) |>
     haven::zap_missing() |>
     haven::zap_labels()
   set_attrs(cb, data_zapped = data)
@@ -219,7 +235,6 @@ string_from_lookups <- function(lookups, no_prefix = NULL) {
 
 cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) {
   separate_missings <- match.arg(separate_missings)
-
   data <- attr(cb, "data_labelled")[cb$name]
   val_labs <- labelled::val_labels(data)
   missings <- labelled::na_values(data)
@@ -239,7 +254,12 @@ cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) 
 ## should maybe generalize this pattern of [get attr data] -> [sort by cb$name] -> [sapply fx]
 cb_add_types <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
-  dplyr::mutate(cb, type = sapply(data, class_collapse), .after = name)
+  cb |>
+    dplyr::mutate(
+      type = sapply(data, class_collapse), 
+      type = stringr::str_replace(type, "ordered, factor", "ordered"),
+      .after = name
+    )
 }
 
 cb_add_missing <- function(cb) {
