@@ -16,7 +16,7 @@ cb_write(
 )
 }
 \arguments{
-\item{cb}{An object of class \code{"li_codebook"} as produced by \code{cb_create()} or
+\item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
 a variant.}
 
 \item{file}{Path to write to.}
@@ -33,11 +33,15 @@ with decked heads for specified groups.}
 \item{detail_missing}{Include detailed missing value information on categorical
 summary tab?}
 
-\item{overwrite}{Overwrite existing file at \code{file}?}
+\item{overwrite}{Overwrite existing file?}
 }
 \value{
 Invisibly returns the path to the written Excel file.
 }
 \description{
-Write codebook and data summaries to an Excel workbook
+\code{cb_write()} writes an Excel workbook to disk with tabs including a codebook;
+summary statistics for numeric variables; frequencies for categorical variables;
+and optional grouped data summaries. For data summaires, variables with value
+labels, factors (including ordered factors), and logical variables are treated
+as categorical, while numeric and integer variables are treated as numeric.
 }

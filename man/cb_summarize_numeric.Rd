@@ -7,7 +7,7 @@
 cb_summarize_numeric(cb, group_by = NULL)
 }
 \arguments{
-\item{cb}{An object of class \code{"li_codebook"} as produced by \code{cb_create()} or
+\item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
 a variant.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group

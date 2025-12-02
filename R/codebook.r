@@ -126,6 +126,11 @@ cb_user_missings <- function(cb, user_missing, match_type = TRUE) {
 cb_add_lookups <- function(cb, sep1, sep2) {
   data <- attr(cb, "data")
   val_labels <- na.omit(setNames(cb$value_labels, cb$name))
+  if (length(val_labels) && (is.null(sep1) || is.null(sep2))) {
+    cli::cli_abort(
+      "{.arg sep1} and {.arg sep2} must be specified if value labels are provided."
+    )
+  }
   types <- sapply(data[names(val_labels)], check_num_chr)
   by_label <- lookups_from_string(
     val_labels, types = types, sep1 = sep1, sep2 = sep2
@@ -238,8 +243,11 @@ cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) 
   data <- attr(cb, "data_labelled")[cb$name]
   val_labs <- labelled::val_labels(data)
   missings <- labelled::na_values(data)
-  separate_missings <- separate_missings == "yes" ||
-    (separate_missings == "if_any" & !rlang::is_empty(missings))
+  separate_missings <- separate_missings == "yes" || (
+    separate_missings == "if_any" & !(
+      rlang::is_empty(missings) || all(sapply(missings, rlang::is_empty))
+    )
+  )
   # could edit to use `val_labels_valid()`
   if (separate_missings) {
     val_labs <- mapply(\(v, m) v[!(v %in% m)], v = val_labs, m = missings)

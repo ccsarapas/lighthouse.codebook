@@ -13,7 +13,7 @@ cb_summarize_categorical(
 )
 }
 \arguments{
-\item{cb}{An object of class \code{"li_codebook"} as produced by \code{cb_create()} or
+\item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
 a variant.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
@@ -32,5 +32,6 @@ A tibble with frequency information for each categorical variable.
 }
 \description{
 \code{cb_summarize_categorical()} generates a frequencies table for all categorical
-variables from a codebook object, optionally by group.
+variables from a codebook object, optionally by group. Variables with value labels,
+factors (including ordered factors), and logical variables are treated as categorical.
 }
