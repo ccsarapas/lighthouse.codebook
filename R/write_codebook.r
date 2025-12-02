@@ -364,7 +364,7 @@ cb_write_codebook <- function(cb,
       overview, "Overview", header = h_overview, cols_pct = Missing
     ) |>
     cb_write_sheet(
-      summaries$num, "Summary - Numeric Vars",
+      summaries$num, "Summary - Numeric",
       header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
     )
     
@@ -378,14 +378,14 @@ cb_write_codebook <- function(cb,
         summaries$cat, "Summary - Categorical", header = h_summ_cat,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
         rows_border_by = Name, rows_sub_border_by = `Valid / Missing`,
-        clear_repeats = c(Name, Label, `Valid / Missing`)
+        clear_repeats = tidyselect::any_of(c("Name", "Label", "Valid / Missing"))
       )
   } else {
     wb <- wb |>
       cb_write_sheet(
         summaries$cat, "Summary - Categorical", header = h_summ_cat,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        clear_repeats = c(Name, Label)
+        clear_repeats = tidyselect::any_of(c("Name", "Label"))
       )
   }
   
@@ -403,13 +403,13 @@ cb_write_codebook <- function(cb,
       cb_write_sheet(
         grouped$num, "Grouped Summary - Numeric", header = h_summ_num_grp, 
         cols_pct = `Valid %`, cols_int = `Valid n`,
-        id_cols = c(Name, Label), group_by = !!group_by
+        id_cols = tidyselect::any_of(c("Name", "Label")), group_by = !!group_by
       ) |>
       cb_write_sheet(
         grouped$cat, "Grouped Summary - Categorical", header = h_summ_cat_grp,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        id_cols = c(Name, Label, Value), group_by = !!group_by,  
-        clear_repeats = c(Name, Label)
+        id_cols = tidyselect::any_of(c("Name", "Label", "Value")), group_by = !!group_by,  
+        clear_repeats = tidyselect::any_of(c("Name", "Label"))
       )
   }
   openxlsx2::wb_save(wb, file, overwrite = overwrite)

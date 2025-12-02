@@ -1,45 +1,33 @@
-#' Generate a codebook object from REDCap data
+#' Generate a codebook object
 #'
 #' @description
-#' `cb_create_rc()` builds an object of class `"li_codebook"` from a dataset and
-#' corresponding codebook exported from REDCap. The resulting object can be used
-#' to write an Excel workbook with variable and data summaries (using [`cb_write()`]),
-#' extract processed data ([`cb_get_data()`]), or generate dataset summaries ([`cb_summarize_numeric()`]
-#' and [`cb_summarize_categorical()`]).
-#'
-#' This variant of `cb_create()` includes functionality specific to REDCap data
-#' and metadata, including:
-#' - Defaults for typical REDCap metadata column names
-#' - Includes form field by default
-#' - Unpacking, labelling, and optional missing propagation for checkbox data
-#' - Optional coercion for character variables marked as "integer" in `metedata$text_validation_type_or_show_slider_number`
+#' `cb_create()` builds an object of class `"li_codebook"` from a dataset and optional
+#' metadata. The resulting object can be used to write an Excel workbook with variable
+#' and data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
+#' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
 #'
 #' @param data A data frame exported or retrieved from REDCap.
-#' @param metadata A data frame containing the REDCap codebook associated with `data`.
+#' @param metadata A data frame containing metadata, such as variable labels and value 
+#' labels.
 #' @param ... Additional columns from `metadata` to preserve in the final codebook.
 #'   New names can be assigned by passing named arguments. Columns for variable
 #'   name, form, variable label, and value labels are included by default.
 #' @param .name,.var_label,.val_labels Columns in `metadata` containing variable
-#'   name, variable label, and value labels, respectively.
-#' @param .form Column in `metadata` containing form names. (Set to `NULL` to omit.)
+#'   name, variable label, and value labels, respectively. If `metadata` is provided, 
+#'   `.name` must be specified. `.var_label` and `.val_labels` may be set to `NULL` 
+#'   to omit.
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
 #'   right-hand side. See "Specifying user missing values" below for examples.
 #' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
-#'   in `metadata`. e.g., if value labels are in format `"1, First label|2, Second label"`,
+#'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2` 
+#'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
 #'   set `.val_labs_sep1` to `","` and `.val_labs_sep2` to `"\\|"`.
 #' @param .rmv_html <[`tidy-select`][dplyr_tidy_select]> Codebook columns from which
 #'   HTML tags should be removed.
 #' @param .rmv_line_breaks <[`tidy-select`][dplyr_tidy_select]> Codebook columns
 #'   from which line breaks should be removed.
-#' @param .coerce_integers Should variables listed as "integer" in `metedata$text_validation_type_or_show_slider_number` 
-#'   be coerced to integer?
-#' @param .checkbox_resp_values Should checkbox values use labels in `metadata` 
-#'   (`TRUE`) or "Yes" / "No" (`FALSE`)? See "Checkbox data handling" below.
-#' @param .propagate_checkbox_missings Should user missing values in a checkbox 
-#'   group be propagated across all variables in the group? See "Checkbox data handling" 
-#'   below.
 #' @param .separate_missings Include value labels for user missing values in a separate
 #'   column? The default, `"if_any"`, adds the column only if user missings are
 #'   specified for at least one variable.
@@ -52,7 +40,6 @@
 #' and additional metadata. Specifically:
 #' - A tibble with columns:
 #'     - `name`: variable name
-#'     - `form`: form name
 #'     - `type`: variable type
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
@@ -70,7 +57,7 @@
 #' `.user_missing` argument. Formulas should specify variables on the left-hand
 #' side and user missing values for those variables on the right-hand side:
 #' \preformatted{
-#' cb <- cb_create_rc(data, metadata, .user_missing = var1 ~ 99)
+#' cb <- cb_create_redcap(data, metadata, .user_missing = var1 ~ 99)
 #' }
 #' The same user missings can be applied to multiple variables using
 #'   [tidyselect][dplyr_tidy_select] expressions:
@@ -96,6 +83,99 @@
 #' }
 #' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
 #' controls which labels are used.
+#'
+#' @export
+cb_create <- function(data,
+                      metadata = NULL,
+                      ...,
+                      .name = name,
+                      .var_label = label,
+                      .val_labels = val_labels,
+                      .user_missing = NULL,
+                      .val_labs_sep1 = NULL,
+                      .val_labs_sep2 = NULL,
+                      .rmv_html = !name,
+                      .rmv_line_breaks = !name,
+                      .separate_missings = c("if_any", "yes", "no"),
+                      .user_missing_conflict = c("metadata", "missing_label")) {
+  .separate_missings <- match.arg(.separate_missings)
+  .user_missing_conflict <- match.arg(.user_missing_conflict)
+  data |>
+    cb_init(
+      metadata,
+      meta_var_name = {{ .name }}, meta_var_label = {{ .var_label }},
+      meta_val_labels = {{ .val_labels }}, ...
+    ) |>
+    cb_clean_fields(
+      rmv_html = {{ .rmv_html }},
+      rmv_line_breaks = {{ .rmv_line_breaks }}
+    ) |>
+    cb_user_missings(user_missing = .user_missing) |>
+    cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
+    cb_label_data(conflict = .user_missing_conflict) |>
+    cb_zap_data() |>
+    cb_add_dims() |>
+    cb_add_val_labels(separate_missings = .separate_missings) |>
+    cb_add_types() |>
+    cb_add_missing()
+}
+
+#' Generate a codebook object from REDCap data
+#'
+#' @description
+#' `cb_create_redcap()` builds an object of class `"li_codebook"` from a dataset and
+#' corresponding codebook exported from REDCap. The resulting object can be used
+#' to write an Excel workbook with variable and data summaries (using [`cb_write()`]),
+#' extract processed data ([`cb_get_data()`]), or generate dataset summaries ([`cb_summarize_numeric()`]
+#' and [`cb_summarize_categorical()`]).
+#'
+#' This variant of [`cb_create()`] includes functionality specific to REDCap data
+#' and metadata, including:
+#' - Defaults for typical REDCap metadata column names
+#' - Includes form field by default
+#' - Unpacking, labelling, and optional missing propagation for checkbox data
+#' - Optional coercion for character variables marked as "integer" in `metedata$text_validation_type_or_show_slider_number`
+#' 
+#' @inheritParams cb_create
+#' @param data A data frame exported or retrieved from REDCap.
+#' @param metadata A data frame containing the REDCap codebook associated with `data`.
+#' @param ... Additional columns from `metadata` to preserve in the final codebook.
+#'   New names can be assigned by passing named arguments. Columns for variable
+#'   name, form, variable label, and value labels are included by default.
+#' @param .name,.var_label,.val_labels Columns in `metadata` containing variable
+#'   name, variable label, and value labels, respectively.
+#' @param .form Column in `metadata` containing form names. (Set to `NULL` to omit.)
+#' @param .user_missing A formula or list of formulas specifying user missing values.
+#'   Formulas should specify variables on the left-hand side (as variable names
+#'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
+#'   right-hand side. See "Specifying user missing values" in [`cb_create()`] documentation 
+#'   for examples.
+#' @param .coerce_integers Should variables listed as "integer" in `metedata$text_validation_type_or_show_slider_number` 
+#'   be coerced to integer?
+#' @param .checkbox_resp_values Should checkbox values use labels in `metadata` 
+#'   (`TRUE`) or "Yes" / "No" (`FALSE`)? See "Checkbox data handling" below.
+#' @param .propagate_checkbox_missings Should user missing values in a checkbox 
+#'   group be propagated across all variables in the group? See "Checkbox data handling" 
+#'   below.
+#'
+#' @return
+#' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
+#' dataset and (2) attributes containing the passed dataset (in several formats)
+#' and additional metadata. Specifically:
+#' - A tibble with columns:
+#'     - `name`: variable name
+#'     - `form`: form name
+#'     - `type`: variable type
+#'     - `label`: variable label
+#'     - `value_labels`: value labels
+#'     - `user_missing`: optional column, depending on value of `.separate_missings`,
+#'        with value labels for user missing values
+#'     - `missing`: proportion missing
+#'     - additional columns if specified in `...`
+#' - Attributes:
+#'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
+#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
+#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`
 #'
 #' @section Checkbox data handling:
 #' ## Value labels
@@ -123,7 +203,7 @@
 #' is `1`. Otherwise, these columns will remain as `0` where `chk_preg_0____9` is `1`.
 #'
 #' @export
-cb_create_rc <- function(data,
+cb_create_redcap <- function(data,
                          metadata,
                          ...,
                          .name = field_name,
@@ -182,7 +262,7 @@ cb_create_rc <- function(data,
 #' to specify the summary statistics used. Currently, summary statistics are valid
 #' n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis.
 #'
-#' @param cb An object of class `"li_codebook"` as produced by `cb_create()` or
+#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
@@ -194,7 +274,7 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
   check_codebook(cb)
   out <- cb |>
     dplyr::filter(type %in% c("numeric", "integer")) |>
-    dplyr::select(name, label)
+    dplyr::select(tidyselect::any_of(c("name", "label")))
   nms_num <- out$name
   data <- attr(cb, "data_zapped")
   res <- lighthouse::summary_table(
@@ -215,9 +295,10 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
 #' Summarize categorical variables from a codebook object
 #'
 #' `cb_summarize_categorical()` generates a frequencies table for all categorical
-#' variables from a codebook object, optionally by group.
+#' variables from a codebook object, optionally by group. Variables with value labels,
+#' factors (including ordered factors), and logical variables are treated as categorical.
 #'
-#' @param cb An object of class `"li_codebook"` as produced by `cb_create()` or
+#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
@@ -241,10 +322,10 @@ cb_summarize_categorical <- function(cb,
   group_chr <- untidyselect(data, {{ group_by }})
   summary_cat <- cb |>
     dplyr::filter(
-      type %in% c("factor", "logical"),
+      type %in% c("factor", "ordered", "logical"),
       !(name %in% group_chr)
     ) |>
-    dplyr::select(name, label)
+    dplyr::select(tidyselect::any_of(c("name", "label")))
   vars <- summary_cat$name
   res <- cb_count_multiple(
     data, !!!vars,
@@ -253,17 +334,17 @@ cb_summarize_categorical <- function(cb,
     .by = {{ group_by }}
   )
   summary_cat |>
-    dplyr::left_join(res, by = "name") |>
+    dplyr::left_join(res, dplyr::join_by(name)) |>
     set_attrs(group_by = rlang::enquo(group_by), detail_missing = detail_missing)
 }
 
 
 #' Extract data from a codebook object
 #'
-#' Codebook objects created by `cb_create()` and friends contain several transformed
+#' Codebook objects created by [`cb_create()`] and friends contain several transformed
 #' versions of the originally passed dataset. These can be extracted using `cb_get_data()`.
 #'
-#' @param cb An object of class `"li_codebook"` as produced by `cb_create()` or
+#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
 #' @param format Format of the returned data; see below for details.
 #'
@@ -271,7 +352,7 @@ cb_summarize_categorical <- function(cb,
 #' A tibble with variables formatted based on the `format` argument.
 #' - For `format = "values"`, all variables retain the same values as the original
 #'   dataset, including values for user missings. The data may reflect transformations
-#'   made by variants of `cb_create()` -- e.g., for [`cb_create_rc()`], integer coercion 
+#'   made by variants of [`cb_create()`] -- e.g., for [`cb_create_redcap()`], integer coercion 
 #'   and propagation of user missings across checkbox variables.
 #' - For `"haven"`, value labels and user missings are encoded using class 
 #'   [`"haven_labelled"`][haven::labelled]`
@@ -290,7 +371,13 @@ cb_get_data <- function(cb, format = c("factors", "haven", "values")) {
 
 #' Write codebook and data summaries to an Excel workbook
 #' 
-#' @param cb An object of class `"li_codebook"` as produced by `cb_create()` or
+#' `cb_write()` writes an Excel workbook to disk with tabs including a codebook; 
+#' summary statistics for numeric variables; frequencies for categorical variables; 
+#' and optional grouped data summaries. For data summaires, variables with value 
+#' labels, factors (including ordered factors), and logical variables are treated 
+#' as categorical, while numeric and integer variables are treated as numeric.
+#' 
+#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
 #' @param file Path to write to.
 #' @param dataset_name Name of the dataset to display in workbook headers.
@@ -301,7 +388,7 @@ cb_get_data <- function(cb, format = c("factors", "haven", "values")) {
 #'   with decked heads for specified groups. 
 #' @param detail_missing Include detailed missing value information on categorical 
 #'   summary tab?
-#' @param overwrite Overwrite existing file at `file`?
+#' @param overwrite Overwrite existing file?
 #'
 #' @return Invisibly returns the path to the written Excel file.
 #' 
