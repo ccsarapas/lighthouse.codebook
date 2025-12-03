@@ -35,7 +35,6 @@ wb_banded_fill_by <- function(wb,
   )
 }
 
-
 wb_row_borders_by <- function(wb,
                               sheet = openxlsx2::current_sheet(),
                               dims,
@@ -43,23 +42,22 @@ wb_row_borders_by <- function(wb,
                               start_col = NULL,
                               data,
                               skip_first = TRUE,
-                              color = openxlsx2::wb_color(hex = "404040"),
+                              color = openxlsx2::wb_color("404040"),
                               border = "thin",
                               update = FALSE,
                               ...) {
-  index_repeats <- function(data, by) {
-    data |>
-      dplyr::mutate(
-        idx = dplyr::if_any({{ by }}, \(x) x != dplyr::lag(x, default = ""))
-      ) |>
-      dplyr::pull(idx)
-  }
-  block_bottoms <- function(chg_rows, rows) {
-    c(rows[which(chg_rows)] - 1, max(rows))
+  style_nm <- paste0(border, color)
+  existing <- wb$styles_mgr$get_dxf_id(style_nm)
+  if (is.null(existing) || is.na(existing)) {
+    style <- openxlsx2::create_dxfs_style(
+      border = TRUE, border_style = NULL, border_color = NULL,
+      top_color = color,
+      top_style = border
+    )
+    wb <- openxlsx2::wb_add_style(wb, style, style_nm)
   }
   rowcol <- openxlsx2::dims_to_rowcol(dims, as_integer = TRUE)
-  chg_rows <- index_repeats(data, {{ by }})
-  rows <- block_bottoms(chg_rows, rowcol$row)
+  rows <- rowcol$row
   if (skip_first) rows <- rows[-1]
   cols <- seq(min(rowcol$col), max(rowcol$col))
   start_quo <- rlang::enquo(start_col)
@@ -67,16 +65,15 @@ wb_row_borders_by <- function(wb,
     idx <- seq(tidyselect::eval_select(start_quo, data), ncol(data))
     cols <- cols[idx]
   }
-  for (r in rows) {
-    wb <- wb |>
-      openxlsx2::wb_add_border(
-        sheet, openxlsx2::wb_dims(r, cols),
-        bottom_color = color, bottom_border = border,
-        top_border = NULL, left_border = NULL, right_border = NULL,
-        update = update, ...
-      )
-  }
-  wb
+  rule <- glue_chr(
+    '{openxlsx2::wb_dims(min(rows), min(cols), fix = "col")}<>""'
+  )
+  wb |>
+    openxlsx2::wb_add_conditional_formatting(
+      dims = openxlsx2::wb_dims(rows, cols),
+      rule = rule,
+      style = style_nm
+  )
 }
 
 cb_prep_grouped_data <- function(data, group_by, id_cols) {
@@ -215,7 +212,7 @@ cb_write_sheet <- function(wb,
         data = data
       )
   }
-    if (!rlang::quo_is_null(rows_sub_border_by)) {
+  if (!rlang::quo_is_null(rows_sub_border_by)) {
     by <- rlang::expr(c(!!rows_border_by, !!rows_sub_border_by))
     wb <- wb |>
       wb_row_borders_by(
