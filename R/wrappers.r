@@ -84,6 +84,58 @@
 #' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
 #' controls which labels are used.
 #'
+#' @examples
+#' diamonds2 <- ggplot2::diamonds |>
+#'   transform(
+#'     carat_group = as.integer(cut(carat, breaks = 3, labels = 1:3)),
+#'     price_group = as.integer(cut(
+#'       price,
+#'       breaks = c(0, 500, 1000, 2000, 5000, 10000, Inf),
+#'       labels = 1:6,
+#'       right = FALSE
+#'     ))
+#'   )
+#' 
+#' # basic codebook
+#' cb_create(diamonds2)
+#' 
+#' # convert variables to factor to treat as categorical
+#' diamonds2 |>
+#'   transform(
+#'     carat_group = factor(carat_group),
+#'     price_group = factor(price_group)
+#'   ) |> 
+#'   cb_create()
+#' 
+#' # provide metadata for variable and value labels
+#' diamonds_meta <- data.frame(
+#'   name = names(diamonds2),
+#'   label = c(
+#'     # from ?ggplot2::diamonds
+#'     "price in US dollars ($326–$18,823)",
+#'     "weight of the diamond (0.2–5.01)",
+#'     "quality of the cut (Fair, Good, Very Good, Premium, Ideal)",
+#'     "diamond colour, from D (best) to J (worst)",
+#'     "a measurement of how clear the diamond is (I1 (worst), SI2, SI1, VS2, VS1, VVS2, VVS1, IF (best))",
+#'     "length in mm (0–10.74)",
+#'     "width in mm (0–58.9)",
+#'     "depth in mm (0–31.8)",
+#'     "total depth percentage = z / mean(x, y) = 2 * z / (x + y) (43–79)",
+#'     "width of top of diamond relative to widest point (43–95)",
+#'     "diamond carat (3 groups)",
+#'     "diamond price (6 groups)"
+#'   ),
+#'   val_labels = c(
+#'     rep(NA, 10),
+#'     "1 = small; 2 = medium; 3 = large",
+#'     "1 = <$500; 2 = $500-$999; 3 = $1,000-$1,999; 4 = $2,000-$4,999; 5 = $5,000-$9,999; 6 = $10,000+"
+#'   )
+#' )
+#' 
+#' cb_create(
+#'   diamonds2, diamonds_meta,
+#'   .val_labs_sep1 = " = ", .val_labs_sep2 = "; "
+#' )
 #' @export
 cb_create <- function(data,
                       metadata = NULL,
@@ -115,9 +167,9 @@ cb_create <- function(data,
     cb_label_data(conflict = .user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
-    cb_add_val_labels(separate_missings = .separate_missings) |>
-    cb_add_types() |>
-    cb_add_missing()
+    cb_add_val_labels_col(separate_missings = .separate_missings) |>
+    cb_add_type_col() |>
+    cb_add_missing_col()
 }
 
 #' Generate a codebook object from REDCap data
@@ -249,9 +301,9 @@ cb_create_redcap <- function(data,
     cb_label_data(conflict = .user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
-    cb_add_val_labels(separate_missings = .separate_missings) |>
-    cb_add_types() |>
-    cb_add_missing() |>
+    cb_add_val_labels_col(separate_missings = .separate_missings) |>
+    cb_add_type_col() |>
+    cb_add_missing_col() |>
     dplyr::relocate(tidyselect::any_of("form"), type, .after = name)
 }
 
