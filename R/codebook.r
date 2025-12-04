@@ -107,13 +107,7 @@ cb_user_missings_across <- function(cb,
 
 cb_user_missings <- function(cb, user_missing, match_type = TRUE) {
   if (is.null(user_missing)) return(set_attrs(cb, user_missing = list()))
-  if (rlang::is_formula(user_missing)) {
-    user_missing <- list(user_missing)
-  } else if (!(
-      is.list(user_missing) && all(sapply(user_missing, rlang::is_formula))
-    )) {
-    cli::cli_abort("{.code user_missing} must be a formula or list of formulas.")
-  }
+  user_missing <- check_user_missing_arg(user_missing)
   for (um in user_missing) {
     cb <- cb_user_missings_across(
       cb, user_missing = eval(rlang::f_rhs(um)), vars = !!rlang::f_lhs(um), 
@@ -238,7 +232,7 @@ string_from_lookups <- function(lookups, no_prefix = NULL) {
   })
 }
 
-cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) {
+cb_add_val_labels_col <- function(cb, separate_missings = c("if_any", "yes", "no")) {
   separate_missings <- match.arg(separate_missings)
   data <- attr(cb, "data_labelled")[cb$name]
   val_labs <- labelled::val_labels(data)
@@ -260,7 +254,7 @@ cb_add_val_labels <- function(cb, separate_missings = c("if_any", "yes", "no")) 
 }
 
 ## should maybe generalize this pattern of [get attr data] -> [sort by cb$name] -> [sapply fx]
-cb_add_types <- function(cb) {
+cb_add_type_col <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
   cb |>
     dplyr::mutate(
@@ -270,7 +264,7 @@ cb_add_types <- function(cb) {
     )
 }
 
-cb_add_missing <- function(cb) {
+cb_add_missing_col <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
   dplyr::mutate(cb, missing = sapply(data, \(x) mean(is.na(x))))
 }
