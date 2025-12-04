@@ -35,47 +35,36 @@ strip_line_breaks <- function(x, replace = " / ", combine_multiple = TRUE) {
   lb <- if (combine_multiple) "(\n|\r)+" else "\n|\r"
   stringr::str_replace_all(x, lb, replace)
 }
-names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 
-is_num_chr <- function(x) {
-  rlang::is_bare_numeric(x) || rlang::is_bare_character(x)
+to_fct_chr <- function(x, levels, detail_missing, na_label) {
+  x |>
+    labelled::to_factor(
+      levels = levels, user_na_to_na = !detail_missing,
+      explicit_tagged_na = detail_missing
+    ) |>
+    as.character() |>
+    tidyr::replace_na(na_label)
 }
 
-
+names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 
 repeats_to_blank <- function(x, replace = c("", "NA")) {
   replace <- if (match.arg(replace) == "NA") NA else ""
   dplyr::if_else(x == dplyr::lag(x, default = replace), replace, x)
 }
 
-check_num_chr <- function(x, 
-                          return = c("type", "class"),
-                          msg = "Classes other than numeric and character are not supported."
-                          ) {
-  if (!is_num_chr(x)) cli::cli_abort(msg)
-  out <- if (match.arg(return) == "type") typeof(x) else class(x)
-  invisible(out)
-}
-labelled_cast <- function(x, to) {
-  stopifnot("haven_labelled" %in% class(x))
-  if (!(rlang::is_bare_character(to) || rlang::is_bare_numeric(to))) {
-    cli::cli_abort(
-      "Only casting between character and numeric classes is supported."
-    )
+user_missing_match_type <- function(nm, data) {
+  classes <- class(data[[nm]])
+  classes_diff <- setdiff(
+    classes, c("ordered", "haven_labelled", "haven_labelled_spss", "vctrs_vctr")
+  )
+  if (length(classes_diff) != 1) {
+    cli::cli_abort(c(
+      "!" = "User missing values are not currently supported for variables of this class.",
+      "i" = "Variable {.var {nm}} with class {.cls {classes}}"
+    ))
   }
-  type_x <- typeof(x)
-  type_to <- typeof(to)
-  if (type_x == type_to) return(x)
-  attr_x <- attributes(x)
-  for (att in intersect(names(attr_x), c("labels", "na_values"))) {
-    nms <- names(attr_x[[att]])
-    attr_x[[att]] <- as(attr_x[[att]], type_to)
-    names(attr_x[[att]]) <- nms
-  }
-  attr_x$class[attr_x$class == type_x] <- type_to
-  out <- as(unclass(x), type_to)
-  attributes(out) <- attr_x
-  out
+  if (classes_diff == "factor") "character" else classes_diff
 }
 
 as_named <- function(x, class) setNames(as(x, class), names(x))

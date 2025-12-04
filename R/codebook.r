@@ -82,10 +82,11 @@ cb_user_missings_by_var <- function(cb,
     ))
   }
   if (match_type) {
-    data <- attr(cb, "data")
-    user_missing <- lapply(setNames(nm = names(user_missing)), \(nm) {
-      as_named(user_missing[[nm]], check_num_chr(data[[nm]]))
-    })
+    user_missing <- lapply(
+      setNames(nm = names(user_missing)), 
+      \(nm, data) as_named(user_missing[[nm]], cb_match_type(nm, data)),
+      data = attr(cb, "data") 
+    )
   }
   keep_prev <- user_missing0[!(names(user_missing0) %in% user_missing_names)]
   user_missing <- c(user_missing, keep_prev)
@@ -196,7 +197,6 @@ cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
   }
   set_attrs(cb, data_labelled = data, factors = factors, ordered = ordered)
 }
-
 
 cb_zap_data <- function(cb) {
   data <- attr(cb, "data_labelled")
