@@ -1,3 +1,32 @@
+
+
+cb_create_spss <- function(data,
+                           .user_missing = NULL,
+                           # these would require a different implementation -- omitted for now
+                           #   .rmv_html = !name,
+                           #   .rmv_line_breaks = !name,
+                           .separate_missings = c("if_any", "yes", "no"),
+                           .user_missing_conflict = c("val_label", "missing_label")) {
+  .separate_missings <- match.arg(.separate_missings)
+  .user_missing_conflict <- match.arg(.user_missing_conflict)
+  .user_missing_conflict <- sub("val_label", "metadata", .user_missing_conflict)
+  data |>
+    cb_init() |>
+    cb_update_labels_spss(
+      user_missing = .user_missing,
+      conflict = .user_missing_conflict
+    ) |>
+    cb_zap_data_spss() |>
+    cb_add_dims() |>
+    cb_add_val_labels_col(separate_missings = .separate_missings) |>
+    cb_add_type_col() |>
+    cb_add_label_col_spss() |> 
+    cb_add_missing_col()
+}
+
+
+
+
 #' Generate a codebook object
 #'
 #' @description
@@ -83,7 +112,7 @@
 #' }
 #' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
 #' controls which labels are used.
-#'
+#' 
 #' @examples
 #' diamonds2 <- ggplot2::diamonds |>
 #'   transform(
