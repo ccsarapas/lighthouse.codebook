@@ -36,15 +36,6 @@ strip_line_breaks <- function(x, replace = " / ", combine_multiple = TRUE) {
   stringr::str_replace_all(x, lb, replace)
 }
 
-to_fct_chr <- function(x, levels, detail_missing, na_label) {
-  x |>
-    labelled::to_factor(
-      levels = levels, user_na_to_na = !detail_missing,
-      explicit_tagged_na = detail_missing
-    ) |>
-    as.character() |>
-    tidyr::replace_na(na_label)
-}
 
 names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 
@@ -58,14 +49,14 @@ repeats_to_blank <- function(x, replace = c("", "NA")) {
   dplyr::if_else(x == dplyr::lag(x, default = replace), replace, x)
 }
 
-user_missing_match_type <- function(nm, data) {
+cb_match_type <- function(nm, 
+                          data, 
+                          ignore = c("ordered", "haven_labelled", "haven_labelled_spss", "vctrs_vctr")) {
   classes <- class(data[[nm]])
-  classes_diff <- setdiff(
-    classes, c("ordered", "haven_labelled", "haven_labelled_spss", "vctrs_vctr")
-  )
+  classes_diff <- setdiff(classes, ignore)
   if (length(classes_diff) != 1) {
     cli::cli_abort(c(
-      "!" = "User missing values are not currently supported for variables of this class.",
+      "!" = "This operation is not currently supported for variables of this class.",
       "i" = "Variable {.var {nm}} with class {.cls {classes}}"
     ))
   }
@@ -74,41 +65,6 @@ user_missing_match_type <- function(nm, data) {
 
 as_named <- function(x, class) setNames(as(x, class), names(x))
 
-val_labels_valid <- function(x, prefixed = FALSE) {
-  UseMethod("val_labels_valid")
-}
-
-#' @export
-val_labels_valid.haven_labelled <- function(x, prefixed = FALSE) {
-  out <- labelled::val_labels(x, prefixed = prefixed)
-  out[!(out %in% labelled::na_values(x))]
-}
-
-#' @export
-val_labels_valid.default <- function(x, prefixed = FALSE) NULL
-
-#' @export
-val_labels_valid.data.frame <- function(x, prefixed = FALSE) {
-  lapply(x, val_labels_valid, prefixed = prefixed)
-}
-
-val_lookups <- function(x, prefixed = FALSE) UseMethod("val_lookups")
-
-#' @export
-val_lookups.default <- function(x, prefixed = FALSE) NULL
-
-#' @export
-val_lookups.haven_labelled <- function(x, prefixed = FALSE) {
-  out <- labelled::val_labels(x, prefixed = prefixed)
-  if (!is.null(out)) setNames(names(out), out) else NULL
-}
-
-#' @export
-val_lookups.data.frame <- function(x, prefixed = FALSE) {
-  lapply(x, val_lookups, prefixed = prefixed)
-}
-
-get_value_lookups <- val_lookups
 
 has_val_labels <- function(x) !is.null(labelled::val_labels(x))
 
@@ -119,25 +75,6 @@ to_labelled_chr <- function(x,
   stopifnot(is.factor(x))
   haven::labelled_spss(
     as.character(x), labels = labels, na_values = na_values, label = label
-  )
-}
-
-remove_user_na_spec <- function(x, ...) {
-  labelled::set_na_values(x, setdiff(labelled::na_values(x), ...))
-}
-
-c_labels <- function(x, y, conflict = c("error", "warn", "ignore")) {
-  conflict <- match.arg(conflict)
-  withCallingHandlers(
-    unique(c(x, y)),
-    warning = function(w) {
-      msg_test <- grepl("value labels", w$message, ignore.case = TRUE)
-      if (msg_test && inherits(w, "warning") && conflict != "warn") {
-        msg <- "{.code ..1} and {.code ..2} have conflicting value labels."
-        if (conflict == "error") cli::cli_abort(msg)
-        rlang::cnd_muffle(w)
-      }
-    }
   )
 }
 
@@ -158,4 +95,3 @@ nan_to_na.data.frame <- function(x) {
 }
 
 nan_to_na <- function(x) UseMethod("nan_to_na")
-
