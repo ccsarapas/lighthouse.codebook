@@ -36,31 +36,6 @@ cb_clean_fields <- function(cb, rmv_html = !name, rmv_line_breaks = !name) {
     )
 }
 
-lookups_from_string <- function(val_labels, types, sep1, sep2) {
-  fx_inner <- function(x, nm, type, sep1) {
-    if (length(x) == 1 && is.na(x)) {
-      return(NA)
-    }
-    if (!all(stringr::str_detect(x, sep1))) {
-      cli::cli_abort("Failed to parse value labels for {.code {nm}}")
-    }
-    x <- stringr::str_split(x, sep1, simplify = TRUE)
-    vals <- as(x[, 1], type)
-    labs <- x[, 2]
-    setNames(vals, labs)
-  }
-  num_val <- "-?\\d{1,99}"
-  sep2 <- glue_chr("{sep2}(?={num_val}{sep1})")
-  sep1 <- glue_chr("(?<=^{num_val}){sep1}")
-  nms <- names(val_labels)
-  val_labels <- setNames(stringr::str_split(val_labels, sep2), nms)
-  mapply(
-    fx_inner, 
-    val_labels, nms, types, MoreArgs = list(sep1 = sep1), 
-    SIMPLIFY = FALSE
-  )
-}
-
 cb_user_missings_by_var <- function(cb, 
                                     user_missing = list(), 
                                     match_type = TRUE) {
@@ -118,19 +93,73 @@ cb_user_missings <- function(cb, user_missing, match_type = TRUE) {
   cb
 }
 
-cb_add_lookups <- function(cb, sep1, sep2) {
-  data <- attr(cb, "data")
+cb_add_factors <- function(cb, data, except = character()) {
+  data <- data[setdiff(names(data), except)]
+  data_fct <- data[vapply(data, is.factor, logical(1))]
+  factors <- names(data_fct)
+  ordered <- factors[vapply(data_fct, is.ordered, logical(1))]
+  set_attrs(cb, factors = factors, ordered = ordered)
+}
+
+lookups_from_string <- function(cb, data, sep1, sep2) {
+  fx_inner <- function(x, nm, type, sep1) {
+    if (length(x) == 1 && is.na(x)) {
+      return(NA)
+    }
+    if (!all(stringr::str_detect(x, sep1))) {
+      cli::cli_abort("Failed to parse value labels for {.code {nm}}")
+    }
+    x <- stringr::str_split(x, sep1, simplify = TRUE)
+    vals <- as(x[, 1], type)
+    labs <- x[, 2]
+    setNames(vals, labs)
+  }
   val_labels <- na.omit(setNames(cb$value_labels, cb$name))
-  if (length(val_labels) && (is.null(sep1) || is.null(sep2))) {
+  if (!length(val_labels)) return(val_labels)
+  if (is.null(sep1) || is.null(sep2)) {
     cli::cli_abort(
       "{.arg sep1} and {.arg sep2} must be specified if value labels are provided."
     )
   }
-  types <- sapply(data[names(val_labels)], check_num_chr)
-  by_label <- lookups_from_string(
-    val_labels, types = types, sep1 = sep1, sep2 = sep2
+  nms <- names(val_labels)
+  types <- vapply(nms, cb_match_type, character(1), data = data)
+  num_val <- "-?\\d{1,99}"
+  sep2 <- glue_chr("{sep2}(?={num_val}{sep1})")
+  sep1 <- glue_chr("(?<=^{num_val}){sep1}")
+  val_labels <- setNames(stringr::str_split(val_labels, sep2), nms)
+  mapply(
+    fx_inner, 
+    val_labels, nms, types, MoreArgs = list(sep1 = sep1), 
+    SIMPLIFY = FALSE
   )
+}
+
+lookups_from_labelled <- function(cb, data, except = character()) {
+  val_labels <- labelled::val_labels(data)
+  val_labels <- val_labels[!vapply(val_labels, is.null, logical(1))]
+  val_labels[setdiff(names(val_labels), except)]
+}
+
+lookups_from_factor <- function(cb, data) {
+  factors <- attr(cb, "factors")
+  val_labels_fct <- lapply(data[factors], \(x) setNames(nm = levels(x)))
+}
+
+cb_add_lookups <- function(cb, sep1, sep2) {
+  data <- attr(cb, "data")
+  val_labs_str <- cb |>
+    lookups_from_string(data = data, sep1 = sep1, sep2 = sep2)
+  val_labs_haven <- cb |>
+    lookups_from_labelled(data = data, except = names(val_labs_str))
+  cb <- cb |>
+    cb_add_factors(data, except = c(names(val_labs_str), names(val_labs_haven)))
+  val_labs_fct <- cb |>
+    lookups_from_factor(data)
+  
+  by_label <- c(val_labs_str, val_labs_haven, val_labs_fct)
+  by_label <- by_label[order(match(names(by_label), cb$name))]
   by_value <- lapply(by_label, \(x) setNames(names(x), x))
+  
   set_attrs(cb, vals_by_label = by_label, labs_by_value = by_value)
 }
 
@@ -169,10 +198,9 @@ cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
   conflict <- match.arg(conflict)
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
-  factors <- setdiff(names(data)[sapply(data, is.factor)], names(vals_by_label))
-  ordered <- setdiff(names(data)[sapply(data, is.ordered)], names(vals_by_label))
+  factors <- attr(cb, "factors")
   user_missing <- attr(cb, "user_missing")
-  label_vars <- unique(c(names(vals_by_label), factors, names(user_missing)))
+  label_vars <- unique(c(names(vals_by_label), names(user_missing)))
   for (nm in label_vars) {
     missings <- sort(user_missing[[nm]])
     if (nm %in% factors) {
@@ -195,7 +223,7 @@ cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
       )
     }
   }
-  set_attrs(cb, data_labelled = data, factors = factors, ordered = ordered)
+  set_attrs(cb, data_labelled = data)
 }
 
 cb_zap_data <- function(cb) {
@@ -219,7 +247,7 @@ cb_add_dims <- function(cb) {
 }
 
 string_from_lookups <- function(lookups, no_prefix = NULL) {
-  sapply(names(lookups), \(var) {
+  vapply(names(lookups), \(var) {
     x <- lookups[[var]]
     if (is.null(x)) return(NA_character_)
     if (var %in% no_prefix) return(stringr::str_c(x, collapse = "; "))
@@ -229,7 +257,7 @@ string_from_lookups <- function(lookups, no_prefix = NULL) {
     # labs <- names(x)
     # labs <- if (is.null(labs)) "" else stringr::str_c(" ", tidyr::replace_na(labs, ""))
     stringr::str_c(glue_chr("[{x}]{labs}"), collapse = "; ")
-  })
+  }, character(1))
 }
 
 cb_add_val_labels_col <- function(cb, separate_missings = c("if_any", "yes", "no")) {
@@ -239,7 +267,7 @@ cb_add_val_labels_col <- function(cb, separate_missings = c("if_any", "yes", "no
   missings <- labelled::na_values(data)
   separate_missings <- separate_missings == "yes" || (
     separate_missings == "if_any" & !(
-      rlang::is_empty(missings) || all(sapply(missings, rlang::is_empty))
+      rlang::is_empty(missings) || all(vapply(missings, rlang::is_empty, logical(1)))
     )
   )
   # could edit to use `val_labels_valid()`
@@ -258,7 +286,7 @@ cb_add_type_col <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
   cb |>
     dplyr::mutate(
-      type = sapply(data, class_collapse), 
+      type = vapply(data, class_collapse, character(1)), 
       type = stringr::str_replace(type, "ordered, factor", "ordered"),
       .after = name
     )
@@ -266,6 +294,6 @@ cb_add_type_col <- function(cb) {
 
 cb_add_missing_col <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]
-  dplyr::mutate(cb, missing = sapply(data, \(x) mean(is.na(x))))
+  dplyr::mutate(cb, missing = vapply(data, \(x) mean(is.na(x)), double(1)))
 }
 

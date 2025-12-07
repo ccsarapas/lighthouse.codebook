@@ -6,35 +6,24 @@ cb_user_missings_from_spss <- function(cb) {
   cb
 }
 
-cb_add_lookups_spss <- function(cb) {
-  by_label <- labelled::val_labels(attr(cb, "data"))
-  set_attrs(cb, vals_by_label = by_label)
-}
-
 cb_update_labels_spss <- function(cb,
                                   user_missing = NULL,
                                   conflict = c("metadata", "missing_label")) {
-  data_labelled <- attr(cb, "data")
+  data <- attr(cb, "data")
   if (is.null(user_missing)) {
-    labelled_vars <- names(labelled::val_labels(data_labelled))
-    factors <- setdiff(names(data)[sapply(data, is.factor)], labelled_vars)
-    ordered <- setdiff(names(data)[sapply(data, is.ordered)], labelled_vars)
     cb |>
-      set_attrs(
-        data_labelled = data_labelled, 
-        factors = factors, 
-        ordered = ordered
-      )
+      cb_add_lookups() |>
+      set_attrs(data_labelled = data)
   } else {
     user_missing <- check_user_missing_arg(user_missing)
     user_missing_vars <- user_missing |>
-      lapply(\(um) untidyselect(data_labelled, !!rlang::f_lhs(um))) |>
+      lapply(\(um) untidyselect(data, !!rlang::f_lhs(um))) |>
       unlist() |>
       unique()
     cb <- cb |>
       cb_user_missings_from_spss() |>
       cb_user_missings(user_missing = user_missing) |>
-      cb_add_lookups_spss()
+      cb_add_lookups()
     
     # temporarily filter missing and val attributes, so `cb_label_data` only
     # relabels vars for which new user missings were passed
@@ -42,8 +31,8 @@ cb_update_labels_spss <- function(cb,
     attr_vals_by_label <- attr(cb, "vals_by_label")
     cb <- cb |>
       set_attrs(
-        user_missing = attr_user_missing[user_missing_vars],
-        vals_by_label = attr_vals_by_label[user_missing_vars]
+        user_missing = attr_user_missing[names(attr_user_missing) %in% user_missing_vars],
+        vals_by_label = attr_vals_by_label[names(attr_vals_by_label) %in% user_missing_vars]
       ) |>
       cb_label_data(conflict = conflict) |>
       # then restore full missing and val attributes
@@ -75,8 +64,8 @@ cb_zap_data_spss <- function(cb) {
 }
 cb_add_label_col_spss <- function(cb) {
   var_labs <- cb |> 
-    attr("data_labelled") |> 
+    attr("data") |> 
     labelled::var_label() |>
     lighthouse::null_to_na(unlist = TRUE)
-  dplyr::mutate(cb, label = var_labs[name], .after = type)
+  dplyr::mutate(cb, label = var_labs[name], .before = value_labels)
 }
