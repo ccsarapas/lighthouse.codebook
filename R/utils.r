@@ -48,6 +48,11 @@ to_fct_chr <- function(x, levels, detail_missing, na_label) {
 
 names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 
+expand_dt <- function(dt, ...) {
+  grid <- data.table::CJ(...)
+  grid[, as.list(dt), by = grid]
+}
+
 repeats_to_blank <- function(x, replace = c("", "NA")) {
   replace <- if (match.arg(replace) == "NA") NA else ""
   dplyr::if_else(x == dplyr::lag(x, default = replace), replace, x)

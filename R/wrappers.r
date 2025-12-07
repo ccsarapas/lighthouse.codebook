@@ -12,6 +12,7 @@ cb_create_spss <- function(data,
   .user_missing_conflict <- sub("val_label", "metadata", .user_missing_conflict)
   data |>
     cb_init() |>
+    cb_add_label_col_spss() |> 
     cb_update_labels_spss(
       user_missing = .user_missing,
       conflict = .user_missing_conflict
@@ -20,7 +21,6 @@ cb_create_spss <- function(data,
     cb_add_dims() |>
     cb_add_val_labels_col(separate_missings = .separate_missings) |>
     cb_add_type_col() |>
-    cb_add_label_col_spss() |> 
     cb_add_missing_col()
 }
 
@@ -334,89 +334,6 @@ cb_create_redcap <- function(data,
     cb_add_type_col() |>
     cb_add_missing_col() |>
     dplyr::relocate(tidyselect::any_of("form"), type, .after = name)
-}
-
-#' Summarize numeric variables from a codebook object
-#' 
-#' `cb_summarize_numeric()` generates a summary table for all numeric variables
-#' from a codebook object, optionally by group. Future releases will include options
-#' to specify the summary statistics used. Currently, summary statistics are valid
-#' n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis.
-#'
-#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
-#'   a variant.
-#' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
-#'   by.
-#' 
-#' @return A tibble with summary statistics for each numeric variable.
-#' 
-#' @export
-cb_summarize_numeric <- function(cb, group_by = NULL) {
-  check_codebook(cb)
-  out <- cb |>
-    dplyr::filter(type %in% c("numeric", "integer")) |>
-    dplyr::select(tidyselect::any_of(c("name", "label")))
-  nms_num <- out$name
-  data <- attr(cb, "data_zapped")
-  res <- lighthouse::summary_table(
-    data,
-    `Valid n` = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
-    mean, SD = sd,
-    median, MAD = mad, min = lighthouse::min_if_any, max = lighthouse::max_if_any, range = spread_if_any,
-    skew = moments::skewness, kurt = moments::kurtosis,
-    na.rm = TRUE,
-    .vars = tidyselect::all_of(nms_num),
-    .rows_group_by = {{ group_by }}
-  )
-  out |>
-    dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    set_attrs(group_by = rlang::enquo(group_by))
-}
-
-#' Summarize categorical variables from a codebook object
-#'
-#' `cb_summarize_categorical()` generates a frequencies table for all categorical
-#' variables from a codebook object, optionally by group. Variables with value labels,
-#' factors (including ordered factors), and logical variables are treated as categorical.
-#'
-#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
-#'   a variant.
-#' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
-#'   by.
-#' @param prefixed Should value labels be prefixed with the corresponding value?
-#'   e.g., `TRUE` yields `"[1] Value One"`; `FALSE` yields `"Value One"`.
-#' @param detail_missing Include detailed missing value information? Currently supported
-#'   only when no grouping variables are specified.
-#' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
-#'
-#' @return A tibble with frequency information for each categorical variable.
-#'
-#' @export
-cb_summarize_categorical <- function(cb,
-                                     group_by = NULL,
-                                     prefixed = TRUE,
-                                     detail_missing = missing(group_by),
-                                     detail_na_label = "NA") {
-  check_codebook(cb)
-  factors <- attr(cb, "factors")
-  data <- attr(cb, "data_labelled")
-  group_chr <- untidyselect(data, {{ group_by }})
-  summary_cat <- cb |>
-    dplyr::filter(
-      type %in% c("factor", "ordered", "logical"),
-      !(name %in% group_chr)
-    ) |>
-    dplyr::select(tidyselect::any_of(c("name", "label")))
-  vars <- summary_cat$name
-  res <- cb_count_multiple(
-    data, !!!vars,
-    .prefixed = prefixed, .no_prefix = factors,
-    .detail_missing = detail_missing, .detail_na_label = detail_na_label,
-    .by = {{ group_by }}
-  )
-  summary_cat |>
-    dplyr::left_join(res, dplyr::join_by(name)) |>
-    set_attrs(group_by = rlang::enquo(group_by), detail_missing = detail_missing)
 }
 
 
