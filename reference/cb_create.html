@@ -167,6 +167,106 @@ formulas:</p><div class="sourceCode"><pre><code><span></span>
 controls which labels are used.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">diamonds2</span> <span class="op">&lt;-</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="va"><a href="https://ggplot2.tidyverse.org/reference/diamonds.html" class="external-link">diamonds</a></span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/transform.html" class="external-link">transform</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    carat_group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">carat</span>, breaks <span class="op">=</span> <span class="fl">3</span>, labels <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    price_group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>      <span class="va">price</span>,</span></span>
+<span class="r-in"><span>      breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">500</span>, <span class="fl">1000</span>, <span class="fl">2000</span>, <span class="fl">5000</span>, <span class="fl">10000</span>, <span class="cn">Inf</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      labels <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">6</span>,</span></span>
+<span class="r-in"><span>      right <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># basic codebook</span></span></span>
+<span class="r-in"><span><span class="fu">cb_create</span><span class="op">(</span><span class="va">diamonds2</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type    value_labels                           missing</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordered Fair; Good; Very Good; Premium; Ideal        0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> color       ordered D; E; F; G; H; I; J                          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> clarity     ordered I1; SI2; SI1; VS2; VS1; VVS2; VVS1; IF       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> depth       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> table       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> price       integer <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> x           numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> y           numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> z           numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> carat_group integer <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> price_group integer <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># convert variables to factor to treat as categorical</span></span></span>
+<span class="r-in"><span><span class="va">diamonds2</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/transform.html" class="external-link">transform</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    carat_group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">carat_group</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    price_group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">price_group</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span> </span></span>
+<span class="r-in"><span>  <span class="fu">cb_create</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 4</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type    value_labels                           missing</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordered Fair; Good; Very Good; Premium; Ideal        0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> color       ordered D; E; F; G; H; I; J                          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> clarity     ordered I1; SI2; SI1; VS2; VS1; VVS2; VVS1; IF       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> depth       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> table       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> price       integer <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> x           numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> y           numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> z           numeric <span style="color: #BB0000;">NA</span>                                           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> carat_group factor  1; 2; 3                                      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> price_group factor  1; 2; 3; 4; 5; 6                             0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># provide metadata for variable and value labels</span></span></span>
+<span class="r-in"><span><span class="va">diamonds_meta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">diamonds2</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="co"># from ?ggplot2::diamonds</span></span></span>
+<span class="r-in"><span>    <span class="st">"price in US dollars ($326–$18,823)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"weight of the diamond (0.2–5.01)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"quality of the cut (Fair, Good, Very Good, Premium, Ideal)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"diamond colour, from D (best) to J (worst)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"a measurement of how clear the diamond is (I1 (worst), SI2, SI1, VS2, VS1, VVS2, VVS1, IF (best))"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"length in mm (0–10.74)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"width in mm (0–58.9)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"depth in mm (0–31.8)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"total depth percentage = z / mean(x, y) = 2 * z / (x + y) (43–79)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"width of top of diamond relative to widest point (43–95)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"diamond carat (3 groups)"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"diamond price (6 groups)"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  val_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">10</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"1 = small; 2 = medium; 3 = large"</span>,</span></span>
+<span class="r-in"><span>    <span class="st">"1 = &lt;$500; 2 = $500-$999; 3 = $1,000-$1,999; 4 = $2,000-$4,999; 5 = $5,000-$9,999; 6 = $10,000+"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">cb_create</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">diamonds2</span>, <span class="va">diamonds_meta</span>,</span></span>
+<span class="r-in"><span>  .val_labs_sep1 <span class="op">=</span> <span class="st">" = "</span>, .val_labs_sep2 <span class="op">=</span> <span class="st">"; "</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type    label                                value_labels missing</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric price in US dollars ($326–$18,823)   <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordered weight of the diamond (0.2–5.01)     Fair; Good;…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> color       ordered quality of the cut (Fair, Good, Ver… D; E; F; G;…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> clarity     ordered diamond colour, from D (best) to J … I1; SI2; SI…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> depth       numeric a measurement of how clear the diam… <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> table       numeric length in mm (0–10.74)               <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> price       integer width in mm (0–58.9)                 <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> x           numeric depth in mm (0–31.8)                 <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> y           numeric total depth percentage = z / mean(x… <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> z           numeric width of top of diamond relative to… <span style="color: #BB0000;">NA</span>                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> carat_group factor  diamond carat (3 groups)             [1] small; …       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> price_group factor  diamond price (6 groups)             [1] &lt;$500; …       0</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 
