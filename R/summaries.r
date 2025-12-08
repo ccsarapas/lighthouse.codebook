@@ -119,15 +119,17 @@ cb_summarize_categorical <- function(cb,
     grp_labs[[col]] <- sort(unique(v))
     data.table::set(data_dt, j = col, value = v)
   }
-  var_labs <- data.table::as.data.table(cb)[, list(name, label)]
   all_vals <- data.table::data.table(
     name = rep(names(val_labs), val_labs_len),
     value_lab = unlist(lapply(unname(val_labs), names)),
     value_val = as.character(unlist(val_labs)),
     is_missing = unlist(is_missing)
   )
-  all_vars <- merge(var_labs, all_vals, by = "name", all.y = TRUE, sort = FALSE)
-  all_vars <- do.call(expand_dt, c(list(all_vars), grp_labs))
+  if ("label" %in% names(cb)) {
+    var_labs <- data.table::as.data.table(cb)[, list(name, label)]
+    all_vals <- merge(var_labs, all_vals, by = "name", all.y = TRUE, sort = FALSE)
+  }
+  all_vals <- do.call(expand_dt, c(list(all_vals), grp_labs))
 
   if (detail_missing) {
     col_to_chr <- as.character
@@ -146,7 +148,7 @@ cb_summarize_categorical <- function(cb,
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
   
   freqs <- merge(
-      all_vars, freqs,
+      all_vals, freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
     ) |> 
     _[is.na(value_val), is_missing := TRUE] |>
@@ -162,10 +164,17 @@ cb_summarize_categorical <- function(cb,
       ),
       by = c("name", "is_missing")
     ] |>
-    _[, c(cols_grp, "name", "label", "is_missing", "value", "n"), with = FALSE] |>
     _[, pct_of_all := n / sum(n), by = c(cols_grp, "name")] |>
     _[!(is_missing), pct_of_valid := n / sum(n), by = c(cols_grp, "name")]
-
+  
+  data.table::setcolorder(
+    freqs,
+    intersect(
+      c(cols_grp, "name", "label", "is_missing", "value", "n"),
+      names(freqs)
+    )
+  )
+  
   if (detail_missing) {
     freqs[(is_missing), pct_of_missing := n / sum(n), by = c(cols_grp, "name")]
   } else {
