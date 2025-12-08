@@ -270,8 +270,8 @@ cb_add_val_labels_col <- function(cb, separate_missings = c("if_any", "yes", "no
       rlang::is_empty(missings) || all(vapply(missings, rlang::is_empty, logical(1)))
     )
   )
-  # could edit to use `val_labels_valid()`
   if (separate_missings) {
+    missings <- lapply(missings, try_sort_numeric)
     val_labs <- mapply(\(v, m) v[!(v %in% m)], v = val_labs, m = missings)
     missings <- string_from_lookups(missings)
   } else {

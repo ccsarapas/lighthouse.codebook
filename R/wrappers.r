@@ -1,5 +1,7 @@
-
-
+#' Generate a codebook object from an SPSS dataset
+#' 
+#' TODO: write docs
+#' @export
 cb_create_spss <- function(data,
                            .user_missing = NULL,
                            # these would require a different implementation -- omitted for now
@@ -23,9 +25,6 @@ cb_create_spss <- function(data,
     cb_add_type_col() |>
     cb_add_missing_col()
 }
-
-
-
 
 #' Generate a codebook object
 #'

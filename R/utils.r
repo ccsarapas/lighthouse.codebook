@@ -20,6 +20,29 @@ set_attrs <- function(x, ...) {
   for (nm in names(dots)) attr(x, nm) <- dots[[nm]]
   x
 }
+
+sort_as_numeric <- function(x, decreasing = FALSE, ...) {
+  x[order(as.numeric(x), decreasing = decreasing, ...)]
+}
+try_sort_numeric <- function(x,
+                             decreasing = FALSE,
+                             partial = c("numeric", "character"),
+                             ...) {
+  coercible <- lighthouse::is_coercible_numeric(x, na = "TRUE")
+  if (all(coercible)) {
+    sort_as_numeric(x, decreasing = decreasing, ...)
+  } else if (match.arg(partial) == "numeric") {
+    c(
+      sort_as_numeric(x[coercible], decreasing = decreasing, ...),
+      sort(x[!coercible], decreasing = decreasing, ...)
+    )
+  } else {
+    sort(x, decreasing = decreasing, ...)
+  }
+}
+try_sort_numeric(letters)
+  coercible <- lighthouse::is_coercible_numeric(letters, na = "TRUE")
+
 class_collapse <- function(x, sep = ", ") stringr::str_c(class(x), collapse = sep)
 strip_html <- function(x) {
   stopifnot(is.character(x))

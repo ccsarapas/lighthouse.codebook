@@ -63,8 +63,9 @@ cb_summarize_categorical <- function(cb,
   check_codebook(cb)
   factors <- attr(cb, "factors")
   val_labs <- attr(cb, "vals_by_label")
-  data_dt <- data.table::as.data.table(attr(cb, "data_labelled"))
-
+  data <- attr(cb, "data_labelled")
+  data_dt <- data.table::as.data.table(data)
+  
   ## define column groups
   val_labs <- attr(cb, "vals_by_label")
   cols_grp <- untidyselect(data, {{ group_by }})
@@ -95,7 +96,10 @@ cb_summarize_categorical <- function(cb,
     }
     is_missing[[nm]] <- labs %in% miss
   }
-  lgl_labs <- lapply(setNames(nm = cols_lgl), \(x) c("TRUE", "FALSE"))
+  lgl_labs <- lapply(
+    setNames(nm = cols_lgl), 
+    \(x) setNames(nm = c("TRUE", "FALSE"))
+  )
   lgl_miss <- lapply(setNames(nm = cols_lgl), \(x) c(FALSE, FALSE))
   val_labs <- c(val_labs, lgl_labs)
   is_missing <- c(is_missing, lgl_miss)
@@ -112,10 +116,9 @@ cb_summarize_categorical <- function(cb,
     v <- data_dt[[col]]
     v <- labelled::to_factor(v, sort_levels = "values", user_na_to_na = TRUE)
     if (anyNA(v)) v <- forcats::fct_na_value_to_level(v, "(Missing)")
+    grp_labs[[col]] <- sort(unique(v))
     data.table::set(data_dt, j = col, value = v)
-    grp_labs[[grp]] <- levels(v)
   }
-
   var_labs <- data.table::as.data.table(cb)[, .(name, label)]
   all_vals <- data.table::data.table(
     name = rep(names(val_labs), val_labs_len),
@@ -137,17 +140,18 @@ cb_summarize_categorical <- function(cb,
   }
   
   freqs <- data.table::melt(
-      data_dt,
-      id.vars = cols_grp, variable.name = "name", value.name = "value_val"
+      data_dt, id.vars = cols_grp, variable.name = "name", 
+      value.name = "value_val", variable.factor = FALSE
     ) |> 
     _[, .(n = .N), by = c(cols_grp, "name", "value_val")]
-
+  
   freqs <- merge(
       all_vars, freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
     ) |> 
     _[is.na(value_val), is_missing := TRUE] |>
     _[!(is.na(n) & is_missing), ] |>
+    _[order(match(name, unique(name)))] |> 
     _[is.na(n), n := 0L] |>
     _[,
       value := data.table::fcase(
@@ -167,5 +171,10 @@ cb_summarize_categorical <- function(cb,
   } else {
     freqs[, is_missing := NULL]
   }
-  tibble::as_tibble(freqs)
+  freqs |>
+    tibble::as_tibble() |>
+    set_attrs(
+      group_by = rlang::enquo(group_by),
+      detail_missing = detail_missing
+    )
 }
