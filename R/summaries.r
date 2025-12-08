@@ -53,7 +53,8 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
 #'
 #' @return A tibble with frequency information for each categorical variable.
-#'
+#' 
+#' @import data.table
 #' @export
 cb_summarize_categorical <- function(cb,
                                      group_by = NULL,
@@ -119,7 +120,7 @@ cb_summarize_categorical <- function(cb,
     grp_labs[[col]] <- sort(unique(v))
     data.table::set(data_dt, j = col, value = v)
   }
-  var_labs <- data.table::as.data.table(cb)[, .(name, label)]
+  var_labs <- data.table::as.data.table(cb)[, list(name, label)]
   all_vals <- data.table::data.table(
     name = rep(names(val_labs), val_labs_len),
     value_lab = unlist(lapply(unname(val_labs), names)),
@@ -143,7 +144,7 @@ cb_summarize_categorical <- function(cb,
       data_dt, id.vars = cols_grp, variable.name = "name", 
       value.name = "value_val", variable.factor = FALSE
     ) |> 
-    _[, .(n = .N), by = c(cols_grp, "name", "value_val")]
+    _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
   
   freqs <- merge(
       all_vars, freqs,

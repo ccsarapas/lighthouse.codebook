@@ -260,6 +260,7 @@ string_from_lookups <- function(lookups, no_prefix = NULL) {
   }, character(1))
 }
 
+
 cb_add_val_labels_col <- function(cb, separate_missings = c("if_any", "yes", "no")) {
   separate_missings <- match.arg(separate_missings)
   data <- attr(cb, "data_labelled")[cb$name]
