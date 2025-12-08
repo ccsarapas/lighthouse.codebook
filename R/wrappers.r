@@ -1,6 +1,42 @@
 #' Generate a codebook object from an SPSS dataset
+#'
+#' @description
+#' `cb_create_spss()` builds an object of class `"li_codebook"` from an SPSS dataset
+#' (imported using `haven::read_spss()`, `read_sav()`, or `read_por()`). Metadata 
+#' including variable labels, value labels, and user missing values are extracted 
+#' from the imported dataset. (User missing values can also be set using the `.user_missing` 
+#' argument.)` 
 #' 
-#' TODO: write docs
+#' The resulting object can be used to write an Excel workbook with variable and 
+#' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]), 
+#' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
+#' 
+#' @inheritParams cb_create
+#' @param data A data frame exported or retrieved from REDCap.
+#' @param .user_missing A formula or list of formulas specifying user missing values.
+#'   Formulas should specify variables on the left-hand side (as variable names
+#'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
+#'   right-hand side. See "Specifying user missing values" in [`cb_create()`] documentation 
+#'   for examples.
+#' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with 
+#'   a value label in the `data`, which should be used?
+#' @return
+#' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
+#' dataset and (2) attributes containing the passed dataset (in several formats)
+#' and additional metadata. Specifically:
+#' - A tibble with columns:
+#'     - `name`: variable name
+#'     - `type`: variable type
+#'     - `label`: variable label
+#'     - `value_labels`: value labels
+#'     - `user_missing`: optional column, depending on value of `.separate_missings`,
+#'        with value labels for user missing values
+#'     - `missing`: proportion missing
+#' - Attributes:
+#'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
+#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
+#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`#'
+#'
 #' @export
 cb_create_spss <- function(data,
                            .user_missing = NULL,
