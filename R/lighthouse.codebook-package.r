@@ -1,3 +1,5 @@
+.datatable.aware <- TRUE
+
 #' @keywords internal
 "_PACKAGE"
 

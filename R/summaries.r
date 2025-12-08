@@ -54,7 +54,6 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
 #'
 #' @return A tibble with frequency information for each categorical variable.
 #' 
-#' @import data.table
 #' @export
 cb_summarize_categorical <- function(cb,
                                      group_by = NULL,
