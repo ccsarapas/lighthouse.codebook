@@ -9,6 +9,7 @@ Authors@R:
 Description: Functions to generate codebooks and dataset summaries for Lighthouse Institute projects.
 Imports:
     cli,
+    data.table,
     dplyr,
     haven,
     labelled,
