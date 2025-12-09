@@ -87,8 +87,9 @@ and metadata, including:</p><ul><li><p>Defaults for typical REDCap metadata colu
 <span>  .coerce_integers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  .checkbox_resp_values <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  .propagate_checkbox_missings <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  .separate_missings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"if_any"</span>, <span class="st">"yes"</span>, <span class="st">"no"</span><span class="op">)</span>,</span>
-<span>  .user_missing_conflict <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metadata"</span>, <span class="st">"missing_label"</span><span class="op">)</span></span>
+<span>  .user_missing_col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"if_any"</span>, <span class="st">"yes"</span>, <span class="st">"no"</span><span class="op">)</span>,</span>
+<span>  .user_missing_conflict <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metadata"</span>, <span class="st">"missing_label"</span><span class="op">)</span>,</span>
+<span>  .user_missing_incompatible <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ignore"</span>, <span class="st">"warn"</span>, <span class="st">"error"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -123,8 +124,8 @@ name, variable label, and value labels, respectively.</p></dd>
 <dd><p>A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
 or <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidyselect</a> expressions), and missing values on the
-right-hand side. See "Specifying user missing values" in <code><a href="cb_create.html">cb_create()</a></code> documentation
-for examples.</p></dd>
+right-hand side. If left-hand side is omitted, defaults to <code><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">tidyselect::everything()</a></code>.
+See "Specifying user missing values" in <code><a href="cb_create.html">cb_create()</a></code> documentation  for examples.</p></dd>
 
 
 <dt id="arg--val-labs-sep-val-labs-sep-">.val_labs_sep1, .val_labs_sep2<a class="anchor" aria-label="anchor" href="#arg--val-labs-sep-val-labs-sep-"></a></dt>
@@ -160,7 +161,7 @@ group be propagated across all variables in the group? See "Checkbox data handli
 below.</p></dd>
 
 
-<dt id="arg--separate-missings">.separate_missings<a class="anchor" aria-label="anchor" href="#arg--separate-missings"></a></dt>
+<dt id="arg--user-missing-col">.user_missing_col<a class="anchor" aria-label="anchor" href="#arg--user-missing-col"></a></dt>
 <dd><p>Include value labels for user missing values in a separate
 column? The default, <code>"if_any"</code>, adds the column only if user missings are
 specified for at least one variable.</p></dd>
@@ -169,6 +170,11 @@ specified for at least one variable.</p></dd>
 <dt id="arg--user-missing-conflict">.user_missing_conflict<a class="anchor" aria-label="anchor" href="#arg--user-missing-conflict"></a></dt>
 <dd><p>If different labels for a value are provided in
 metadata and user missings, which should be used?</p></dd>
+
+
+<dt id="arg--user-missing-incompatible">.user_missing_incompatible<a class="anchor" aria-label="anchor" href="#arg--user-missing-incompatible"></a></dt>
+<dd><p>How to handle variables specified in <code>.user_missing</code>
+that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -180,7 +186,7 @@ and additional metadata. Specifically:</p><ul><li><p>A tibble with columns:</p><
 <li><p><code>type</code>: variable type</p></li>
 <li><p><code>label</code>: variable label</p></li>
 <li><p><code>value_labels</code>: value labels</p></li>
-<li><p><code>user_missing</code>: optional column, depending on value of <code>.separate_missings</code>,
+<li><p><code>user_missing</code>: optional column, depending on value of <code>.user_missing_col</code>,
 with value labels for user missing values</p></li>
 <li><p><code>missing</code>: proportion missing</p></li>
 <li><p>additional columns if specified in <code>...</code></p></li>

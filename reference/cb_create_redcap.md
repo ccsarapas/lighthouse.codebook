@@ -45,8 +45,9 @@ cb_create_redcap(
   .coerce_integers = TRUE,
   .checkbox_resp_values = FALSE,
   .propagate_checkbox_missings = TRUE,
-  .separate_missings = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("metadata", "missing_label")
+  .user_missing_col = c("if_any", "yes", "no"),
+  .user_missing_conflict = c("metadata", "missing_label"),
+  .user_missing_incompatible = c("ignore", "warn", "error")
 )
 ```
 
@@ -81,8 +82,10 @@ cb_create_redcap(
   A formula or list of formulas specifying user missing values. Formulas
   should specify variables on the left-hand side (as variable names or
   [tidyselect](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  expressions), and missing values on the right-hand side. See
-  "Specifying user missing values" in
+  expressions), and missing values on the right-hand side. If left-hand
+  side is omitted, defaults to
+  [`tidyselect::everything()`](https://tidyselect.r-lib.org/reference/everything.html).
+  See "Specifying user missing values" in
   [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
   documentation for examples.
 
@@ -120,7 +123,7 @@ cb_create_redcap(
   Should user missing values in a checkbox group be propagated across
   all variables in the group? See "Checkbox data handling" below.
 
-- .separate_missings:
+- .user_missing_col:
 
   Include value labels for user missing values in a separate column? The
   default, `"if_any"`, adds the column only if user missings are
@@ -130,6 +133,11 @@ cb_create_redcap(
 
   If different labels for a value are provided in metadata and user
   missings, which should be used?
+
+- .user_missing_incompatible:
+
+  How to handle variables specified in `.user_missing` that aren't
+  compatible with user missing values (e.g., logical, Date, or POSIXt)?
 
 ## Value
 
@@ -150,7 +158,7 @@ several formats) and additional metadata. Specifically:
   - `value_labels`: value labels
 
   - `user_missing`: optional column, depending on value of
-    `.separate_missings`, with value labels for user missing values
+    `.user_missing_col`, with value labels for user missing values
 
   - `missing`: proportion missing
 

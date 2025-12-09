@@ -24,8 +24,9 @@ and
 cb_create_spss(
   data,
   .user_missing = NULL,
-  .separate_missings = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("val_label", "missing_label")
+  .user_missing_col = c("if_any", "yes", "no"),
+  .user_missing_conflict = c("val_label", "missing_label"),
+  .user_missing_incompatible = c("ignore", "warn", "error")
 )
 ```
 
@@ -40,12 +41,14 @@ cb_create_spss(
   A formula or list of formulas specifying user missing values. Formulas
   should specify variables on the left-hand side (as variable names or
   [tidyselect](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  expressions), and missing values on the right-hand side. See
-  "Specifying user missing values" in
+  expressions), and missing values on the right-hand side. If left-hand
+  side is omitted, defaults to
+  [`tidyselect::everything()`](https://tidyselect.r-lib.org/reference/everything.html).
+  See "Specifying user missing values" in
   [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
   documentation for examples.
 
-- .separate_missings:
+- .user_missing_col:
 
   Include value labels for user missing values in a separate column? The
   default, `"if_any"`, adds the column only if user missings are
@@ -55,6 +58,11 @@ cb_create_spss(
 
   If labels passed to `.user_missing` conflicts with a value label in
   the `data`, which should be used?
+
+- .user_missing_incompatible:
+
+  How to handle variables specified in `.user_missing` that aren't
+  compatible with user missing values (e.g., logical, Date, or POSIXt)?
 
 ## Value
 
@@ -73,7 +81,7 @@ several formats) and additional metadata. Specifically:
   - `value_labels`: value labels
 
   - `user_missing`: optional column, depending on value of
-    `.separate_missings`, with value labels for user missing values
+    `.user_missing_col`, with value labels for user missing values
 
   - `missing`: proportion missing
 

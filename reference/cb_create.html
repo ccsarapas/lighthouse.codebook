@@ -59,8 +59,9 @@ or generate dataset summaries (<code><a href="cb_summarize_numeric.html">cb_summ
 <span>  .val_labs_sep2 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  .rmv_html <span class="op">=</span> <span class="op">!</span><span class="va">name</span>,</span>
 <span>  .rmv_line_breaks <span class="op">=</span> <span class="op">!</span><span class="va">name</span>,</span>
-<span>  .separate_missings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"if_any"</span>, <span class="st">"yes"</span>, <span class="st">"no"</span><span class="op">)</span>,</span>
-<span>  .user_missing_conflict <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metadata"</span>, <span class="st">"missing_label"</span><span class="op">)</span></span>
+<span>  .user_missing_col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"if_any"</span>, <span class="st">"yes"</span>, <span class="st">"no"</span><span class="op">)</span>,</span>
+<span>  .user_missing_conflict <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metadata"</span>, <span class="st">"missing_label"</span><span class="op">)</span>,</span>
+<span>  .user_missing_incompatible <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ignore"</span>, <span class="st">"warn"</span>, <span class="st">"error"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -94,7 +95,8 @@ to omit.</p></dd>
 <dd><p>A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
 or <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidyselect</a> expressions), and missing values on the
-right-hand side. See "Specifying user missing values" below for examples.</p></dd>
+right-hand side. If left-hand side is omitted, defaults to <code><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">tidyselect::everything()</a></code>.
+See "Specifying user missing values" below for examples.</p></dd>
 
 
 <dt id="arg--val-labs-sep-val-labs-sep-">.val_labs_sep1, .val_labs_sep2<a class="anchor" aria-label="anchor" href="#arg--val-labs-sep-val-labs-sep-"></a></dt>
@@ -114,7 +116,7 @@ HTML tags should be removed.</p></dd>
 from which line breaks should be removed.</p></dd>
 
 
-<dt id="arg--separate-missings">.separate_missings<a class="anchor" aria-label="anchor" href="#arg--separate-missings"></a></dt>
+<dt id="arg--user-missing-col">.user_missing_col<a class="anchor" aria-label="anchor" href="#arg--user-missing-col"></a></dt>
 <dd><p>Include value labels for user missing values in a separate
 column? The default, <code>"if_any"</code>, adds the column only if user missings are
 specified for at least one variable.</p></dd>
@@ -123,6 +125,11 @@ specified for at least one variable.</p></dd>
 <dt id="arg--user-missing-conflict">.user_missing_conflict<a class="anchor" aria-label="anchor" href="#arg--user-missing-conflict"></a></dt>
 <dd><p>If different labels for a value are provided in
 metadata and user missings, which should be used?</p></dd>
+
+
+<dt id="arg--user-missing-incompatible">.user_missing_incompatible<a class="anchor" aria-label="anchor" href="#arg--user-missing-incompatible"></a></dt>
+<dd><p>How to handle variables specified in <code>.user_missing</code>
+that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -133,7 +140,7 @@ and additional metadata. Specifically:</p><ul><li><p>A tibble with columns:</p><
 <li><p><code>type</code>: variable type</p></li>
 <li><p><code>label</code>: variable label</p></li>
 <li><p><code>value_labels</code>: value labels</p></li>
-<li><p><code>user_missing</code>: optional column, depending on value of <code>.separate_missings</code>,
+<li><p><code>user_missing</code>: optional column, depending on value of <code>.user_missing_col</code>,
 with value labels for user missing values</p></li>
 <li><p><code>missing</code>: proportion missing</p></li>
 <li><p>additional columns if specified in <code>...</code></p></li>
@@ -150,21 +157,27 @@ with value labels for user missing values</p></li>
 <p>User missing values are defined by passing a formula or list of formulas to the
 <code>.user_missing</code> argument. Formulas should specify variables on the left-hand
 side and user missing values for those variables on the right-hand side:</p><div class="sourceCode"><pre><code><span></span>
-<span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create_redcap.html">cb_create_redcap</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span>, .user_missing <span class="op">=</span> <span class="va">var1</span> <span class="op">~</span> <span class="fl">99</span><span class="op">)</span></span></code></pre></div><p>The same user missings can be applied to multiple variables using
-<a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidyselect</a> expressions:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create_redcap.html">cb_create_redcap</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span>, .user_missing <span class="op">=</span> <span class="va">var1</span> <span class="op">~</span> <span class="fl">99</span><span class="op">)</span></span></code></pre></div><p>The same user missings can be applied to multiple variables using <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidyselect</a>
+expressions.</p><div class="sourceCode"><pre><code><span></span>
 <span><span class="co"># for variables `var1` through `var5`</span></span>
 <span><span class="va">.user_missing</span> <span class="op">=</span> <span class="va">var1</span><span class="op">:</span><span class="va">var5</span> <span class="op">~</span> <span class="fl">99</span></span>
 <span></span>
 <span><span class="co"># for all numeric variables, plus `var6` and `var7`</span></span>
-<span><span class="va">.user_missing</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">where</span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span>, <span class="va">var6</span>, <span class="va">var7</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9</span>, <span class="op">-</span><span class="fl">8</span>, <span class="op">-</span><span class="fl">7</span><span class="op">)</span></span></code></pre></div><p>Different user missings can be applied to different variables using a list of
+<span><span class="va">.user_missing</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">where</span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span>, <span class="va">var6</span>, <span class="va">var7</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9</span>, <span class="op">-</span><span class="fl">8</span>, <span class="op">-</span><span class="fl">7</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># omitted left-hand side defaults to `tidyselect::everything()`</span></span>
+<span><span class="va">.user_missing</span> <span class="op">=</span> <span class="op">~</span> <span class="op">-</span><span class="fl">99</span></span></code></pre></div><p>Different user missings can be applied to different variables using a list of
 formulas:</p><div class="sourceCode"><pre><code><span></span>
 <span><span class="va">.user_missing</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="fu">starts_with</span><span class="op">(</span><span class="st">"status"</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">98</span>, <span class="fl">99</span><span class="op">)</span>,</span>
 <span>  <span class="va">var7</span><span class="op">:</span><span class="va">var10</span> <span class="op">~</span> <span class="fl">97</span></span>
 <span><span class="op">)</span></span></code></pre></div><p>User missing values may optionally be named to set value labels:</p><div class="sourceCode"><pre><code><span></span>
-<span><span class="va">.user_missing</span> <span class="op">=</span> <span class="fu">where</span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span> <span class="op">~</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Declined <span class="op">=</span> <span class="op">-</span><span class="fl">97</span>, <span class="st">"Don't know"</span> <span class="op">=</span> <span class="op">-</span><span class="fl">98</span>, <span class="st">"Not applicable"</span> <span class="op">=</span> <span class="op">-</span><span class="fl">99</span><span class="op">)</span></span></code></pre></div><p>If labels set in <code>.user_missing</code> conflict with those in <code>metadata</code>, <code>.user_missing_conflict</code>
+<span><span class="va">.user_missing</span> <span class="op">=</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Declined <span class="op">=</span> <span class="op">-</span><span class="fl">98</span>, <span class="st">"Not applicable"</span> <span class="op">=</span> <span class="op">-</span><span class="fl">99</span><span class="op">)</span></span></code></pre></div><p>If labels set in <code>.user_missing</code> conflict with those in <code>metadata</code>, <code>.user_missing_conflict</code>
 controls which labels are used.</p>
+<p>User missing values are not compatible with logical, date, or datetime (POSIXt)
+variables. By default, these variables will be ignored if specified in <code>.user_missing</code>.
+(i.e., user missing values will be applied only to compatible variables.) This behavior
+can be changed using the <code>.user_missing_incompatible</code> argument.</p>
     </div>
 
     <div class="section level2">

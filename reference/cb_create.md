@@ -26,8 +26,9 @@ cb_create(
   .val_labs_sep2 = NULL,
   .rmv_html = !name,
   .rmv_line_breaks = !name,
-  .separate_missings = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("metadata", "missing_label")
+  .user_missing_col = c("if_any", "yes", "no"),
+  .user_missing_conflict = c("metadata", "missing_label"),
+  .user_missing_incompatible = c("ignore", "warn", "error")
 )
 ```
 
@@ -61,8 +62,10 @@ cb_create(
   A formula or list of formulas specifying user missing values. Formulas
   should specify variables on the left-hand side (as variable names or
   [tidyselect](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-  expressions), and missing values on the right-hand side. See
-  "Specifying user missing values" below for examples.
+  expressions), and missing values on the right-hand side. If left-hand
+  side is omitted, defaults to
+  [`tidyselect::everything()`](https://tidyselect.r-lib.org/reference/everything.html).
+  See "Specifying user missing values" below for examples.
 
 - .val_labs_sep1, .val_labs_sep2:
 
@@ -82,7 +85,7 @@ cb_create(
   \<[`tidy-select`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)\>
   Codebook columns from which line breaks should be removed.
 
-- .separate_missings:
+- .user_missing_col:
 
   Include value labels for user missing values in a separate column? The
   default, `"if_any"`, adds the column only if user missings are
@@ -92,6 +95,11 @@ cb_create(
 
   If different labels for a value are provided in metadata and user
   missings, which should be used?
+
+- .user_missing_incompatible:
+
+  How to handle variables specified in `.user_missing` that aren't
+  compatible with user missing values (e.g., logical, Date, or POSIXt)?
 
 ## Value
 
@@ -110,7 +118,7 @@ several formats) and additional metadata. Specifically:
   - `value_labels`: value labels
 
   - `user_missing`: optional column, depending on value of
-    `.separate_missings`, with value labels for user missing values
+    `.user_missing_col`, with value labels for user missing values
 
   - `missing`: proportion missing
 
@@ -136,13 +144,16 @@ right-hand side:
 
 The same user missings can be applied to multiple variables using
 [tidyselect](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
-expressions:
+expressions.
 
     # for variables `var1` through `var5`
     .user_missing = var1:var5 ~ 99
 
     # for all numeric variables, plus `var6` and `var7`
     .user_missing = c(where(is.numeric), var6, var7) ~ c(-9, -8, -7)
+
+    # omitted left-hand side defaults to `tidyselect::everything()`
+    .user_missing = ~ -99
 
 Different user missings can be applied to different variables using a
 list of formulas:
@@ -154,11 +165,16 @@ list of formulas:
 
 User missing values may optionally be named to set value labels:
 
-    .user_missing = where(is.numeric) ~
-      c(Declined = -97, "Don't know" = -98, "Not applicable" = -99)
+    .user_missing = ~ c(Declined = -98, "Not applicable" = -99)
 
 If labels set in `.user_missing` conflict with those in `metadata`,
 `.user_missing_conflict` controls which labels are used.
+
+User missing values are not compatible with logical, date, or datetime
+(POSIXt) variables. By default, these variables will be ignored if
+specified in `.user_missing`. (i.e., user missing values will be applied
+only to compatible variables.) This behavior can be changed using the
+`.user_missing_incompatible` argument.
 
 ## Examples
 
