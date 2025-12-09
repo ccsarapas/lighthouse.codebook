@@ -1,5 +1,6 @@
 ## `field_name` and `field_type` are hard-coded -- do they always have these names?
 meta_expand_checkboxes_rc <- function(meta, data) {
+  if (!("checkbox" %in% meta$field_type)) return(meta)
   datanames <- names(data)
   checkbox_names <- meta |>
     dplyr::filter(field_type == "checkbox") |>
@@ -59,6 +60,7 @@ cb_relabel_checkboxes_rc <- function(cb, use_resp_values = FALSE) {
     }
     setNames(0:1, labs)
   }
+  if (!("checkbox" %in% cb$..rc_type)) return(dplyr::select(cb, !..rc_type))
   cb_chk <- cb |>
     dplyr::filter(..rc_type == "checkbox") |>
     dplyr::mutate(
@@ -131,8 +133,9 @@ cb_complete_label_rc <- function(cb) {
 }
 
 cb_propagate_user_missing_checkboxes_rc <- function(cb) {
-  data <- attr(cb, "data")
   mp <- attr(cb, "miss_propagate")
+  if (is.null(mp)) return(cb)
+  data <- attr(cb, "data")
   for (mpi in mp) {
     for (var in mpi$vars) {
       data[[var]][data[[mpi$flag]] == 1] <- mpi$val
