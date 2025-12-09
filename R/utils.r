@@ -71,13 +71,35 @@ repeats_to_blank <- function(x, replace = c("", "NA")) {
   replace <- if (match.arg(replace) == "NA") NA else ""
   dplyr::if_else(x == dplyr::lag(x, default = replace), replace, x)
 }
+class(1)
+
+
+can_have_labels <- function(nm, data) {
+  allowed <- c(
+    "integer", "double", "numeric", "character", "factor", "ordered",
+    "haven_labelled", "haven_labelled_spss", "vctrs_vctr"
+  )
+  vapply(data[nm], \(x) all(class(x) %in% allowed), logical(1))  
+}
+
+# check_can_have_labels <- function(nm, data) {
+#   ok <- can_have_labels(nm, data)
+#   if (!all(ok)) {
+#     bad_var <- nm[!ok][[1]]
+#     bad_class <- class(data[[bad_var]])
+#     cli::cli_abort(c(
+#       "!" = "This operation is not currently supported for variables of this class.",
+#       "i" = "Variable {.var {nm}} with class {.cls {classes}}"
+#     ))
+
+# }
 
 cb_match_type <- function(nm, 
                           data, 
                           ignore = c("ordered", "haven_labelled", "haven_labelled_spss", "vctrs_vctr")) {
   classes <- class(data[[nm]])
   classes_diff <- setdiff(classes, ignore)
-  if (length(classes_diff) != 1) {
+  if (!can_have_labels(nm, data) || length(classes_diff) != 1) {
     cli::cli_abort(c(
       "!" = "This operation is not currently supported for variables of this class.",
       "i" = "Variable {.var {nm}} with class {.cls {classes}}"

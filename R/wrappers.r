@@ -29,7 +29,7 @@
 #'     - `type`: variable type
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
-#'     - `user_missing`: optional column, depending on value of `.separate_missings`,
+#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
 #'        with value labels for user missing values
 #'     - `missing`: proportion missing
 #' - Attributes:
@@ -43,21 +43,20 @@ cb_create_spss <- function(data,
                            # these would require a different implementation -- omitted for now
                            #   .rmv_html = !name,
                            #   .rmv_line_breaks = !name,
-                           .separate_missings = c("if_any", "yes", "no"),
-                           .user_missing_conflict = c("val_label", "missing_label")) {
-  .separate_missings <- match.arg(.separate_missings)
-  .user_missing_conflict <- match.arg(.user_missing_conflict)
-  .user_missing_conflict <- sub("val_label", "metadata", .user_missing_conflict)
+                           .user_missing_col = c("if_any", "yes", "no"),
+                           .user_missing_conflict = c("val_label", "missing_label"),
+                           .user_missing_incompatible = c("ignore", "warn", "error")) {
   data |>
     cb_init() |>
     cb_add_label_col_spss() |> 
     cb_update_labels_spss(
       user_missing = .user_missing,
-      conflict = .user_missing_conflict
+      user_missing_conflict = .user_missing_conflict,
+      user_missing_incompatible = .user_missing_incompatible
     ) |>
     cb_zap_data_spss() |>
     cb_add_dims() |>
-    cb_add_val_labels_col(separate_missings = .separate_missings) |>
+    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
     cb_add_missing_col()
 }
@@ -92,12 +91,14 @@ cb_create_spss <- function(data,
 #'   HTML tags should be removed.
 #' @param .rmv_line_breaks <[`tidy-select`][dplyr_tidy_select]> Codebook columns
 #'   from which line breaks should be removed.
-#' @param .separate_missings Include value labels for user missing values in a separate
+#' @param .user_missing_col Include value labels for user missing values in a separate
 #'   column? The default, `"if_any"`, adds the column only if user missings are
 #'   specified for at least one variable.
 #' @param .user_missing_conflict If different labels for a value are provided in
 #'   metadata and user missings, which should be used?
-#'
+#' @param .user_missing_incompatible How to handle variables specified in `.user_missing` 
+#'   that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?
+#' 
 #' @return
 #' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
 #' dataset and (2) attributes containing the passed dataset (in several formats)
@@ -107,7 +108,7 @@ cb_create_spss <- function(data,
 #'     - `type`: variable type
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
-#'     - `user_missing`: optional column, depending on value of `.separate_missings`,
+#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
 #'        with value labels for user missing values
 #'     - `missing`: proportion missing
 #'     - additional columns if specified in `...`
@@ -212,10 +213,9 @@ cb_create <- function(data,
                       .val_labs_sep2 = NULL,
                       .rmv_html = !name,
                       .rmv_line_breaks = !name,
-                      .separate_missings = c("if_any", "yes", "no"),
-                      .user_missing_conflict = c("metadata", "missing_label")) {
-  .separate_missings <- match.arg(.separate_missings)
-  .user_missing_conflict <- match.arg(.user_missing_conflict)
+                      .user_missing_col = c("if_any", "yes", "no"),
+                      .user_missing_conflict = c("metadata", "missing_label"),
+                      .user_missing_incompatible = c("ignore", "warn", "error")) {
   data |>
     cb_init(
       metadata,
@@ -226,12 +226,15 @@ cb_create <- function(data,
       rmv_html = {{ .rmv_html }},
       rmv_line_breaks = {{ .rmv_line_breaks }}
     ) |>
-    cb_user_missings(user_missing = .user_missing) |>
+    cb_user_missings(
+      user_missing = .user_missing, 
+      incompatible = .user_missing_incompatible
+    ) |>
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
     cb_label_data(conflict = .user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
-    cb_add_val_labels_col(separate_missings = .separate_missings) |>
+    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
     cb_add_missing_col()
 }
@@ -284,7 +287,7 @@ cb_create <- function(data,
 #'     - `type`: variable type
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
-#'     - `user_missing`: optional column, depending on value of `.separate_missings`,
+#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
 #'        with value labels for user missing values
 #'     - `missing`: proportion missing
 #'     - additional columns if specified in `...`
@@ -334,9 +337,10 @@ cb_create_redcap <- function(data,
                          .coerce_integers = TRUE,
                          .checkbox_resp_values = FALSE,
                          .propagate_checkbox_missings = TRUE,
-                         .separate_missings = c("if_any", "yes", "no"),
-                         .user_missing_conflict = c("metadata", "missing_label")) {
-  .separate_missings <- match.arg(.separate_missings)
+                         .user_missing_col = c("if_any", "yes", "no"),
+                         .user_missing_conflict = c("metadata", "missing_label"),
+                         .user_missing_incompatible = c("ignore", "warn", "error")) {
+  .user_missing_col <- match.arg(.user_missing_col)
   .user_missing_conflict <- match.arg(.user_missing_conflict)
   meta <- meta_expand_checkboxes_rc(metadata, data)
   cb <- data |>
@@ -354,7 +358,10 @@ cb_create_redcap <- function(data,
       rmv_html = {{ .rmv_html }},
       rmv_line_breaks = {{ .rmv_line_breaks }}
     ) |>
-    cb_user_missings(user_missing = .user_missing) |>
+    cb_user_missings(
+      user_missing = .user_missing,
+      incompatible = .user_missing_incompatible
+    ) |>
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
     cb_relabel_checkboxes_rc(use_resp_values = .checkbox_resp_values)
   if ("form" %in% names(cb)) cb <- cb_complete_label_rc(cb)
@@ -365,7 +372,7 @@ cb_create_redcap <- function(data,
     cb_label_data(conflict = .user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
-    cb_add_val_labels_col(separate_missings = .separate_missings) |>
+    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
     cb_add_missing_col() |>
     dplyr::relocate(tidyselect::any_of("form"), type, .after = name)

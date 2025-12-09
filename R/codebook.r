@@ -38,14 +38,34 @@ cb_clean_fields <- function(cb, rmv_html = !name, rmv_line_breaks = !name) {
 
 cb_user_missings_by_var <- function(cb, 
                                     user_missing = list(), 
-                                    match_type = TRUE) {
+                                    match_type = TRUE,
+                                    incompatible = c("ignore", "warn", "error")) {
+  incompatible <- match.arg(incompatible)
   user_missing_names <- names(user_missing)
   if (!rlang::is_bare_list(user_missing) || is.null(user_missing_names)) {
     cli::cli_abort(c(
-      "!" = "{.code user_missing} must be a named list",
+      "!" = "{.arg .user_missing} must be a named list",
       "i" = "To set the same missing vals across multiple variables, try {.code cb_user_missings_across()}."
     ))
   }
+  data <- attr(cb, "data")
+  idx_labelable <- can_have_labels(user_missing_names, data)
+  if (incompatible != "ignore" && !all(idx_labelable)) {
+    n_bad <- sum(!idx_labelable)
+    bad_vars <- user_missing_names[!idx_labelable]
+    bad_vars <- vapply(
+      bad_vars,
+      \(v) cli::format_inline("{.var {v}} {.cls {class(data[[v]])}}"),
+      character(1)
+    )
+    if (length(bad_vars) > 4) bad_vars <- c(head(bad_vars, 3), "...")
+    bad_vars <- paste(bad_vars, collapse = ", ")
+    msg <- "{n_bad} variable{?s} specified in {.arg .user_missing} are not compatible with user missing values"
+    if (incompatible == "error") cli::cli_abort(c("!" = msg, "*" = bad_vars))
+    cli::cli_warn(c("!" = paste0(msg, " and will be ignored"), "*" = bad_vars))
+  }
+  user_missing <- user_missing[idx_labelable]
+  user_missing_names <- user_missing_names[idx_labelable]
   if (!all(user_missing_names %in% cb$name)) {
     cli::cli_abort("{.code user_missing} contains names not found in {.code cb}.")
   }
@@ -60,7 +80,7 @@ cb_user_missings_by_var <- function(cb,
     user_missing <- lapply(
       setNames(nm = names(user_missing)), 
       \(nm, data) as_named(user_missing[[nm]], cb_match_type(nm, data)),
-      data = attr(cb, "data") 
+      data = data
     )
   }
   keep_prev <- user_missing0[!(names(user_missing0) %in% user_missing_names)]
@@ -71,23 +91,27 @@ cb_user_missings_by_var <- function(cb,
 cb_user_missings_across <- function(cb,
                                     user_missing,
                                     vars = tidyselect::where(is_num_chr),
-                                    match_type = TRUE) {
+                                    match_type = TRUE,
+                                    incompatible = c("ignore", "warn", "error")) {
   data <- attr(cb, "data")
   vars <- setNames(nm = untidyselect(data, {{ vars }}))
   user_missing_list <- lapply(vars, \(x) user_missing)
   cb_user_missings_by_var(
-    cb,
-    user_missing = user_missing_list, match_type = match_type
+    cb, user_missing = user_missing_list, match_type = match_type, 
+    incompatible = incompatible
   )
 }
 
-cb_user_missings <- function(cb, user_missing, match_type = TRUE) {
+cb_user_missings <- function(cb, 
+                             user_missing, 
+                             match_type = TRUE,
+                             incompatible = c("ignore", "warn", "error")) {
   if (is.null(user_missing)) return(set_attrs(cb, user_missing = list()))
   user_missing <- check_user_missing_arg(user_missing)
   for (um in user_missing) {
     cb <- cb_user_missings_across(
       cb, user_missing = eval(rlang::f_rhs(um)), vars = !!rlang::f_lhs(um), 
-      match_type = match_type
+      match_type = match_type, incompatible = incompatible
     )
   }
   cb
@@ -264,17 +288,17 @@ string_from_lookups <- function(lookups, no_prefix = NULL) {
 }
 
 
-cb_add_val_labels_col <- function(cb, separate_missings = c("if_any", "yes", "no")) {
-  separate_missings <- match.arg(separate_missings)
+cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no")) {
+  user_missing_col <- match.arg(user_missing_col)
   data <- attr(cb, "data_labelled")[cb$name]
   val_labs <- labelled::val_labels(data)
   missings <- labelled::na_values(data)
-  separate_missings <- separate_missings == "yes" || (
-    separate_missings == "if_any" & !(
+  user_missing_col <- user_missing_col == "yes" || (
+    user_missing_col == "if_any" & !(
       rlang::is_empty(missings) || all(vapply(missings, rlang::is_empty, logical(1)))
     )
   )
-  if (separate_missings) {
+  if (user_missing_col) {
     missings <- lapply(missings, try_sort_numeric)
     val_labs <- mapply(\(v, m) v[!(v %in% m)], v = val_labs, m = missings)
     missings <- string_from_lookups(missings)

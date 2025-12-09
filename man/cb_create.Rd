@@ -16,8 +16,9 @@ cb_create(
   .val_labs_sep2 = NULL,
   .rmv_html = !name,
   .rmv_line_breaks = !name,
-  .separate_missings = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("metadata", "missing_label")
+  .user_missing_col = c("if_any", "yes", "no"),
+  .user_missing_conflict = c("metadata", "missing_label"),
+  .user_missing_incompatible = c("ignore", "warn", "error")
 )
 }
 \arguments{
@@ -51,12 +52,15 @@ HTML tags should be removed.}
 \item{.rmv_line_breaks}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Codebook columns
 from which line breaks should be removed.}
 
-\item{.separate_missings}{Include value labels for user missing values in a separate
+\item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are
 specified for at least one variable.}
 
 \item{.user_missing_conflict}{If different labels for a value are provided in
 metadata and user missings, which should be used?}
+
+\item{.user_missing_incompatible}{How to handle variables specified in \code{.user_missing}
+that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?}
 }
 \value{
 An \code{"li_codebook"} object, consisting of (1) a tibble summarizing the passed
@@ -69,7 +73,7 @@ and additional metadata. Specifically:
 \item \code{type}: variable type
 \item \code{label}: variable label
 \item \code{value_labels}: value labels
-\item \code{user_missing}: optional column, depending on value of \code{.separate_missings},
+\item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
 with value labels for user missing values
 \item \code{missing}: proportion missing
 \item additional columns if specified in \code{...}

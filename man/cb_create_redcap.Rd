@@ -20,8 +20,9 @@ cb_create_redcap(
   .coerce_integers = TRUE,
   .checkbox_resp_values = FALSE,
   .propagate_checkbox_missings = TRUE,
-  .separate_missings = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("metadata", "missing_label")
+  .user_missing_col = c("if_any", "yes", "no"),
+  .user_missing_conflict = c("metadata", "missing_label"),
+  .user_missing_incompatible = c("ignore", "warn", "error")
 )
 }
 \arguments{
@@ -65,12 +66,15 @@ be coerced to integer?}
 group be propagated across all variables in the group? See "Checkbox data handling"
 below.}
 
-\item{.separate_missings}{Include value labels for user missing values in a separate
+\item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are
 specified for at least one variable.}
 
 \item{.user_missing_conflict}{If different labels for a value are provided in
 metadata and user missings, which should be used?}
+
+\item{.user_missing_incompatible}{How to handle variables specified in \code{.user_missing}
+that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?}
 }
 \value{
 An \code{"li_codebook"} object, consisting of (1) a tibble summarizing the passed
@@ -84,7 +88,7 @@ and additional metadata. Specifically:
 \item \code{type}: variable type
 \item \code{label}: variable label
 \item \code{value_labels}: value labels
-\item \code{user_missing}: optional column, depending on value of \code{.separate_missings},
+\item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
 with value labels for user missing values
 \item \code{missing}: proportion missing
 \item additional columns if specified in \code{...}

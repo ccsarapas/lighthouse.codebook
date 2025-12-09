@@ -7,8 +7,9 @@
 cb_create_spss(
   data,
   .user_missing = NULL,
-  .separate_missings = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("val_label", "missing_label")
+  .user_missing_col = c("if_any", "yes", "no"),
+  .user_missing_conflict = c("val_label", "missing_label"),
+  .user_missing_incompatible = c("ignore", "warn", "error")
 )
 }
 \arguments{
@@ -20,12 +21,15 @@ or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values o
 right-hand side. See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation
 for examples.}
 
-\item{.separate_missings}{Include value labels for user missing values in a separate
+\item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are
 specified for at least one variable.}
 
 \item{.user_missing_conflict}{If labels passed to \code{.user_missing} conflicts with
 a value label in the \code{data}, which should be used?}
+
+\item{.user_missing_incompatible}{How to handle variables specified in \code{.user_missing}
+that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?}
 }
 \value{
 An \code{"li_codebook"} object, consisting of (1) a tibble summarizing the passed
@@ -38,7 +42,7 @@ and additional metadata. Specifically:
 \item \code{type}: variable type
 \item \code{label}: variable label
 \item \code{value_labels}: value labels
-\item \code{user_missing}: optional column, depending on value of \code{.separate_missings},
+\item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
 with value labels for user missing values
 \item \code{missing}: proportion missing
 }

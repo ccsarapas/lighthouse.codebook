@@ -8,13 +8,15 @@ cb_user_missings_from_spss <- function(cb) {
 
 cb_update_labels_spss <- function(cb,
                                   user_missing = NULL,
-                                  conflict = c("metadata", "missing_label")) {
+                                  user_missing_conflict = c("val_label", "missing_label"),
+                                  user_missing_incompatible = c("ignore", "warn", "error")) {
   data <- attr(cb, "data")
   if (is.null(user_missing)) {
     cb |>
       cb_add_lookups() |>
       set_attrs(data_labelled = data)
   } else {
+    conflict <- sub("val_label", "metadata", match.arg(user_missing_conflict))
     user_missing <- check_user_missing_arg(user_missing)
     user_missing_vars <- user_missing |>
       lapply(\(um) untidyselect(data, !!rlang::f_lhs(um))) |>
@@ -22,7 +24,10 @@ cb_update_labels_spss <- function(cb,
       unique()
     cb <- cb |>
       cb_user_missings_from_spss() |>
-      cb_user_missings(user_missing = user_missing) |>
+      cb_user_missings(
+        user_missing = user_missing, 
+        incompatible = user_missing_incompatible
+      ) |>
       cb_add_lookups()
     
     # temporarily filter missing and val attributes, so `cb_label_data` only
