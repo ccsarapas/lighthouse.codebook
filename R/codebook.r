@@ -70,7 +70,7 @@ cb_user_missings_by_var <- function(cb,
     cli::cli_abort("{.code user_missing} contains names not found in {.code cb}.")
   }
   user_missing0 <- attr(cb, "user_missing")
-  n_shared <- sum(user_missing_names %in% user_missing0)
+  n_shared <- sum(user_missing_names %in% names(user_missing0))
   if (n_shared) {
     cli::cli_warn(c(
       "!" = "Existing user missing values will be overwritten for {n_shared} variable{?s}."
