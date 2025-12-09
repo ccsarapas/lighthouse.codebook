@@ -90,11 +90,13 @@ cb_user_missings_by_var <- function(cb,
 
 cb_user_missings_across <- function(cb,
                                     user_missing,
-                                    vars = tidyselect::where(is_num_chr),
+                                    vars = tidyselect::everything(),
                                     match_type = TRUE,
                                     incompatible = c("ignore", "warn", "error")) {
   data <- attr(cb, "data")
-  vars <- setNames(nm = untidyselect(data, {{ vars }}))
+  vars <- rlang::enexpr(vars)
+  if (is.null(vars)) vars <- rlang::expr(tidyselect::everything())
+  vars <- setNames(nm = untidyselect(data, !!vars))
   user_missing_list <- lapply(vars, \(x) user_missing)
   cb_user_missings_by_var(
     cb, user_missing = user_missing_list, match_type = match_type, 

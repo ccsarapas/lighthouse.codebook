@@ -2,23 +2,23 @@
 #'
 #' @description
 #' `cb_create_spss()` builds an object of class `"li_codebook"` from an SPSS dataset
-#' (imported using `haven::read_spss()`, `read_sav()`, or `read_por()`). Metadata 
-#' including variable labels, value labels, and user missing values are extracted 
-#' from the imported dataset. (User missing values can also be set using the `.user_missing` 
-#' argument.)` 
-#' 
-#' The resulting object can be used to write an Excel workbook with variable and 
-#' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]), 
+#' (imported using `haven::read_spss()`, `read_sav()`, or `read_por()`). Metadata
+#' including variable labels, value labels, and user missing values are extracted
+#' from the imported dataset. (User missing values can also be set using the `.user_missing`
+#' argument.)`
+#'
+#' The resulting object can be used to write an Excel workbook with variable and
+#' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
 #' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
-#' 
+#'
 #' @inheritParams cb_create
 #' @param data A data frame exported or retrieved from REDCap.
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
-#'   right-hand side. See "Specifying user missing values" in [`cb_create()`] documentation 
-#'   for examples.
-#' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with 
+#'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
+#'   See "Specifying user missing values" in [`cb_create()`] documentation for examples.
+#' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with
 #'   a value label in the `data`, which should be used?
 #' @return
 #' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
@@ -48,7 +48,7 @@ cb_create_spss <- function(data,
                            .user_missing_incompatible = c("ignore", "warn", "error")) {
   data |>
     cb_init() |>
-    cb_add_label_col_spss() |> 
+    cb_add_label_col_spss() |>
     cb_update_labels_spss(
       user_missing = .user_missing,
       user_missing_conflict = .user_missing_conflict,
@@ -70,19 +70,20 @@ cb_create_spss <- function(data,
 #' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
 #'
 #' @param data A data frame exported or retrieved from REDCap.
-#' @param metadata A data frame containing metadata, such as variable labels and value 
+#' @param metadata A data frame containing metadata, such as variable labels and value
 #' labels.
 #' @param ... Additional columns from `metadata` to preserve in the final codebook.
 #'   New names can be assigned by passing named arguments. Columns for variable
 #'   name, form, variable label, and value labels are included by default.
 #' @param .name,.var_label,.val_labels Columns in `metadata` containing variable
-#'   name, variable label, and value labels, respectively. If `metadata` is provided, 
-#'   `.name` must be specified. `.var_label` and `.val_labels` may be set to `NULL` 
+#'   name, variable label, and value labels, respectively. If `metadata` is provided,
+#'   `.name` must be specified. `.var_label` and `.val_labels` may be set to `NULL`
 #'   to omit.
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
-#'   right-hand side. See "Specifying user missing values" below for examples.
+#'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
+#'   See "Specifying user missing values" below for examples.
 #' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
 #'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2` 
 #'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
@@ -124,14 +125,17 @@ cb_create_spss <- function(data,
 #' \preformatted{
 #' cb <- cb_create_redcap(data, metadata, .user_missing = var1 ~ 99)
 #' }
-#' The same user missings can be applied to multiple variables using
-#'   [tidyselect][dplyr_tidy_select] expressions:
+#' The same user missings can be applied to multiple variables using [tidyselect][dplyr_tidy_select] 
+#' expressions.
 #' \preformatted{
 #' # for variables `var1` through `var5`
 #' .user_missing = var1:var5 ~ 99
 #'
 #' # for all numeric variables, plus `var6` and `var7`
 #' .user_missing = c(where(is.numeric), var6, var7) ~ c(-9, -8, -7)
+#' 
+#' # omitted left-hand side defaults to `tidyselect::everything()`
+#' .user_missing = ~ -99
 #' }
 #' Different user missings can be applied to different variables using a list of
 #' formulas:
@@ -143,11 +147,15 @@ cb_create_spss <- function(data,
 #' }
 #' User missing values may optionally be named to set value labels:
 #' \preformatted{
-#' .user_missing = where(is.numeric) ~
-#'   c(Declined = -97, "Don't know" = -98, "Not applicable" = -99)
+#' .user_missing = ~ c(Declined = -98, "Not applicable" = -99)
 #' }
 #' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
 #' controls which labels are used.
+#' 
+#' User missing values are not compatible with logical, date, or datetime (POSIXt)
+#' variables. By default, these variables will be ignored if specified in `.user_missing`.
+#' (i.e., user missing values will be applied only to compatible variables.) This behavior
+#' can be changed using the `.user_missing_incompatible` argument.
 #' 
 #' @examples
 #' diamonds2 <- ggplot2::diamonds |>
@@ -267,8 +275,8 @@ cb_create <- function(data,
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
-#'   right-hand side. See "Specifying user missing values" in [`cb_create()`] documentation 
-#'   for examples.
+#'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
+#'   See "Specifying user missing values" in [`cb_create()`] documentation  for examples.
 #' @param .coerce_integers Should variables listed as "integer" in `metedata$text_validation_type_or_show_slider_number` 
 #'   be coerced to integer?
 #' @param .checkbox_resp_values Should checkbox values use labels in `metadata` 

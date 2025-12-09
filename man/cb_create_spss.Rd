@@ -18,8 +18,8 @@ cb_create_spss(
 \item{.user_missing}{A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
 or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values on the
-right-hand side. See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation
-for examples.}
+right-hand side. If left-hand side is omitted, defaults to \code{tidyselect::everything()}.
+See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation for examples.}
 
 \item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are

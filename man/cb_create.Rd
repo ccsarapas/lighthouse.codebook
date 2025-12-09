@@ -39,7 +39,8 @@ to omit.}
 \item{.user_missing}{A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
 or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values on the
-right-hand side. See "Specifying user missing values" below for examples.}
+right-hand side. If left-hand side is omitted, defaults to \code{tidyselect::everything()}.
+See "Specifying user missing values" below for examples.}
 
 \item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
 in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
@@ -100,14 +101,17 @@ side and user missing values for those variables on the right-hand side:
 \preformatted{
 cb <- cb_create_redcap(data, metadata, .user_missing = var1 ~ 99)
 }
-The same user missings can be applied to multiple variables using
-\link[dplyr:dplyr_tidy_select]{tidyselect} expressions:
+The same user missings can be applied to multiple variables using \link[dplyr:dplyr_tidy_select]{tidyselect}
+expressions.
 \preformatted{
 # for variables `var1` through `var5`
 .user_missing = var1:var5 ~ 99
 
 # for all numeric variables, plus `var6` and `var7`
 .user_missing = c(where(is.numeric), var6, var7) ~ c(-9, -8, -7)
+
+# omitted left-hand side defaults to `tidyselect::everything()`
+.user_missing = ~ -99
 }
 Different user missings can be applied to different variables using a list of
 formulas:
@@ -119,11 +123,15 @@ formulas:
 }
 User missing values may optionally be named to set value labels:
 \preformatted{
-.user_missing = where(is.numeric) ~
-  c(Declined = -97, "Don't know" = -98, "Not applicable" = -99)
+.user_missing = ~ c(Declined = -98, "Not applicable" = -99)
 }
 If labels set in \code{.user_missing} conflict with those in \code{metadata}, \code{.user_missing_conflict}
 controls which labels are used.
+
+User missing values are not compatible with logical, date, or datetime (POSIXt)
+variables. By default, these variables will be ignored if specified in \code{.user_missing}.
+(i.e., user missing values will be applied only to compatible variables.) This behavior
+can be changed using the \code{.user_missing_incompatible} argument.
 }
 
 \examples{

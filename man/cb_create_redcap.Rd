@@ -42,8 +42,8 @@ name, variable label, and value labels, respectively.}
 \item{.user_missing}{A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
 or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values on the
-right-hand side. See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation
-for examples.}
+right-hand side. If left-hand side is omitted, defaults to \code{tidyselect::everything()}.
+See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation  for examples.}
 
 \item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
 in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
