@@ -74,7 +74,7 @@ cb_summarize_categorical <- function(cb,
     names(data_dt)[vapply(data_dt, is.logical, logical(1))],
     cols_grp
   )
-
+  
   ## define labels and is_missing
   val_labs <- val_labs[cols_cat]
   is_missing <- list()
@@ -92,15 +92,17 @@ cb_summarize_categorical <- function(cb,
       } else {
         labs <- labs[!(labs %in% miss)]
       }
-      val_labs[[nm]] <- labs
     }
+    labs <- c(labs, NA)
+    miss <- c(miss, NA)
+    val_labs[[nm]] <- labs
     is_missing[[nm]] <- labs %in% miss
   }
   lgl_labs <- lapply(
-    setNames(nm = cols_lgl), 
-    \(x) setNames(nm = c("TRUE", "FALSE"))
+    setNames(nm = cols_lgl),
+    \(x) setNames(nm = c("TRUE", "FALSE", NA))
   )
-  lgl_miss <- lapply(setNames(nm = cols_lgl), \(x) c(FALSE, FALSE))
+  lgl_miss <- lapply(lgl_labs, is.na)
   val_labs <- c(val_labs, lgl_labs)
   is_missing <- c(is_missing, lgl_miss)
   val_labs_len <- sapply(val_labs, length)
@@ -125,6 +127,7 @@ cb_summarize_categorical <- function(cb,
     value_val = as.character(unlist(val_labs)),
     is_missing = unlist(is_missing)
   )
+  
   if ("label" %in% names(cb)) {
     var_labs <- data.table::as.data.table(cb)[, list(name, label)]
     all_vals <- merge(var_labs, all_vals, by = "name", all.y = TRUE, sort = FALSE)
@@ -146,13 +149,13 @@ cb_summarize_categorical <- function(cb,
       value.name = "value_val", variable.factor = FALSE
     ) |> 
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
-  
+
   freqs <- merge(
       all_vals, freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
     ) |> 
     _[is.na(value_val), is_missing := TRUE] |>
-    _[!(is.na(n) & is_missing), ] |>
+    _[, .SD[!(all(is.na(n)) & is_missing)], , by = c("name", "value_val")] |>
     _[order(match(name, unique(name)))] |> 
     _[is.na(n), n := 0L] |>
     _[,
@@ -165,7 +168,7 @@ cb_summarize_categorical <- function(cb,
       by = c("name", "is_missing")] |>
     _[, pct_of_all := n / sum(n), by = c(cols_grp, "name")] |>
     _[!(is_missing), pct_of_valid := n / sum(n), by = c(cols_grp, "name")]
-    
+      
   if (detail_missing) {
     freqs[(is_missing), pct_of_missing := n / sum(n), by = c(cols_grp, "name")]
   } else {
