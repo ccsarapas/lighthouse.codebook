@@ -124,8 +124,11 @@ lookups_from_string <- function(cb, data, sep1, sep2) {
   nms <- names(val_labels)
   types <- vapply(nms, cb_match_type, character(1), data = data)
   num_val <- "-?\\d{1,99}"
-  sep2 <- glue_chr("{sep2}(?={num_val}{sep1})")
-  sep1 <- glue_chr("(?<=^{num_val}){sep1}")
+  # sep2 followed immediately by number and sep1 (with optional whitespace)
+  sep2 <- glue_chr("\\s*{sep2}\\s*(?={num_val}{sep1})")
+  # after splitting by sep2, substring begins with number which immediately 
+  # precedes sep1 (with optional whitespace)
+  sep1 <- glue_chr("(?<=^{num_val})\\s*{sep1}\\s*")
   val_labels <- setNames(stringr::str_split(val_labels, sep2), nms)
   mapply(
     fx_inner, 
