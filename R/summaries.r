@@ -162,24 +162,22 @@ cb_summarize_categorical <- function(cb,
         rep(all(is.na(value_lab) | is.na(value_val) | value_lab == value_val), .N), value_val,
         default = stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val))
       ),
-      by = c("name", "is_missing")
-    ] |>
+      by = c("name", "is_missing")] |>
     _[, pct_of_all := n / sum(n), by = c(cols_grp, "name")] |>
     _[!(is_missing), pct_of_valid := n / sum(n), by = c(cols_grp, "name")]
-  
-  data.table::setcolorder(
-    freqs,
-    intersect(
-      c(cols_grp, "name", "label", "is_missing", "value", "n"),
-      names(freqs)
-    )
-  )
-  
+    
   if (detail_missing) {
     freqs[(is_missing), pct_of_missing := n / sum(n), by = c(cols_grp, "name")]
   } else {
     freqs[, is_missing := NULL]
   }
+  
+  cols_out <- c(
+    cols_grp, "name", "label", "is_missing", "value", "n", "pct_of_all",
+    "pct_of_valid", "pct_of_missing"
+  )
+  freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
+  
   freqs |>
     tibble::as_tibble() |>
     set_attrs(
