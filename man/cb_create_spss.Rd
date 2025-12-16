@@ -7,6 +7,7 @@
 cb_create_spss(
   data,
   .user_missing = NULL,
+  .split_var_labels = NULL,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("val_label", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -20,6 +21,10 @@ Formulas should specify variables on the left-hand side (as variable names
 or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values on the
 right-hand side. If left-hand side is omitted, defaults to \code{tidyselect::everything()}.
 See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation for examples.}
+
+\item{.split_var_labels}{A \code{\link[dplyr:dplyr_tidy_select]{tidyselect}} expression or list of tidyselect
+expressions, indicating (sets of) variable labels with a common stem that should
+be extracted into a separate column.}
 
 \item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are
@@ -40,6 +45,8 @@ and additional metadata. Specifically:
 \itemize{
 \item \code{name}: variable name
 \item \code{type}: variable type
+\item \code{label_stem}: optional column containing variable label stems, if any variables
+are specified in \code{.split_var_labels}
 \item \code{label}: variable label
 \item \code{value_labels}: value labels
 \item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},

@@ -13,10 +13,11 @@ cb_create_redcap(
   .val_labels = select_choices_or_calculations,
   .form = form_name,
   .user_missing = NULL,
+  .split_var_labels = NULL,
   .val_labs_sep1 = ", ",
   .val_labs_sep2 = "\\\\|",
-  .rmv_html = !name,
-  .rmv_line_breaks = !name,
+  .rmv_html = TRUE,
+  .rmv_line_breaks = TRUE,
   .coerce_integers = TRUE,
   .checkbox_resp_values = FALSE,
   .propagate_checkbox_missings = TRUE,
@@ -45,16 +46,20 @@ or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values o
 right-hand side. If left-hand side is omitted, defaults to \code{tidyselect::everything()}.
 See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} documentation  for examples.}
 
+\item{.split_var_labels}{A \code{\link[dplyr:dplyr_tidy_select]{tidyselect}} expression or list of tidyselect
+expressions, indicating (sets of) variable labels with a common stem that should
+be extracted into a separate column.}
+
 \item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
 in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
 separates value/label pairs. e.g., if value labels are in format \code{"1, First label|2, Second label"},
 set \code{.val_labs_sep1} to \code{","} and \code{.val_labs_sep2} to \code{"\\\\|"}.}
 
-\item{.rmv_html}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Codebook columns from which
-HTML tags should be removed.}
+\item{.rmv_html}{Should HTML tags be removed from metadata (e.g., from variable
+and value lables)?}
 
-\item{.rmv_line_breaks}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Codebook columns
-from which line breaks should be removed.}
+\item{.rmv_line_breaks}{Should line breaks be removed from metadata (e.g., from
+variable and value lables)? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
 
 \item{.coerce_integers}{Should variables listed as "integer" in \code{metedata$text_validation_type_or_show_slider_number}
 be coerced to integer?}
@@ -86,6 +91,8 @@ and additional metadata. Specifically:
 \item \code{name}: variable name
 \item \code{form}: form name
 \item \code{type}: variable type
+\item \code{label_stem}: optional column containing variable label stems, if any variables
+are specified in \code{.split_var_labels}
 \item \code{label}: variable label
 \item \code{value_labels}: value labels
 \item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},

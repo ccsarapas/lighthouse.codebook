@@ -12,10 +12,11 @@ cb_create(
   .var_label = label,
   .val_labels = val_labels,
   .user_missing = NULL,
+  .split_var_labels = NULL,
   .val_labs_sep1 = NULL,
   .val_labs_sep2 = NULL,
-  .rmv_html = !name,
-  .rmv_line_breaks = !name,
+  .rmv_html = TRUE,
+  .rmv_line_breaks = TRUE,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("metadata", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -42,16 +43,20 @@ or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values o
 right-hand side. If left-hand side is omitted, defaults to \code{tidyselect::everything()}.
 See "Specifying user missing values" below for examples.}
 
+\item{.split_var_labels}{A \code{\link[dplyr:dplyr_tidy_select]{tidyselect}} expression or list of tidyselect
+expressions, indicating (sets of) variable labels with a common stem that should
+be extracted into a separate column.}
+
 \item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
 in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
 separates value/label pairs. e.g., if value labels are in format \code{"1, First label|2, Second label"},
 set \code{.val_labs_sep1} to \code{","} and \code{.val_labs_sep2} to \code{"\\\\|"}.}
 
-\item{.rmv_html}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Codebook columns from which
-HTML tags should be removed.}
+\item{.rmv_html}{Should HTML tags be removed from metadata (e.g., from variable
+and value lables)?}
 
-\item{.rmv_line_breaks}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Codebook columns
-from which line breaks should be removed.}
+\item{.rmv_line_breaks}{Should line breaks be removed from metadata (e.g., from
+variable and value lables)? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
 
 \item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are
@@ -72,6 +77,8 @@ and additional metadata. Specifically:
 \itemize{
 \item \code{name}: variable name
 \item \code{type}: variable type
+\item \code{label_stem}: optional column containing variable label stems, if any variables
+are specified in \code{.split_var_labels}
 \item \code{label}: variable label
 \item \code{value_labels}: value labels
 \item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
