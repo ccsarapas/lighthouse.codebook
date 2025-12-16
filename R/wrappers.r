@@ -21,6 +21,9 @@
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
 #'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
 #'   See "Specifying user missing values" below for examples.
+#' @param .split_var_labels A [`tidyselect`][dplyr_tidy_select] expression or list of tidyselect
+#'   expressions, indicating (sets of) variable labels with a common stem that should 
+#'   be extracted into a separate column.
 #' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
 #'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2` 
 #'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
@@ -44,6 +47,8 @@
 #' - A tibble with columns:
 #'     - `name`: variable name
 #'     - `type`: variable type
+#'     - `label_stem`: optional column containing variable label stems, if any variables 
+#'       are specified in `.split_var_labels`
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
 #'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
@@ -154,13 +159,15 @@ cb_create <- function(data,
                       .var_label = label,
                       .val_labels = val_labels,
                       .user_missing = NULL,
+                      .split_var_labels = NULL,
                       .val_labs_sep1 = NULL,
                       .val_labs_sep2 = NULL,
                       .rmv_html = TRUE,
                       .rmv_line_breaks = TRUE,
                       .user_missing_col = c("if_any", "yes", "no"),
                       .user_missing_conflict = c("metadata", "missing_label"),
-                      .user_missing_incompatible = c("ignore", "warn", "error")) {
+                      .user_missing_incompatible = c("ignore", "warn", "error")
+                      ) {
   data |>
     cb_init(
       metadata,
@@ -169,7 +176,7 @@ cb_create <- function(data,
     ) |>
     cb_clean_fields(rmv_html = .rmv_html, rmv_line_breaks = .rmv_line_breaks) |>
     cb_user_missings(
-      user_missing = .user_missing, 
+      user_missing = .user_missing,
       incompatible = .user_missing_incompatible
     ) |>
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
@@ -178,7 +185,8 @@ cb_create <- function(data,
     cb_add_dims() |>
     cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
-    cb_add_missing_col()
+    cb_add_missing_col() |>
+    cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels))
 }
 
 #' Generate a codebook object from an SPSS dataset
@@ -211,6 +219,8 @@ cb_create <- function(data,
 #' - A tibble with columns:
 #'     - `name`: variable name
 #'     - `type`: variable type
+#'     - `label_stem`: optional column containing variable label stems, if any variables 
+#'       are specified in `.split_var_labels`
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
 #'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
@@ -224,12 +234,14 @@ cb_create <- function(data,
 #' @export
 cb_create_spss <- function(data,
                            .user_missing = NULL,
+                           .split_var_labels = NULL,
                            # these would require a different implementation -- omitted for now
                            #   .rmv_html = TRUE,
                            #   .rmv_line_breaks = TRUE,
                            .user_missing_col = c("if_any", "yes", "no"),
                            .user_missing_conflict = c("val_label", "missing_label"),
-                           .user_missing_incompatible = c("ignore", "warn", "error")) {
+                           .user_missing_incompatible = c("ignore", "warn", "error")
+                           ) {
   data |>
     cb_init() |>
     cb_add_label_col_spss() |>
@@ -242,7 +254,8 @@ cb_create_spss <- function(data,
     cb_add_dims() |>
     cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
-    cb_add_missing_col()
+    cb_add_missing_col() |>
+    cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels))
 }
 
 #' Generate a codebook object from REDCap data
@@ -291,6 +304,8 @@ cb_create_spss <- function(data,
 #'     - `name`: variable name
 #'     - `form`: form name
 #'     - `type`: variable type
+#'     - `label_stem`: optional column containing variable label stems, if any variables
+#'       are specified in `.split_var_labels`
 #'     - `label`: variable label
 #'     - `value_labels`: value labels
 #'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
@@ -329,23 +344,25 @@ cb_create_spss <- function(data,
 #'
 #' @export
 cb_create_redcap <- function(data,
-                         metadata,
-                         ...,
-                         .name = field_name,
-                         .var_label = field_label,
-                         .val_labels = select_choices_or_calculations,
-                         .form = form_name,
-                         .user_missing = NULL,
-                         .val_labs_sep1 = ", ",
-                         .val_labs_sep2 = "\\|",
-                         .rmv_html = TRUE,
-                         .rmv_line_breaks = TRUE,
-                         .coerce_integers = TRUE,
-                         .checkbox_resp_values = FALSE,
-                         .propagate_checkbox_missings = TRUE,
-                         .user_missing_col = c("if_any", "yes", "no"),
-                         .user_missing_conflict = c("metadata", "missing_label"),
-                         .user_missing_incompatible = c("ignore", "warn", "error")) {
+                             metadata,
+                             ...,
+                             .name = field_name,
+                             .var_label = field_label,
+                             .val_labels = select_choices_or_calculations,
+                             .form = form_name,
+                             .user_missing = NULL,
+                             .split_var_labels = NULL,
+                             .val_labs_sep1 = ", ",
+                             .val_labs_sep2 = "\\|",
+                             .rmv_html = TRUE,
+                             .rmv_line_breaks = TRUE,
+                             .coerce_integers = TRUE,
+                             .checkbox_resp_values = FALSE,
+                             .propagate_checkbox_missings = TRUE,
+                             .user_missing_col = c("if_any", "yes", "no"),
+                             .user_missing_conflict = c("metadata", "missing_label"),
+                             .user_missing_incompatible = c("ignore", "warn", "error")
+                             ) {
   .user_missing_col <- match.arg(.user_missing_col)
   .user_missing_conflict <- match.arg(.user_missing_conflict)
   meta <- meta_expand_checkboxes_rc(metadata, data)
@@ -378,6 +395,7 @@ cb_create_redcap <- function(data,
     cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
     cb_add_missing_col() |>
+    cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels)) |> 
     dplyr::relocate(tidyselect::any_of("form"), type, .after = name)
 }
 

@@ -313,6 +313,37 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
   dplyr::mutate(cb, value_labels = val_labs, user_missings = missings)
 }
 
+cb_split_labels_col <- function(cb, split_var_labels = NULL) {
+  if (is.null(split_var_labels)) return(cb)
+  if (rlang::is_call(split_var_labels) && rlang::call_name(split_var_labels) == "list") {
+    split_var_labels <- rlang::call_args(split_var_labels)
+  } else {
+    split_var_labels <- list(split_var_labels)
+  }
+  data <- attr(cb, "data")
+  split_var_labels <- lapply(split_var_labels, \(x) untidyselect(data, !!x))
+  if (anyDuplicated(unlist(split_var_labels))) {
+    cli::cli_abort(
+      "The same variable(s) are captured by more than one expression in `split_var_labels`."
+    )
+  }
+  cb <- dplyr::mutate(cb, label_stem = NA_character_, .before = label)
+  for (v in split_var_labels) {
+    idx <- cb$name %in% v
+    stem <- lighthouse::str_prefix(cb$label[idx])
+    if (is.na(stem) || stem == "") {
+      cli::cli_warn(c(
+        "!" = "No common prefix found for variables:",
+        "*" = "{toString(v)}"
+      ))
+    } else {
+      cb$label_stem[idx] <- stem
+      cb$label[idx] <- stringr::str_remove(cb$label[idx], stringr::fixed(stem))
+    }
+  }
+  cb
+}
+
 ## should maybe generalize this pattern of [get attr data] -> [sort by cb$name] -> [sapply fx]
 cb_add_type_col <- function(cb) {
   data <- attr(cb, "data_zapped")[cb$name]

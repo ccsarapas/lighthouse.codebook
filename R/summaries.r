@@ -18,7 +18,11 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
   check_codebook(cb)
   out <- cb |>
     dplyr::filter(type %in% c("numeric", "integer")) |>
-    dplyr::select(tidyselect::any_of(c("name", "label")))
+    dplyr::select(tidyselect::any_of(c("name", "label_stem", "label")))
+  # only include `label_stem` if not empty
+  if ("label_stem" %in% names(out) && all(is.na(out$label_stem))) {
+    out$label_stem <- NULL
+  }
   nms_num <- out$name
   data <- attr(cb, "data_zapped")
   res <- lighthouse::summary_table(
@@ -128,9 +132,14 @@ cb_summarize_categorical <- function(cb,
     is_missing = unlist(is_missing)
   )
   
-  if ("label" %in% names(cb)) {
-    var_labs <- data.table::as.data.table(cb)[, list(name, label)]
-    all_vals <- merge(var_labs, all_vals, by = "name", all.y = TRUE, sort = FALSE)
+  label_cols <- intersect(c("label_stem", "label"), names(cb))
+  if (length(label_cols)) {
+    all_vals <- cb |>
+      data.table::as.data.table() |>
+      _[, c("name", label_cols), with = FALSE] |>
+      merge(all_vals, by = "name", all.y = TRUE, sort = FALSE)
+    ls <- all_vals[["label_stem"]]
+    if (!is.null(ls) && all(is.na(ls))) all_vals[, label_stem := NULL]
   }
   all_vals <- do.call(expand_dt, c(list(all_vals), grp_labs))
 
@@ -176,8 +185,8 @@ cb_summarize_categorical <- function(cb,
   }
   
   cols_out <- c(
-    cols_grp, "name", "label", "is_missing", "value", "n", "pct_of_all",
-    "pct_of_valid", "pct_of_missing"
+    cols_grp, "name", "label_stem", "label", "is_missing", "value", "n", 
+    "pct_of_all", "pct_of_valid", "pct_of_missing"
   )
   freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
   
