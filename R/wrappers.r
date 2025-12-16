@@ -1,66 +1,3 @@
-#' Generate a codebook object from an SPSS dataset
-#'
-#' @description
-#' `cb_create_spss()` builds an object of class `"li_codebook"` from an SPSS dataset
-#' (imported using `haven::read_spss()`, `read_sav()`, or `read_por()`). Metadata
-#' including variable labels, value labels, and user missing values are extracted
-#' from the imported dataset. (User missing values can also be set using the `.user_missing`
-#' argument.)`
-#'
-#' The resulting object can be used to write an Excel workbook with variable and
-#' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
-#' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
-#'
-#' @inheritParams cb_create
-#' @param data A data frame exported or retrieved from REDCap.
-#' @param .user_missing A formula or list of formulas specifying user missing values.
-#'   Formulas should specify variables on the left-hand side (as variable names
-#'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
-#'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
-#'   See "Specifying user missing values" in [`cb_create()`] documentation for examples.
-#' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with
-#'   a value label in the `data`, which should be used?
-#' @return
-#' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
-#' dataset and (2) attributes containing the passed dataset (in several formats)
-#' and additional metadata. Specifically:
-#' - A tibble with columns:
-#'     - `name`: variable name
-#'     - `type`: variable type
-#'     - `label`: variable label
-#'     - `value_labels`: value labels
-#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
-#'        with value labels for user missing values
-#'     - `missing`: proportion missing
-#' - Attributes:
-#'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
-#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
-#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`#'
-#'
-#' @export
-cb_create_spss <- function(data,
-                           .user_missing = NULL,
-                           # these would require a different implementation -- omitted for now
-                           #   .rmv_html = !name,
-                           #   .rmv_line_breaks = !name,
-                           .user_missing_col = c("if_any", "yes", "no"),
-                           .user_missing_conflict = c("val_label", "missing_label"),
-                           .user_missing_incompatible = c("ignore", "warn", "error")) {
-  data |>
-    cb_init() |>
-    cb_add_label_col_spss() |>
-    cb_update_labels_spss(
-      user_missing = .user_missing,
-      user_missing_conflict = .user_missing_conflict,
-      user_missing_incompatible = .user_missing_incompatible
-    ) |>
-    cb_zap_data_spss() |>
-    cb_add_dims() |>
-    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
-    cb_add_type_col() |>
-    cb_add_missing_col()
-}
-
 #' Generate a codebook object
 #'
 #' @description
@@ -88,10 +25,10 @@ cb_create_spss <- function(data,
 #'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2` 
 #'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
 #'   set `.val_labs_sep1` to `","` and `.val_labs_sep2` to `"\\|"`.
-#' @param .rmv_html <[`tidy-select`][dplyr_tidy_select]> Codebook columns from which
-#'   HTML tags should be removed.
-#' @param .rmv_line_breaks <[`tidy-select`][dplyr_tidy_select]> Codebook columns
-#'   from which line breaks should be removed.
+#' @param .rmv_html Should HTML tags be removed from metadata (e.g., from variable 
+#'   and value lables)?
+#' @param .rmv_line_breaks Should line breaks be removed from metadata (e.g., from
+#'   variable and value lables)? If `TRUE`, line breaks will be replaced with `" / "`.
 #' @param .user_missing_col Include value labels for user missing values in a separate
 #'   column? The default, `"if_any"`, adds the column only if user missings are
 #'   specified for at least one variable.
@@ -219,8 +156,8 @@ cb_create <- function(data,
                       .user_missing = NULL,
                       .val_labs_sep1 = NULL,
                       .val_labs_sep2 = NULL,
-                      .rmv_html = !name,
-                      .rmv_line_breaks = !name,
+                      .rmv_html = TRUE,
+                      .rmv_line_breaks = TRUE,
                       .user_missing_col = c("if_any", "yes", "no"),
                       .user_missing_conflict = c("metadata", "missing_label"),
                       .user_missing_incompatible = c("ignore", "warn", "error")) {
@@ -230,10 +167,7 @@ cb_create <- function(data,
       meta_var_name = {{ .name }}, meta_var_label = {{ .var_label }},
       meta_val_labels = {{ .val_labels }}, ...
     ) |>
-    cb_clean_fields(
-      rmv_html = {{ .rmv_html }},
-      rmv_line_breaks = {{ .rmv_line_breaks }}
-    ) |>
+    cb_clean_fields(rmv_html = .rmv_html, rmv_line_breaks = .rmv_line_breaks) |>
     cb_user_missings(
       user_missing = .user_missing, 
       incompatible = .user_missing_incompatible
@@ -241,6 +175,70 @@ cb_create <- function(data,
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
     cb_label_data(conflict = .user_missing_conflict) |>
     cb_zap_data() |>
+    cb_add_dims() |>
+    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
+    cb_add_type_col() |>
+    cb_add_missing_col()
+}
+
+#' Generate a codebook object from an SPSS dataset
+#'
+#' @description
+#' `cb_create_spss()` builds an object of class `"li_codebook"` from an SPSS dataset
+#' (imported using `haven::read_spss()`, `read_sav()`, or `read_por()`). Metadata
+#' including variable labels, value labels, and user missing values are extracted
+#' from the imported dataset. (User missing values can also be set using the `.user_missing`
+#' argument.)`
+#'
+#' The resulting object can be used to write an Excel workbook with variable and
+#' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
+#' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
+#'
+#' @inheritParams cb_create
+#' @param data A data frame exported or retrieved from REDCap.
+#' @param .user_missing A formula or list of formulas specifying user missing values.
+#'   Formulas should specify variables on the left-hand side (as variable names
+#'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
+#'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
+#'   See "Specifying user missing values" in [`cb_create()`] documentation for examples.
+#' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with
+#'   a value label in the `data`, which should be used?
+#' 
+#' @return
+#' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
+#' dataset and (2) attributes containing the passed dataset (in several formats)
+#' and additional metadata. Specifically:
+#' - A tibble with columns:
+#'     - `name`: variable name
+#'     - `type`: variable type
+#'     - `label`: variable label
+#'     - `value_labels`: value labels
+#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
+#'        with value labels for user missing values
+#'     - `missing`: proportion missing
+#' - Attributes:
+#'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
+#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
+#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`#'
+#'
+#' @export
+cb_create_spss <- function(data,
+                           .user_missing = NULL,
+                           # these would require a different implementation -- omitted for now
+                           #   .rmv_html = TRUE,
+                           #   .rmv_line_breaks = TRUE,
+                           .user_missing_col = c("if_any", "yes", "no"),
+                           .user_missing_conflict = c("val_label", "missing_label"),
+                           .user_missing_incompatible = c("ignore", "warn", "error")) {
+  data |>
+    cb_init() |>
+    cb_add_label_col_spss() |>
+    cb_update_labels_spss(
+      user_missing = .user_missing,
+      user_missing_conflict = .user_missing_conflict,
+      user_missing_incompatible = .user_missing_incompatible
+    ) |>
+    cb_zap_data_spss() |>
     cb_add_dims() |>
     cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
     cb_add_type_col() |>
@@ -340,8 +338,8 @@ cb_create_redcap <- function(data,
                          .user_missing = NULL,
                          .val_labs_sep1 = ", ",
                          .val_labs_sep2 = "\\|",
-                         .rmv_html = !name,
-                         .rmv_line_breaks = !name,
+                         .rmv_html = TRUE,
+                         .rmv_line_breaks = TRUE,
                          .coerce_integers = TRUE,
                          .checkbox_resp_values = FALSE,
                          .propagate_checkbox_missings = TRUE,
@@ -362,10 +360,7 @@ cb_create_redcap <- function(data,
   if (.coerce_integers) cb <- cb_coerce_integers_rc(cb)
   cb$..rc_validate_type <- NULL
   cb <- cb |>
-    cb_clean_fields(
-      rmv_html = {{ .rmv_html }},
-      rmv_line_breaks = {{ .rmv_line_breaks }}
-    ) |>
+    cb_clean_fields(rmv_html = .rmv_html, rmv_line_breaks = .rmv_line_breaks) |>
     cb_user_missings(
       user_missing = .user_missing,
       incompatible = .user_missing_incompatible

@@ -28,12 +28,14 @@ cb_init <- function(data,
   out
 }
 
-cb_clean_fields <- function(cb, rmv_html = !name, rmv_line_breaks = !name) {
-  cb |>
-    dplyr::mutate(
-      dplyr::across({{ rmv_html }}, strip_html),
-      dplyr::across({{ rmv_line_breaks }}, strip_line_breaks)
-    )
+cb_clean_fields <- function(cb, rmv_html = TRUE, rmv_line_breaks = TRUE) {
+  if (rmv_html) {
+    cb <- dplyr::mutate(cb, dplyr::across(!name, strip_html))
+  }
+  if (rmv_line_breaks) {
+    cb <- dplyr::mutate(cb, dplyr::across(!name, strip_line_breaks))
+  }
+  cb
 }
 
 cb_user_missings_by_var <- function(cb, 
