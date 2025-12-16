@@ -337,7 +337,9 @@ cb_write_codebook <- function(cb,
                               dataset_name = NULL,
                               incl_date = TRUE,
                               incl_dims = TRUE,
-                              overwrite = TRUE) {
+                              overwrite = TRUE,
+                              min_col_width = 7,
+                              max_col_width = 70) {
   # create headers
   cb_name <- cb_dims <- cb_date <- NULL
   if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
@@ -350,6 +352,13 @@ cb_write_codebook <- function(cb,
   h_overview <- c(dataset_name, cb_dims, cb_date)
   h_summ_num <- c(dataset_name, "Numeric variables summary")
   h_summ_cat <- c(dataset_name, "Categorical variables summary")
+  
+  # set max col width
+  opts <- options(
+    openxlsx2.minWidth = min_col_width,
+    openxlsx2.maxWidth = max_col_width
+  )
+  on.exit(options(opts))
     
   # write overview and ungrouped numeric sheets
   overview <- cb_format_names(cb)
