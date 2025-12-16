@@ -35,17 +35,16 @@ wb_banded_fill_by <- function(wb,
   )
 }
 
-wb_row_borders_by <- function(wb,
-                              sheet = openxlsx2::current_sheet(),
-                              dims,
-                              by,
-                              start_col = NULL,
-                              data,
-                              skip_first = TRUE,
-                              color = openxlsx2::wb_color("404040"),
-                              border = "thin",
-                              update = FALSE,
-                              ...) {
+wb_row_borders <- function(wb,
+                           sheet = openxlsx2::current_sheet(),
+                           dims,
+                           start_col = NULL,
+                           data,
+                           skip_first = TRUE,
+                           color = openxlsx2::wb_color("404040"),
+                           border = "thin",
+                           update = FALSE,
+                           ...) {
   style_nm <- paste0(border, color)
   existing <- wb$styles_mgr$get_dxf_id(style_nm)
   if (is.null(existing) || is.na(existing)) {
@@ -213,19 +212,18 @@ cb_write_sheet <- function(wb,
       )
   }
   if (!rlang::quo_is_null(rows_sub_border_by)) {
-    by <- rlang::expr(c(!!rows_border_by, !!rows_sub_border_by))
     wb <- wb |>
-      wb_row_borders_by(
-        dims = openxlsx2::wb_dims(rows$dat, cols$all), by = !!by, data = data,
+      wb_row_borders(
+        dims = openxlsx2::wb_dims(rows$dat, cols$all), data = data,
         start_col = !!rows_sub_border_by, 
-        color = openxlsx2::wb_color(hex = "808080"),
+        color = openxlsx2::wb_color(hex = "808080")
       )
   }
   if (!rlang::quo_is_null(rows_border_by)) {
     wb <- wb |>
-      wb_row_borders_by(
-        dims = openxlsx2::wb_dims(rows$dat, cols$all), by = !!rows_banded_by, 
-        data = data
+      wb_row_borders(
+        dims = openxlsx2::wb_dims(rows$dat, cols$all), data = data,
+        start_col = !!rows_border_by
       )
   }
   clear_repeats <- untidyselect(data, {{ clear_repeats }})
@@ -369,22 +367,22 @@ cb_write_codebook <- function(cb,
   detail_missing <- attr(summaries$cat, "detail_missing")
   if (detail_missing) summaries$cat <- cb_valid_miss_col(summaries$cat)
   summaries$cat <- cb_format_names(summaries$cat, !n)
+  rows_border_by <- rows_sub_border_by <- NULL
   if (detail_missing) {
-    wb <- wb |>
-      cb_write_sheet(
-        summaries$cat, "Summary - Categorical", header = h_summ_cat,
-        cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        rows_border_by = Name, rows_sub_border_by = `Valid / Missing`,
-        clear_repeats = tidyselect::any_of(c("Name", "Label", "Valid / Missing"))
-      )
-  } else {
-    wb <- wb |>
-      cb_write_sheet(
-        summaries$cat, "Summary - Categorical", header = h_summ_cat,
-        cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        clear_repeats = tidyselect::any_of(c("Name", "Label"))
-      )
+    rows_border_by <- rlang::sym("Name")
+    rows_sub_border_by <- rlang::sym("Valid / Missing")
   }
+  wb <- wb |>
+    cb_write_sheet(
+      summaries$cat, 
+      "Summary - Categorical", 
+      header = h_summ_cat,
+      cols_pct = tidyselect::starts_with("%"), 
+      cols_int = n,
+      rows_border_by = !!rows_border_by, 
+      rows_sub_border_by = !!rows_sub_border_by,
+      clear_repeats = tidyselect::any_of(c("Name", "Label", "Valid / Missing"))
+    )
   
   # write grouped sheets
   grouped <- summaries$grouped
