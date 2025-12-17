@@ -19,22 +19,25 @@ cb_update_labels_spss <- function(cb,
     conflict <- sub("val_label", "metadata", match.arg(user_missing_conflict))
     user_missing <- check_user_missing_arg(user_missing)
     user_missing_vars <- user_missing |>
-      lapply(\(um) untidyselect(data, !!rlang::f_lhs(um))) |>
+      lapply(\(um) {
+        vars <- rlang::f_lhs(um) %||% rlang::expr(tidyselect::everything())
+        untidyselect(data, !!vars)
+      }) |>
       unlist() |>
       unique()
     cb <- cb |>
       cb_user_missings_from_spss() |>
       cb_user_missings(
-        user_missing = user_missing, 
+        user_missing = user_missing,
         incompatible = user_missing_incompatible
       ) |>
       cb_add_lookups()
-    
+
     # temporarily filter missing and val attributes, so `cb_label_data` only
     # relabels vars for which new user missings were passed
     attr_user_missing <- attr(cb, "user_missing")
     attr_vals_by_label <- attr(cb, "vals_by_label")
-    cb <- cb |>
+    cb |>
       set_attrs(
         user_missing = attr_user_missing[names(attr_user_missing) %in% user_missing_vars],
         vals_by_label = attr_vals_by_label[names(attr_vals_by_label) %in% user_missing_vars]
@@ -47,6 +50,7 @@ cb_update_labels_spss <- function(cb,
       )
   }
 }
+
 cb_zap_data_spss <- function(cb) {
   data <- attr(cb, "data_labelled")
   ordered <- attr(cb, "ordered")

@@ -96,8 +96,7 @@ cb_user_missings_across <- function(cb,
                                     match_type = TRUE,
                                     incompatible = c("ignore", "warn", "error")) {
   data <- attr(cb, "data")
-  vars <- rlang::enexpr(vars)
-  if (is.null(vars)) vars <- rlang::expr(tidyselect::everything())
+  vars <- rlang::enexpr(vars) %||% rlang::expr(tidyselect::everything())
   vars <- setNames(nm = untidyselect(data, !!vars))
   user_missing_list <- lapply(vars, \(x) user_missing)
   cb_user_missings_by_var(
