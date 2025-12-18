@@ -18,7 +18,7 @@
 #'      `cb` includes a `label_stem` column and at least one numeric variable has
 #'      a non-missing label stem.
 #'   - `label`: variable label
-#'   - `Valid n`, `valid_pct`: number and proportion of non-missing values
+#'   - `valid_n`, `valid_pct`: number and proportion of non-missing values
 #'   - summary statistic columns: by default, these include `mean` and standard 
 #'     deviation (`SD`); `median`, median absolute deviation (`MAD`), `min`, `max`, 
 #'     and `range`; skewness (`skew`), and kurtosis (`kurt`).
@@ -37,7 +37,7 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
   data <- attr(cb, "data_zapped")
   res <- lighthouse::summary_table(
     data,
-    `Valid n` = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
+    valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
     mean, SD = sd,
     median, MAD = mad, min = lighthouse::min_if_any, max = lighthouse::max_if_any, range = spread_if_any,
     skew = moments::skewness, kurt = moments::kurtosis,
@@ -245,7 +245,7 @@ cb_summarize_categorical <- function(cb,
 #'      `cb` includes a `label_stem` column and at least one character variable 
 #'      has a non-missing label stem.
 #'   - `label`: variable label
-#'   - `n_unique`: number of unique non-missing values
+#'   - `unique_n`: number of unique non-missing values
 #'   - `is_missing`: optional column indicating if `value` is a missing value. Included
 #'      if `detail_missing` is `TRUE`.
 #'   - `value`: the most prevalent unique values for the variable. If there are 
@@ -313,7 +313,7 @@ cb_summarize_text <- function(cb,
     _[, is_missing := lighthouse::is_TRUE(is_missing) | is.na(value_val)] |>
     _[order(match(name, unique(name)), -n, value_val)] |>
     _[,
-      n_unique := data.table::fifelse(is_missing, NA, .N),
+      unique_n := data.table::fifelse(is_missing, NA, .N),
       by = c("name", "is_missing")
     ] |>
     _[,
@@ -330,7 +330,7 @@ cb_summarize_text <- function(cb,
     ] |>
     _[,
       list(n = sum(n)),
-      by = c("name", "label", "n_unique", "is_missing", "value")] |> 
+      by = c("name", "label", "unique_n", "is_missing", "value")] |> 
     _[, pct_of_all := n / sum(n), by = "name"] |>
     _[!(is_missing), pct_of_valid := n / sum(n), by = "name"]
       
@@ -341,7 +341,7 @@ cb_summarize_text <- function(cb,
   }
   
   cols_out <- c(
-    "name", "label_stem", "label", "n_unique", "is_missing", "value", "n", 
+    "name", "label_stem", "label", "unique_n", "is_missing", "value", "n", 
     "pct_of_all", "pct_of_valid", "pct_of_missing"
   )
   freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]

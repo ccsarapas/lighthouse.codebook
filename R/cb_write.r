@@ -57,18 +57,26 @@ cb_write <- function(cb,
   )
 }
 
-
-cb_format_names <- function(cb, cols = tidyselect::everything()) {
-  dplyr::rename_with(
-    cb,
-    \(x) {
-      x |>
-        stringr::str_replace_all(c("_" = " ", "pct" = "%")) |>
-        stringr::str_to_title() |>
-        stringr::str_replace_all("\\bOf\\b", "of")
-    },
-    {{ cols }}
-  )
+cb_format_names <- function(cb,
+                            cols = tidyselect::everything(),
+                            replace = c("pct" = "%"),
+                            keep_lower = c("n", "of")) {
+  format_fx <- function(x, keep_lower) {
+    # change to title case unless in `keep_lower` or has any non-lowercase characters
+    ifelse(
+        x %in% keep_lower | stringr::str_to_lower(x) != x,
+        x,
+        stringr::str_to_title(x)
+      ) |>
+      stringr::str_c(collapse = " ")
+  }
+  old <- untidyselect(cb, {{ cols }})
+  new <- old |>
+    stringr::str_replace_all(replace) |>
+    stringr::str_split("_") |>
+    vapply(format_fx, character(1), keep_lower = keep_lower)
+  new <- setNames(old, new)
+  dplyr::rename(cb, !!!new)
 }
 
 wb_banded_fill_by <- function(wb,
@@ -422,7 +430,7 @@ cb_write_codebook <- function(cb,
     
   # write overview and ungrouped numeric sheets
   overview <- cb_format_names(cb)
-  summaries$num <- cb_format_names(summaries$num, !c(`Valid n`, SD, MAD))
+  summaries$num <- cb_format_names(summaries$num)
   wb <- openxlsx2::wb_workbook() |>
     cb_write_sheet(
       overview, "Overview", header = h_overview, cols_pct = Missing
@@ -435,7 +443,7 @@ cb_write_codebook <- function(cb,
   # write ungrouped categorical sheet 
   detail_missing <- attr(summaries$cat, "detail_missing")
   if (detail_missing) summaries$cat <- cb_valid_miss_col(summaries$cat)
-  summaries$cat <- cb_format_names(summaries$cat, !n)
+  summaries$cat <- cb_format_names(summaries$cat)
   rows_border_by <- rows_sub_border_by <- NULL
   if (detail_missing) {
     rows_border_by <- rlang::sym("Name")
@@ -462,9 +470,8 @@ cb_write_codebook <- function(cb,
     group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!group_by)
     h_summ_num_grp <- c(h_summ_num, paste("By ", toString(group_by_chr)))
     h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(group_by_chr)))
-    grouped$num <- grouped$num |>
-      cb_format_names(!c(`Valid n`, SD, MAD, !!group_by))
-    grouped$cat <- cb_format_names(grouped$cat, !c(n, !!group_by))
+    grouped$num <- cb_format_names(grouped$num, !(!!group_by))
+    grouped$cat <- cb_format_names(grouped$cat, !(!!group_by))
     wb <- wb |>
       cb_write_sheet(
         grouped$num, "Grouped Summary - Numeric", header = h_summ_num_grp, 
