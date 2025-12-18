@@ -1,6 +1,6 @@
 
 #' Summarize numeric variables from a codebook object
-#' 
+#'
 #' `cb_summarize_numeric()` generates a summary table for all numeric variables
 #' from a codebook object, optionally by group. Future releases will include options
 #' to specify the summary statistics used. Currently, summary statistics are valid
@@ -10,9 +10,19 @@
 #'   a variant.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
-#' 
-#' @return A tibble with summary statistics for each numeric variable.
-#' 
+#'
+#' @return A tibble with columns:
+#'   - optional grouping column(s) if specified in `group_by`
+#'   - `name`: variable name
+#'   - `label_stem`: optional column containing variable label stems; included if
+#'      `cb` includes a `label_stem` column and at least one numeric variable has
+#'      a non-missing label stem.
+#'   - `label`: variable label
+#'   - `Valid n`, `valid_pct`: number and proportion of non-missing values
+#'   - summary statistic columns: by default, these include `mean` and standard 
+#'     deviation (`SD`); `median`, median absolute deviation (`MAD`), `min`, `max`, 
+#'     and `range`; skewness (`skew`), and kurtosis (`kurt`).
+#'
 #' @export
 cb_summarize_numeric <- function(cb, group_by = NULL) {
   check_codebook(cb)
@@ -37,6 +47,7 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
   )
   out |>
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
+    dplyr::relocate({{ group_by }}) |> 
     set_attrs(group_by = rlang::enquo(group_by))
 }
 
@@ -56,7 +67,21 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
 #'   only when no grouping variables are specified.
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
 #'
-#' @return A tibble with frequency information for each categorical variable.
+#' @return A tibble with columns:
+#'   - optional grouping column(s) if specified in `group_by`
+#'   - `name`: variable name
+#'   - `label_stem`: optional column containing variable label stems; included if
+#'      `cb` includes a `label_stem` column and at least one categorical variable 
+#'      has a non-missing label stem.
+#'   - `label`: variable label
+#'   - `is_missing`: optional column indicating if `value` is a missing value. Included
+#'      if `detail_missing` is `TRUE`.
+#'   - `value`: variable value
+#'   - `n`: number of observations
+#'   - `pct_of_all`: proportion of all (non-missing and missing) observations
+#'   - `pct_of_valid`: for non-missing values, proportion of all non-missing observations
+#'   - `pct_of_missing`: optional column showing, for missing values, proportion 
+#'     of all missing observations. Included if `detail_missing` is `TRUE`.
 #' 
 #' @export
 cb_summarize_categorical <- function(cb,
