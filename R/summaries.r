@@ -158,13 +158,15 @@ cb_summarize_categorical <- function(cb,
       value.name = "value_val", variable.factor = FALSE
     ) |> 
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
-
+  
   freqs <- merge(
       all_vals, freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
     ) |> 
+    # flag true `NA`s as missing
     _[is.na(value_val), is_missing := TRUE] |>
-    _[, .SD[!(all(is.na(n)) & is_missing)], , by = c("name", "value_val")] |>
+    # remove missing values if not observed in at least one group
+    _[, .SD[!(all(is.na(n)) & is_missing)], by = c("name", "value_val")] |>
     _[order(match(name, unique(name)))] |> 
     _[is.na(n), n := 0L] |>
     _[,
@@ -196,4 +198,98 @@ cb_summarize_categorical <- function(cb,
       group_by = rlang::enquo(group_by),
       detail_missing = detail_missing
     )
+}
+
+cb_summarize_character <- function(cb,
+                                   n_char_vals = 5,
+                                   detail_missing = TRUE,
+                                   detail_na_label = "NA") {
+  check_codebook(cb)
+  cb <- data.table::as.data.table(cb)[type == "character"]
+  cols_chr <- cb[["name"]]
+  data_dt <- attr(cb, "data_labelled") |> 
+    data.table::as.data.table() |> 
+    _[, cols_chr, with = FALSE]
+    
+  label_cols <- intersect(c("name", "label_stem", "label"), names(cb))
+  var_labs <- cb[, label_cols, with = FALSE]
+  ls <- var_labs[["label_stem"]]
+  if (!is.null(ls) && all(is.na(ls))) var_labs[, label_stem := NULL]
+  
+  if (detail_missing) {
+    user_missings <- attr(cb, "user_missing")
+    user_missings <- user_missings[intersect(cols_chr, names(user_missings))]
+    missing_len <- sapply(user_missings, length)    
+    all_missings <- data.table::data.table(
+        name = rep(names(user_missings), missing_len),
+        value_lab = unlist(
+          lapply(unname(user_missings), \(um) names(um) %||% rep("", length(um)))
+        ),
+        value_val = as.character(unlist(user_missings)),
+        is_missing = TRUE
+      )
+    col_to_chr <- as.character
+  } else {
+    all_missings <- data.table::data.table(
+      name = NA_character_, value_lab = NA_character_, 
+      value_val = NA_character_, is_missing = NA
+    )
+    col_to_chr <- \(x) as.character(haven::zap_missing(x))
+  }
+
+  for (col in cols_chr) {
+    data.table::set(data_dt, j = col, value = col_to_chr(data_dt[[col]]))
+  }
+  
+  freqs <- data.table::melt(
+      data_dt,
+      measure.vars = names(data_dt),
+      variable.name = "name", value.name = "value_val", variable.factor = FALSE
+    ) |>
+    _[, list(n = .N), by = c("name", "value_val")] |>
+    merge(var_labs, by = "name", all.x = TRUE, sort = FALSE) |>
+    merge(
+      all_missings,
+      by = c("name", "value_val"), all.x = TRUE, sort = FALSE
+    ) |>
+    _[, is_missing := lighthouse::is_TRUE(is_missing) | is.na(value_val)] |>
+    # not sure if this is needed here
+    _[order(match(name, unique(name)), -n, value_val)] |>
+    _[,
+      n_vals := data.table::fifelse(is_missing, NA, .N),
+      by = c("name", "is_missing")
+    ] |>
+    _[,
+      value := data.table::fcase(
+        !is_missing & .N > n_char_vals + 1 &
+          data.table::frankv(n, order = -1, ties.method = "first") > n_char_vals,
+        stringr::str_c("(", .N - n_char_vals, " other values)"),
+        is.na(value_val) & detail_missing, detail_na_label,
+        is.na(value_val), "(Missing)",
+        rep(all(is.na(value_lab) | is.na(value_val) | value_lab == value_val), .N), value_val,
+        default = stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val))
+      ),
+      by = c("name", "is_missing")
+    ] |>
+    _[,
+      list(n = sum(n)),
+      by = c("name", "label", "n_vals", "is_missing", "value")] |> 
+    _[, pct_of_all := n / sum(n), by = "name"] |>
+    _[!(is_missing), pct_of_valid := n / sum(n), by = "name"]
+      
+  if (detail_missing) {
+    freqs[(is_missing), pct_of_missing := n / sum(n), by = "name"]
+  } else {
+    freqs[, is_missing := NULL]
+  }
+  
+  cols_out <- c(
+    "name", "label_stem", "label", "n_vals", "is_missing", "value", "n", 
+    "pct_of_all", "pct_of_valid", "pct_of_missing"
+  )
+  freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
+  
+  freqs |>
+    tibble::as_tibble() |>
+    set_attrs(detail_missing = detail_missing)
 }
