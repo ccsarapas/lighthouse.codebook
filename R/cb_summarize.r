@@ -225,16 +225,16 @@ cb_summarize_categorical <- function(cb,
     )
 }
 
-#' Summarize string variables from a codebook object
+#' Summarize character variables from a codebook object
 #'
-#' `cb_summarize_character()` generates a summary table for all character variables 
+#' `cb_summarize_text()` generates a summary table for all character variables 
 #' from a codebook object, including number of unique values, frequencies for the 
 #' most common values, and missing value information. Note that character variables 
 #' of class `"haven_labelled"` are treated as categorical; see `cb_summarize_categorical()`.
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
-#' @param n_char_vals Frequencies for the `n_char_vals` most frequent values will 
+#' @param n_text_vals Frequencies for the `n_text_vals` most frequent values will 
 #'   be included.
 #' @param detail_missing Include detailed missing value information?
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
@@ -249,7 +249,7 @@ cb_summarize_categorical <- function(cb,
 #'   - `is_missing`: optional column indicating if `value` is a missing value. Included
 #'      if `detail_missing` is `TRUE`.
 #'   - `value`: the most prevalent unique values for the variable. If there are 
-#'     more than `n_char_vals` + 1 unique values, the `n_char_vals` most common
+#'     more than `n_text_vals` + 1 unique values, the `n_text_vals` most common
 #'     non-missing values will be included. (All missing values will always be included.)
 #'   - `n`: number of observations
 #'   - `pct_of_all`: proportion of all (non-missing and missing) observations
@@ -258,10 +258,10 @@ cb_summarize_categorical <- function(cb,
 #'     of all missing observations. Included if `detail_missing` is `TRUE`.
 #' 
 #' @export
-cb_summarize_character <- function(cb,
-                                   n_char_vals = 5,
-                                   detail_missing = TRUE,
-                                   detail_na_label = "NA") {
+cb_summarize_text <- function(cb,
+                              n_text_vals = 5,
+                              detail_missing = TRUE,
+                              detail_na_label = "NA") {
   check_codebook(cb)
   cb <- data.table::as.data.table(cb)[type == "character"]
   cols_chr <- cb[["name"]]
@@ -318,9 +318,9 @@ cb_summarize_character <- function(cb,
     ] |>
     _[,
       value := data.table::fcase(
-        !is_missing & .N > n_char_vals + 1 &
-          data.table::frankv(n, order = -1, ties.method = "first") > n_char_vals,
-        stringr::str_c("(", .N - n_char_vals, " other values)"),
+        !is_missing & .N > n_text_vals + 1 &
+          data.table::frankv(n, order = -1, ties.method = "first") > n_text_vals,
+        stringr::str_c("(", .N - n_text_vals, " other values)"),
         is.na(value_val) & detail_missing, detail_na_label,
         is.na(value_val), "(Missing)",
         rep(all(is.na(value_lab) | is.na(value_val) | value_lab == value_val), .N), value_val,
