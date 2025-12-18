@@ -67,12 +67,11 @@ expand_dt <- function(dt, ...) {
   grid[, as.list(dt), by = grid]
 }
 
-repeats_to_blank <- function(x, replace = c("", "NA")) {
-  replace <- if (match.arg(replace) == "NA") NA else ""
-  dplyr::if_else(x == dplyr::lag(x, default = replace), replace, x)
+repeats_to_blank <- function(x, replace = c("empty", "NA")) {
+  # changes "" to "empty" because "" doesn't work with `match.arg()`
+  replace <- if (match.arg(replace) == "empty") "" else NA
+  dplyr::if_else(lighthouse::is_TRUE(x == dplyr::lag(x)), replace, x)
 }
-class(1)
-
 
 can_have_labels <- function(nm, data) {
   allowed <- c(
