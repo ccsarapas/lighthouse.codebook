@@ -311,7 +311,7 @@ cb_summarize_text <- function(cb,
       by = c("name", "value_val"), all.x = TRUE, sort = FALSE
     ) |>
     _[, is_missing := lighthouse::is_TRUE(is_missing) | is.na(value_val)] |>
-    _[order(match(name, unique(name)), -n, value_val)] |>
+    _[order(match(name, unique(name)), is_missing, -n * !is_missing, value_val)] |>
     _[,
       unique_n := data.table::fifelse(is_missing, NA, .N),
       by = c("name", "is_missing")
