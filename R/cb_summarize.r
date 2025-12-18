@@ -200,6 +200,39 @@ cb_summarize_categorical <- function(cb,
     )
 }
 
+#' Summarize string variables from a codebook object
+#'
+#' `cb_summarize_character()` generates a summary table for all character variables 
+#' from a codebook object, including number of unique values, frequencies for the 
+#' most common values, and missing value information. Note that character variables 
+#' of class `"haven_labelled"` are treated as categorical; see `cb_summarize_categorical()`.
+#'
+#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
+#'   a variant.
+#' @param n_char_vals Frequencies for the `n_char_vals` most frequent values will 
+#'   be included.
+#' @param detail_missing Include detailed missing value information?
+#' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
+#' 
+#' @return A tibble with columns:
+#'   - `name`: variable name
+#'   - `label_stem`: optional column containing variable label stems; included if
+#'      `cb` includes a `label_stem` column and at least one character variable 
+#'      has a non-missing label stem.
+#'   - `label`: variable label
+#'   - `n_unique`: number of unique non-missing values
+#'   - `is_missing`: optional column indicating if `value` is a missing value. Included
+#'      if `detail_missing` is `TRUE`.
+#'   - `value`: the most prevalent unique values for the variable. If there are 
+#'     more than `n_char_vals` + 1 unique values, the `n_char_vals` most common
+#'     non-missing values will be included. (All missing values will always be included.)
+#'   - `n`: number of observations
+#'   - `pct_of_all`: proportion of all (non-missing and missing) observations
+#'   - `pct_of_valid`: for non-missing values, proportion of all non-missing observations
+#'   - `pct_of_missing`: optional column showing, for missing values, proportion 
+#'     of all missing observations. Included if `detail_missing` is `TRUE`.
+#' 
+#' @export
 cb_summarize_character <- function(cb,
                                    n_char_vals = 5,
                                    detail_missing = TRUE,
@@ -253,10 +286,9 @@ cb_summarize_character <- function(cb,
       by = c("name", "value_val"), all.x = TRUE, sort = FALSE
     ) |>
     _[, is_missing := lighthouse::is_TRUE(is_missing) | is.na(value_val)] |>
-    # not sure if this is needed here
     _[order(match(name, unique(name)), -n, value_val)] |>
     _[,
-      n_vals := data.table::fifelse(is_missing, NA, .N),
+      n_unique := data.table::fifelse(is_missing, NA, .N),
       by = c("name", "is_missing")
     ] |>
     _[,
@@ -273,7 +305,7 @@ cb_summarize_character <- function(cb,
     ] |>
     _[,
       list(n = sum(n)),
-      by = c("name", "label", "n_vals", "is_missing", "value")] |> 
+      by = c("name", "label", "n_unique", "is_missing", "value")] |> 
     _[, pct_of_all := n / sum(n), by = "name"] |>
     _[!(is_missing), pct_of_valid := n / sum(n), by = "name"]
       
@@ -284,7 +316,7 @@ cb_summarize_character <- function(cb,
   }
   
   cols_out <- c(
-    "name", "label_stem", "label", "n_vals", "is_missing", "value", "n", 
+    "name", "label_stem", "label", "n_unique", "is_missing", "value", "n", 
     "pct_of_all", "pct_of_valid", "pct_of_missing"
   )
   freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
