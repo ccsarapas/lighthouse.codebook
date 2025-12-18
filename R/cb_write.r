@@ -384,19 +384,19 @@ cb_write_sheet <- function(wb,
 cb_valid_miss_col <- function(summary) {
   summary |>
     dplyr::mutate(
-      `valid / missing` = ifelse(
+      n_val_miss = ifelse(
         is_missing,
         sum(n[is_missing]) / sum(n),
         sum(n[!is_missing]) / sum(n)
       ),
-      `valid / missing` = glue_chr(
+      is_missing = glue_chr(
         "{ifelse(is_missing, 'Missing', 'Valid')} ",
-        "({sprintf('%.1f%%', `valid / missing` * 100)})"
+        "({sprintf('%.1f%%', n_val_miss * 100)})"
       ),
-      is_missing = NULL,
-      .before = value,
+      n_val_miss = NULL,
       .by = name
-    )
+    ) |>
+    dplyr::rename(`valid / missing` = is_missing)
 }
 
 cb_write_codebook <- function(cb, 
