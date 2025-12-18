@@ -9,7 +9,8 @@
 #'
 #' The resulting object can be used to write an Excel workbook with variable and
 #' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
-#' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
+#' or generate dataset summaries ([`cb_summarize_numeric()`], [`cb_summarize_categorical()`],
+#' [`cb_summarize_text()`]).
 #'
 #' @inheritParams cb_create
 #' @param data A data frame exported or retrieved from REDCap.
@@ -37,8 +38,7 @@
 #'     - `missing`: proportion missing
 #' - Attributes:
 #'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
-#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
-#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`#'
+#'     - Lookup tables and other metadata used internally.
 #'
 #' @export
 cb_create_spss <- function(data,

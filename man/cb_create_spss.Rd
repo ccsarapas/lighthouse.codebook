@@ -56,8 +56,7 @@ with value labels for user missing values
 \item Attributes:
 \itemize{
 \item Transformed versions of the passed dataset. See \code{\link[=cb_get_data]{cb_get_data()}}.
-\item Lookup tables and other metadata used internally: \code{"user_missing"}, \code{"vals_by_label"},
-\code{"labs_by_value"}, \code{"miss_propagate"}, \code{"factors"}, \code{"n_obs"}, \code{"n_vars"}#'
+\item Lookup tables and other metadata used internally.
 }
 }
 }
@@ -70,5 +69,6 @@ argument.)`
 
 The resulting object can be used to write an Excel workbook with variable and
 data summaries (using \code{\link[=cb_write]{cb_write()}}), extract processed data (\code{\link[=cb_get_data]{cb_get_data()}}),
-or generate dataset summaries (\code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}} and \code{\link[=cb_summarize_categorical]{cb_summarize_categorical()}}).
+or generate dataset summaries (\code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}}, \code{\link[=cb_summarize_categorical]{cb_summarize_categorical()}},
+\code{\link[=cb_summarize_text]{cb_summarize_text()}}).
 }

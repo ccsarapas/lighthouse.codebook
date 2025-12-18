@@ -4,8 +4,8 @@
 #' `cb_create_redcap()` builds an object of class `"li_codebook"` from a dataset and
 #' corresponding codebook exported from REDCap. The resulting object can be used
 #' to write an Excel workbook with variable and data summaries (using [`cb_write()`]),
-#' extract processed data ([`cb_get_data()`]), or generate dataset summaries ([`cb_summarize_numeric()`]
-#' and [`cb_summarize_categorical()`]).
+#' extract processed data ([`cb_get_data()`]), or generate dataset summaries ([`cb_summarize_numeric()`],
+#' [`cb_summarize_categorical()`], [`cb_summarize_text()`]).
 #'
 #' This variant of [`cb_create()`] includes functionality specific to REDCap data
 #' and metadata, including:
@@ -54,8 +54,7 @@
 #'     - additional columns if specified in `...`
 #' - Attributes:
 #'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
-#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
-#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`
+#'     - Lookup tables and other metadata used internally.
 #'
 #' @section Checkbox data handling:
 #' ## Value labels

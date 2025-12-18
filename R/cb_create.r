@@ -4,7 +4,8 @@
 #' `cb_create()` builds an object of class `"li_codebook"` from a dataset and optional
 #' metadata. The resulting object can be used to write an Excel workbook with variable
 #' and data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
-#' or generate dataset summaries ([`cb_summarize_numeric()`] and [`cb_summarize_categorical()`]).
+#' or generate dataset summaries ([`cb_summarize_numeric()`], [`cb_summarize_categorical()`],
+#' [`cb_summarize_text()`]).
 #'
 #' @param data A data frame exported or retrieved from REDCap.
 #' @param metadata A data frame containing metadata, such as variable labels and value
@@ -56,16 +57,15 @@
 #'     - `missing`: proportion missing
 #'     - additional columns if specified in `...`
 #' - Attributes:
-#'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
-#'     - Lookup tables and other metadata used internally: `"user_missing"`, `"vals_by_label"`,
-#'       `"labs_by_value"`, `"miss_propagate"`, `"factors"`, `"n_obs"`, `"n_vars"`
+#'     - Transformed versions of the passed dataset. See [`cb_get_data()`]
+#'     - Lookup tables and other metadata used internally.
 #'
 #' @section Specifying user missing values:
 #' User missing values are defined by passing a formula or list of formulas to the
 #' `.user_missing` argument. Formulas should specify variables on the left-hand
 #' side and user missing values for those variables on the right-hand side:
 #' \preformatted{
-#' cb <- cb_create_redcap(data, metadata, .user_missing = var1 ~ 99)
+#' cb <- cb_create(data, metadata, .user_missing = var1 ~ 99)
 #' }
 #' The same user missings can be applied to multiple variables using [tidyselect][dplyr_tidy_select] 
 #' expressions.
