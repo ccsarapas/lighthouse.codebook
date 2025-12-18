@@ -15,8 +15,8 @@ cb_summarize_text(
 \item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
 a variant.}
 
-\item{n_text_vals}{Frequencies for the \code{n_text_vals} most frequent values will
-be included.}
+\item{n_text_vals}{How many unique non-missing values should be included for
+each variable?}
 
 \item{detail_missing}{Include detailed missing value information?}
 
@@ -30,7 +30,7 @@ A tibble with columns:
 \code{cb} includes a \code{label_stem} column and at least one character variable
 has a non-missing label stem.
 \item \code{label}: variable label
-\item \code{n_unique}: number of unique non-missing values
+\item \code{unique_n}: number of unique non-missing values
 \item \code{is_missing}: optional column indicating if \code{value} is a missing value. Included
 if \code{detail_missing} is \code{TRUE}.
 \item \code{value}: the most prevalent unique values for the variable. If there are

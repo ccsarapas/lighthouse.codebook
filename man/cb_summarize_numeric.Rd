@@ -22,7 +22,7 @@ A tibble with columns:
 \code{cb} includes a \code{label_stem} column and at least one numeric variable has
 a non-missing label stem.
 \item \code{label}: variable label
-\item \verb{Valid n}, \code{valid_pct}: number and proportion of non-missing values
+\item \code{valid_n}, \code{valid_pct}: number and proportion of non-missing values
 \item summary statistic columns: by default, these include \code{mean} and standard
 deviation (\code{SD}); \code{median}, median absolute deviation (\code{MAD}), \code{min}, \code{max},
 and \code{range}; skewness (\code{skew}), and kurtosis (\code{kurt}).

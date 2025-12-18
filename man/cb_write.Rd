@@ -12,6 +12,7 @@ cb_write(
   incl_dims = TRUE,
   group_by = NULL,
   detail_missing = TRUE,
+  n_text_vals = 5,
   overwrite = TRUE
 )
 }
@@ -31,17 +32,26 @@ by. If specified, additional numeric and categorical summary tabs will be includ
 with decked heads for specified groups.}
 
 \item{detail_missing}{Include detailed missing value information on categorical
-summary tab?}
+and text summary tabs?}
+
+\item{n_text_vals}{On the text summary tab, how many unique non-missing values
+should be included for each variable? If there are more than \code{n_text_vals}
+\itemize{
+\item 1 unique values, the \code{n_text_vals} most common non-missing values will be included.
+}}
 
 \item{overwrite}{Overwrite existing file?}
 }
 \value{
-Invisibly returns the path to the written Excel file.
+Invisibly returns the path to the written Excel file. See []\code{cb_create()}]
+and variants, \code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}}, \code{\link[=cb_summarize_categorical]{cb_summarize_categorical()}}, and
+\code{\link[=cb_summarize_text]{cb_summarize_text()}} for details on the objects written to the file.
 }
 \description{
 \code{cb_write()} writes an Excel workbook to disk with tabs including a codebook;
 summary statistics for numeric variables; frequencies for categorical variables;
-and optional grouped data summaries. For data summaires, variables with value
-labels, factors (including ordered factors), and logical variables are treated
-as categorical, while numeric and integer variables are treated as numeric.
+truncated frequencies for text variables; and optional grouped summaries for numeric
+and categorical variables. For data summaires, variables with value labels, factors,
+and logical variables are treated as categorical, numeric and integer variables
+are treated as numeric, and (unlabeled) character variables are treated as text.
 }

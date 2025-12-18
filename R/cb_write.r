@@ -2,9 +2,10 @@
 #' 
 #' `cb_write()` writes an Excel workbook to disk with tabs including a codebook; 
 #' summary statistics for numeric variables; frequencies for categorical variables; 
-#' and optional grouped data summaries. For data summaires, variables with value 
-#' labels, factors (including ordered factors), and logical variables are treated 
-#' as categorical, while numeric and integer variables are treated as numeric.
+#' truncated frequencies for text variables; and optional grouped summaries for numeric
+#' and categorical variables. For data summaires, variables with value labels, factors, 
+#' and logical variables are treated as categorical, numeric and integer variables 
+#' are treated as numeric, and (unlabeled) character variables are treated as text.
 #' 
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
@@ -16,10 +17,15 @@
 #'   by. If specified, additional numeric and categorical summary tabs will be included
 #'   with decked heads for specified groups. 
 #' @param detail_missing Include detailed missing value information on categorical 
-#'   summary tab?
+#'   and text summary tabs?
+#' @param n_text_vals On the text summary tab, how many unique non-missing values 
+#'   should be included for each variable? If there are more than `n_text_vals` 
+#'   + 1 unique values, the `n_text_vals` most common non-missing values will be included. 
 #' @param overwrite Overwrite existing file?
 #'
-#' @return Invisibly returns the path to the written Excel file.
+#' @return Invisibly returns the path to the written Excel file. See []`cb_create()`]
+#'   and variants, [`cb_summarize_numeric()`], [`cb_summarize_categorical()`], and 
+#'   [`cb_summarize_text()`] for details on the objects written to the file.
 #' 
 #' @export
 cb_write <- function(cb, 
@@ -29,11 +35,17 @@ cb_write <- function(cb,
                      incl_dims = TRUE,
                      group_by = NULL,
                      detail_missing = TRUE,
+                     n_text_vals = 5,
                      overwrite = TRUE) {
   check_codebook(cb)
   summaries <- list(
     num = cb_summarize_numeric(cb),
-    cat = cb_summarize_categorical(cb, detail_missing = detail_missing)
+    cat = cb_summarize_categorical(cb, detail_missing = detail_missing),
+    txt = cb_summarize_text(
+      cb, 
+      n_text_vals = n_text_vals, 
+      detail_missing = detail_missing
+    )
   )
   group_by <- rlang::enquo(group_by)
   if (!rlang::quo_is_null(group_by)) {
@@ -79,6 +91,41 @@ cb_format_names <- function(cb,
   dplyr::rename(cb, !!!new)
 }
 
+wb_add_data_multi_na <- function(wb,
+                                 sheet = openxlsx2::current_sheet(),
+                                 x,
+                                 start_col = 1,
+                                 start_row = 1,
+                                 na.strings = openxlsx2::na_strings(),
+                                 ...) {
+  if (length(na.strings) == 1) {
+    wb |>
+      openxlsx2::wb_add_data(
+        x = x, start_row = start_row, start_col = start_col,
+        na.strings = na.strings, ...
+      )
+  } else {
+    if (length(na.strings) != ncol(x)) {
+      cli::cli_abort(
+        "{.arg na.strings} must be length 1 or length {.code ncol(x)}."
+      )
+    }
+    na.cols <- split(seq_along(na.strings), data.table::rleid(na.strings))
+    na.vals <- rle(na.strings)$values
+    for (i in seq_along(na.cols)) {
+      cols <- na.cols[[i]]
+      vals <- na.vals[[i]]
+      start <- start_col + cols[[1]] - 1
+      wb <- wb |>
+        openxlsx2::wb_add_data(
+          x = x[, cols, drop = FALSE], start_row = start_row, start_col = start,
+          na.strings = vals, ...
+        )
+    }
+    wb
+  }
+}
+  
 wb_banded_fill_by <- function(wb,
                               sheet = openxlsx2::current_sheet(),
                               dims,
@@ -299,9 +346,10 @@ cb_write_sheet <- function(wb,
     for (i in seq(length(clear_repeats), 1)) {
       var <- clear_repeats[[i]]
       grp <- clear_repeats[seq(length.out = i - 1)]
+      replace <- ifelse(is.character(data[[var]]), "empty", "NA")
       data <- data |>
         dplyr::mutate(
-          "{var}" := repeats_to_blank(.data[[var]]),
+          "{var}" := repeats_to_blank(.data[[var]], replace = replace),
           .by = tidyselect::all_of(grp)
         )
     }
@@ -324,13 +372,24 @@ cb_write_sheet <- function(wb,
       }
     }
   }
-  
+
   data <- as.data.frame(data)
   names(data) <- data_nms
+
   ## Write data
+
+  # the following, along with `wb_add_data_multi_na()`, is a workaround to use 
+  # different `na.strings` for `Unique n` column
+  na.strings <- "-"
+  if ("Unique n" %in% data_nms) {
+    na.strings <- rep(na.strings, ncol(data))
+    na.strings[data_nms == "Unique n"] <- ""
+  }
+  
   wb <- wb |>
-    openxlsx2::wb_add_data(
-      x = data, start_row = rows$dat_start, start_col = 1, na.strings = "-"
+    wb_add_data_multi_na(
+      x = data, start_row = rows$dat_start, start_col = 1, 
+      na.strings = na.strings
     )  
   
   if (!is.null(decked)) {
@@ -420,6 +479,7 @@ cb_write_codebook <- function(cb,
   h_overview <- c(dataset_name, cb_dims, cb_date)
   h_summ_num <- c(dataset_name, "Numeric variables summary")
   h_summ_cat <- c(dataset_name, "Categorical variables summary")
+  h_summ_txt <- c(dataset_name, "Text variables summary")
   
   # set max col width
   opts <- options(
@@ -460,6 +520,29 @@ cb_write_codebook <- function(cb,
       rows_sub_border_by = !!rows_sub_border_by,
       clear_repeats = tidyselect::any_of(
         c("Name", "Label Stem", "Label", "Valid / Missing")
+      )
+    )
+
+  # write ungrouped text sheet 
+  detail_missing <- attr(summaries$txt, "detail_missing")
+  if (detail_missing) summaries$txt <- cb_valid_miss_col(summaries$txt)
+  summaries$txt <- cb_format_names(summaries$txt)
+  rows_border_by <- rows_sub_border_by <- NULL
+  if (detail_missing) {
+    rows_border_by <- rlang::sym("Name")
+    rows_sub_border_by <- rlang::sym("Valid / Missing")
+  }
+  wb <- wb |>
+    cb_write_sheet(
+      summaries$txt, 
+      "Summary - Text", 
+      header = h_summ_txt,
+      cols_pct = tidyselect::starts_with("%"), 
+      cols_int = c(`Unique n`, n),
+      rows_border_by = !!rows_border_by, 
+      rows_sub_border_by = !!rows_sub_border_by,
+      clear_repeats = tidyselect::any_of(
+        c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
       )
     )
   

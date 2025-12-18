@@ -2,6 +2,10 @@
 
 ## New functionality
 
+* New function `cb_summarize_text()` returns a summary of text variables including
+  unique values, frequencies for the most common values, and missing value information.
+  A tab including this information is now included in workbooks created by `cb_write()`.
+
 * The `.split_var_labels` argument to `cb_create()` and variants splits variable 
   labels with a common prefix into separate columns. For example, given a set of 
   variable labels that all begin with `"Select all that apply: "`, the default behavior 

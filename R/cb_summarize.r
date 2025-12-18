@@ -234,8 +234,8 @@ cb_summarize_categorical <- function(cb,
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
-#' @param n_text_vals Frequencies for the `n_text_vals` most frequent values will 
-#'   be included.
+#' @param n_text_vals How many unique non-missing values should be included for 
+#'   each variable?
 #' @param detail_missing Include detailed missing value information?
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
 #' 
@@ -341,7 +341,7 @@ cb_summarize_text <- function(cb,
   }
   
   cols_out <- c(
-    "name", "label_stem", "label", "unique_n", "is_missing", "value", "n", 
+    "name", "label_stem", "label", "is_missing", "unique_n", "value", "n", 
     "pct_of_all", "pct_of_valid", "pct_of_missing"
   )
   freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
