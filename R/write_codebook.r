@@ -1,3 +1,63 @@
+#' Write codebook and data summaries to an Excel workbook
+#' 
+#' `cb_write()` writes an Excel workbook to disk with tabs including a codebook; 
+#' summary statistics for numeric variables; frequencies for categorical variables; 
+#' and optional grouped data summaries. For data summaires, variables with value 
+#' labels, factors (including ordered factors), and logical variables are treated 
+#' as categorical, while numeric and integer variables are treated as numeric.
+#' 
+#' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
+#'   a variant.
+#' @param file Path to write to.
+#' @param dataset_name Name of the dataset to display in workbook headers.
+#' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
+#'   in the Overview tab header?
+#' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
+#'   by. If specified, additional numeric and categorical summary tabs will be included
+#'   with decked heads for specified groups. 
+#' @param detail_missing Include detailed missing value information on categorical 
+#'   summary tab?
+#' @param overwrite Overwrite existing file?
+#'
+#' @return Invisibly returns the path to the written Excel file.
+#' 
+#' @export
+cb_write <- function(cb, 
+                     file, 
+                     dataset_name = NULL,
+                     incl_date = TRUE,
+                     incl_dims = TRUE,
+                     group_by = NULL,
+                     detail_missing = TRUE,
+                     overwrite = TRUE) {
+  check_codebook(cb)
+  summaries <- list(
+    num = cb_summarize_numeric(cb),
+    cat = cb_summarize_categorical(cb, detail_missing = detail_missing)
+  )
+  group_by <- rlang::enquo(group_by)
+  if (!rlang::quo_is_null(group_by)) {
+    if (detail_missing) {
+      cli::cli_inform(c(
+        "i" = paste0(
+          "Detailed missing value information is not currently supported for ", 
+          "grouped summaries, so will be included only for ungrouped summaries."
+        )
+      ))
+    }
+    summaries$grouped <- list(
+      num = cb_summarize_numeric(cb, group_by = !!group_by),
+      cat = cb_summarize_categorical(cb, group_by = !!group_by)
+    )
+  }
+  cb_write_codebook(
+    cb, summaries,
+    file = file, dataset_name = dataset_name, incl_date = incl_date, 
+    incl_dims = incl_dims, overwrite = overwrite
+  )
+}
+
+
 cb_format_names <- function(cb, cols = tidyselect::everything()) {
   dplyr::rename_with(
     cb,
