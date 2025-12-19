@@ -49,15 +49,21 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   nms_num <- out$name
   data <- attr(cb, "data_zapped")
   res <- lighthouse::summary_table(
-    data,
-    valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
-    mean, SD = sd,
-    median, MAD = mad, min = lighthouse::min_if_any, max = lighthouse::max_if_any, range = spread_if_any,
-    skew = moments::skewness, kurt = moments::kurtosis,
-    na.rm = TRUE,
-    .vars = tidyselect::all_of(nms_num),
-    .rows_group_by = {{ group_by }}
-  )
+      data,
+      valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
+      mean, SD = sd,
+      median, MAD = mad, min = lighthouse::min_if_any, max = lighthouse::max_if_any, 
+      range = spread_if_any,
+      skew = moments::skewness, kurt = moments::kurtosis,
+      na.rm = TRUE,
+      .vars = tidyselect::all_of(nms_num),
+      .rows_group_by = {{ group_by }}
+    ) |>
+    dplyr::mutate(dplyr::across(
+      {{ group_by }},
+      \(x) forcats::fct_na_value_to_level(factor(x), "(Missing)")
+    ))
+  
   out |>
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
     dplyr::relocate({{ group_by }}) |> 
