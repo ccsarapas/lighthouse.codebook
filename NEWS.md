@@ -30,6 +30,9 @@
   Multiple sets of variables with common prefixes can be specified by passing a 
   list of tidyselect expressions.
 
+* In `cb_write()`, changed `detail_missing` argument from logical to options `"if_any_user_missing"`, 
+  `"yes"`, and `"no"`.
+
 * `cb_summarize_numeric()`, `cb_summarize_categorical()`, and `cb_summarize_text()`
   now return `NULL` when there are no variables of the relevant type, with an optional
   warning controlled by the `.warn_if_none` argument.

@@ -34,10 +34,14 @@ cb_write <- function(cb,
                      incl_date = TRUE,
                      incl_dims = TRUE,
                      group_by = NULL,
-                     detail_missing = TRUE,
+                     detail_missing = c("if_any_user_missing", "yes", "no"),
                      n_text_vals = 5,
                      overwrite = TRUE) {
   check_codebook(cb)
+  detail_missing <- match.arg(detail_missing)
+  detail_missing <- detail_missing == "yes" || (
+    detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
+  )
   summaries <- list(
     num = cb_summarize_numeric(cb),
     cat = cb_summarize_categorical(cb, detail_missing = detail_missing),

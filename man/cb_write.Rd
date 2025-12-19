@@ -11,7 +11,7 @@ cb_write(
   incl_date = TRUE,
   incl_dims = TRUE,
   group_by = NULL,
-  detail_missing = TRUE,
+  detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
   overwrite = TRUE
 )
