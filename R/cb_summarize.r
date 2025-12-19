@@ -10,8 +10,11 @@
 #'   a variant.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
+#' @param warn_if_none Should a warning be issued if there are no numeric variables
+#'   in `cb`?
 #'
-#' @return A tibble with columns:
+#' @return If there no numeric variables in `cb`, `NULL`. Otherwise, a tibble with 
+#'   columns:
 #'   - optional grouping column(s) if specified in `group_by`
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
@@ -24,11 +27,21 @@
 #'     and `range`; skewness (`skew`), and kurtosis (`kurt`).
 #'
 #' @export
-cb_summarize_numeric <- function(cb, group_by = NULL) {
+cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   check_codebook(cb)
   out <- cb |>
     dplyr::filter(type %in% c("numeric", "integer")) |>
     dplyr::select(tidyselect::any_of(c("name", "label_stem", "label")))
+  
+    if (!nrow(out)) {
+    if (warn_if_none) {
+      cli::cli_warn(c(
+        "!" = "No numeric variables in codebook; returning `NULL`."
+      ))
+    }
+    return(NULL)
+  }
+  
   # only include `label_stem` if not empty
   if ("label_stem" %in% names(out) && all(is.na(out$label_stem))) {
     out$label_stem <- NULL
@@ -66,8 +79,11 @@ cb_summarize_numeric <- function(cb, group_by = NULL) {
 #' @param detail_missing Include detailed missing value information? Currently supported
 #'   only when no grouping variables are specified.
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
+#' @param warn_if_none Should a warning be issued if there are no categorical 
+#'   variables in `cb`?
 #'
-#' @return A tibble with columns:
+#' @return If there no categorical variables in `cb`, `NULL`. Otherwise, a tibble 
+#'   with columns:
 #'   - optional grouping column(s) if specified in `group_by`
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
@@ -88,7 +104,8 @@ cb_summarize_categorical <- function(cb,
                                      group_by = NULL,
                                      prefixed = TRUE,
                                      detail_missing = missing(group_by),
-                                     detail_na_label = "NA") {
+                                     detail_na_label = "NA",
+                                     warn_if_none = TRUE) {
   check_codebook(cb)
   factors <- attr(cb, "factors")
   val_labs <- attr(cb, "vals_by_label")
@@ -103,6 +120,21 @@ cb_summarize_categorical <- function(cb,
     names(data_dt)[vapply(data_dt, is.logical, logical(1))],
     cols_grp
   )
+  
+  if (!length(c(cols_cat, cols_lgl))) {
+    if (warn_if_none) {
+      if (!length(cols_grp)) {
+        cli::cli_warn(c(
+          "!" = "No categorical variables in codebook; returning `NULL`."
+        ))
+      } else {
+        cli::cli_warn((
+          "i" = "No categorical variables in codebook after grouping; returning `NULL`."
+        ))
+      }
+    }
+    return(NULL)
+  }
   
   ## define labels and is_missing
   val_labs <- val_labs[cols_cat]
@@ -238,8 +270,10 @@ cb_summarize_categorical <- function(cb,
 #'   each variable?
 #' @param detail_missing Include detailed missing value information?
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
+#' @param warn_if_none Should a warning be issued if there are no text variables in `cb`?
 #' 
-#' @return A tibble with columns:
+#' @return If there no text variables in `cb`, `NULL`. Otherwise, a tibble with 
+#'   columns:
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
 #'      `cb` includes a `label_stem` column and at least one character variable 
@@ -261,9 +295,16 @@ cb_summarize_categorical <- function(cb,
 cb_summarize_text <- function(cb,
                               n_text_vals = 5,
                               detail_missing = TRUE,
-                              detail_na_label = "NA") {
+                              detail_na_label = "NA",
+                              warn_if_none = TRUE) {
   check_codebook(cb)
   cb <- data.table::as.data.table(cb)[type == "character"]
+  if (!nrow(cb)) {
+    if (warn_if_none) {
+      cli::cli_warn("No character variables in codebook; returning `NULL`.")
+    }
+    return(NULL)
+  }
   cols_chr <- cb[["name"]]
   data_dt <- attr(cb, "data_labelled") |> 
     data.table::as.data.table() |> 

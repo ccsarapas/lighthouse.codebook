@@ -8,7 +8,8 @@ cb_summarize_text(
   cb,
   n_text_vals = 5,
   detail_missing = TRUE,
-  detail_na_label = "NA"
+  detail_na_label = "NA",
+  warn_if_none = TRUE
 )
 }
 \arguments{
@@ -21,9 +22,12 @@ each variable?}
 \item{detail_missing}{Include detailed missing value information?}
 
 \item{detail_na_label}{Label used for \code{NA} values when \code{detail_missing} is \code{TRUE}.}
+
+\item{warn_if_none}{Should a warning be issued if there are no text variables in \code{cb}?}
 }
 \value{
-A tibble with columns:
+If there no text variables in \code{cb}, \code{NULL}. Otherwise, a tibble with
+columns:
 \itemize{
 \item \code{name}: variable name
 \item \code{label_stem}: optional column containing variable label stems; included if

@@ -9,7 +9,8 @@ cb_summarize_categorical(
   group_by = NULL,
   prefixed = TRUE,
   detail_missing = missing(group_by),
-  detail_na_label = "NA"
+  detail_na_label = "NA",
+  warn_if_none = TRUE
 )
 }
 \arguments{
@@ -26,9 +27,13 @@ e.g., \code{TRUE} yields \code{"[1] Value One"}; \code{FALSE} yields \code{"Valu
 only when no grouping variables are specified.}
 
 \item{detail_na_label}{Label used for \code{NA} values when \code{detail_missing} is \code{TRUE}.}
+
+\item{warn_if_none}{Should a warning be issued if there are no categorical
+variables in \code{cb}?}
 }
 \value{
-A tibble with columns:
+If there no categorical variables in \code{cb}, \code{NULL}. Otherwise, a tibble
+with columns:
 \itemize{
 \item optional grouping column(s) if specified in \code{group_by}
 \item \code{name}: variable name

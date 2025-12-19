@@ -4,7 +4,7 @@
 \alias{cb_summarize_numeric}
 \title{Summarize numeric variables from a codebook object}
 \usage{
-cb_summarize_numeric(cb, group_by = NULL)
+cb_summarize_numeric(cb, group_by = NULL, warn_if_none = TRUE)
 }
 \arguments{
 \item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
@@ -12,9 +12,13 @@ a variant.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
 by.}
+
+\item{warn_if_none}{Should a warning be issued if there are no numeric variables
+in \code{cb}?}
 }
 \value{
-A tibble with columns:
+If there no numeric variables in \code{cb}, \code{NULL}. Otherwise, a tibble with
+columns:
 \itemize{
 \item optional grouping column(s) if specified in \code{group_by}
 \item \code{name}: variable name

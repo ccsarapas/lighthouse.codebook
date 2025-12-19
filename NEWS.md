@@ -27,8 +27,12 @@
   | colors3 | Select all that apply: | Blue |
   | colors4 | Select all that apply: | Orange |
 
-  Multiple sets of variables with common prefixes can be specified by passing a list 
-  of tidyselect expressions.
+  Multiple sets of variables with common prefixes can be specified by passing a 
+  list of tidyselect expressions.
+
+* `cb_summarize_numeric()`, `cb_summarize_categorical()`, and `cb_summarize_text()`
+  now return `NULL` when there are no variables of the relevant type, with an optional
+  warning controlled by the `.warn_if_none` argument.
 
 ## Interface changes
 
