@@ -46,8 +46,10 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   if ("label_stem" %in% names(out) && all(is.na(out$label_stem))) {
     out$label_stem <- NULL
   }
+  
   nms_num <- out$name
   data <- attr(cb, "data_zapped")
+  
   res <- lighthouse::summary_table(
       data,
       valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
@@ -64,10 +66,19 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
       \(x) fct_replace_na(factor(x), "(Missing)")
     ))
   
-  out |>
+  out <- out |>
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    dplyr::relocate({{ group_by }}) |> 
-    set_attrs(group_by = rlang::enquo(group_by))
+    dplyr::relocate({{ group_by }}) 
+  
+  group_by_quo <- rlang::enquo(group_by)
+  if (!rlang::quo_is_null(group_by_quo)) {
+    out <- set_attrs(
+      out,
+      group_by = group_by_quo, group_counts = group_counts(cb, {{ group_by }})
+    )
+  }
+  
+  out
 }
 
 #' Summarize categorical variables from a codebook object
@@ -257,12 +268,19 @@ cb_summarize_categorical <- function(cb,
   )
   freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
   
-  freqs |>
+  out <- freqs |>
     tibble::as_tibble() |>
-    set_attrs(
-      group_by = rlang::enquo(group_by),
-      detail_missing = detail_missing
+    set_attrs(detail_missing = detail_missing)
+  
+  group_by_quo <- rlang::enquo(group_by)
+  if (!rlang::quo_is_null(group_by_quo)) {
+    out <- set_attrs(
+      out,
+      group_by = group_by_quo, group_counts = group_counts(cb, {{ group_by }})
     )
+  }
+
+  out
 }
 
 #' Summarize character variables from a codebook object
@@ -401,4 +419,15 @@ cb_summarize_text <- function(cb,
   freqs |>
     tibble::as_tibble() |>
     set_attrs(detail_missing = detail_missing)
+}
+
+group_counts <- function(cb, group_by) {
+  cb |>
+    attr("data_zapped") |>
+    dplyr::count(dplyr::pick({{ group_by }})) |>
+    dplyr::mutate(dplyr::across(
+      {{ group_by }},
+      \(x) fct_replace_na(factor(x), "(Missing)")
+    )) |>
+    deframe_nest()
 }

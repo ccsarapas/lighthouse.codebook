@@ -64,6 +64,10 @@ fct_replace_na <- function(x, replace) {
   if (anyNA(x)) forcats::fct_na_value_to_level(x, level = replace) else x
 }
 
+deframe_nest <- function(x) {
+  if (ncol(x) == 2) return(tibble::deframe(x))
+  lapply(split(x[, -1], x[, 1]), deframe_nest)
+}
 
 names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 

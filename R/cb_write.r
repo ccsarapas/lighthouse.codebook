@@ -231,15 +231,33 @@ cb_prep_grouped_data <- function(data, group_by, id_cols) {
   list(data, group_var_nms)
 }
 
-cb_prep_decked_cols <- function(data, group_var_nms, incl_group_col_names) {
+cb_prep_decked_cols <- function(data, 
+                                group_var_nms, 
+                                incl_group_col_n, 
+                                incl_group_col_names) {
   decked <- strsplit(names(data), "_SEP_")
   decked <- do.call(cbind, lighthouse::pad_vectors(!!!decked))
-
+  
   data_nms <- decked[1, ]
   data_nms[data_nms == "..spacer"] <- ""
 
   decked <- decked[-1, , drop = FALSE]
   decked <- decked[rev(seq(nrow(decked))), , drop = FALSE]
+  
+  if (incl_group_col_n) {
+    decked_in <- decked
+    group_counts <- attr(data, "group_counts")
+    for (i in seq(nrow(decked_in))) {
+      rows_i <- decked_in[seq(i), , drop = FALSE]
+      for (j in seq(ncol(decked_in))) {
+        cols_j <- rows_i[, j]
+        if (anyNA(cols_j)) next
+        n <- sum(unlist(group_counts[[cols_j]]))
+        decked[i, j] <- glue_chr("{decked[i, j]}\n(n = {n})")
+      }
+    }
+  }
+
   if (incl_group_col_names) {
     decked <- apply(decked, 2, \(x) stringr::str_c(group_var_nms, " = ", x))
     # if decked has only one row, `apply` returns vector, so coerce back to matrix
@@ -271,6 +289,7 @@ cb_write_sheet <- function(wb,
                            clear_repeats = NULL,
                            id_cols = NULL,
                            group_by = NULL,
+                           incl_group_col_n = TRUE,
                            incl_group_col_names = TRUE) {
   # init sheet
   wb <- wb |>
@@ -286,6 +305,7 @@ cb_write_sheet <- function(wb,
     )
     c(decked, data_nms, decked_fmt) %<-% cb_prep_decked_cols(
       data = data, group_var_nms = group_var_nms, 
+      incl_group_col_n = incl_group_col_n, 
       incl_group_col_names = incl_group_col_names
     )
   }
@@ -416,11 +436,15 @@ cb_write_sheet <- function(wb,
   if (!is.null(decked)) {
     wb <- wb |>
       openxlsx2::wb_add_data(
-        x = decked, start_row = rows$decked_start, start_col = 1, 
+        x = decked, start_row = rows$decked_start, start_col = 1,
         col_names = FALSE, na.strings = ""
-      ) |> 
+      ) |>
       openxlsx2::wb_add_cell_style(
-        dims = openxlsx2::wb_dims(rows$decked, cols$all), horizontal = "center"
+        dims = openxlsx2::wb_dims(rows$decked, cols$all),
+        horizontal = "center", wrap_text = TRUE
+      ) |>
+      openxlsx2::wb_set_row_heights(
+        rows = rows$decked, heights = 30
       ) |> 
       openxlsx2::wb_add_font(
         dims = openxlsx2::wb_dims(rows$decked, cols$all),

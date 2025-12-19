@@ -30,6 +30,8 @@
   Multiple sets of variables with common prefixes can be specified by passing a 
   list of tidyselect expressions.
 
+* _n_ for each subgroup are now included in decked headers for grouped summaries.
+
 * In `cb_write()`, changed `detail_missing` argument from logical to options `"if_any_user_missing"`, 
   `"yes"`, and `"no"`.
 
