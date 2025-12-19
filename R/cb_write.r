@@ -209,9 +209,11 @@ wb_row_borders <- function(wb,
 }
 
 cb_prep_grouped_data <- function(data, group_by, id_cols) {
+  attrs_keep <- c("detail_missing", "group_by", "group_counts")
+  attrs <- attributes(data)
+  attrs <- attrs[intersect(names(attrs), attrs_keep)]
   group_var_nms <- untidyselect(data, {{ group_by }})
   val_cols <- rlang::quo(!c({{ group_by }}, {{ id_cols }}))
-  data
   data <- data |>
     dplyr::mutate(..spacer = NA_character_) |>
     # needed to ensure correct column order when >1 group var
@@ -222,7 +224,8 @@ cb_prep_grouped_data <- function(data, group_by, id_cols) {
       values_from = c(..spacer, {{ val_cols }}),
       names_sep = "_SEP_",
       names_vary = "slowest"
-    )
+    ) |>
+    set_attrs(!!!attrs)
   first_spacer <- grep("^\\.\\.spacer", names(data))[[1]]
   data[, first_spacer] <- NULL
   list(data, group_var_nms)
