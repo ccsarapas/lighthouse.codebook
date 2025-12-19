@@ -54,4 +54,5 @@ truncated frequencies for text variables; and optional grouped summaries for num
 and categorical variables. For data summaires, variables with value labels, factors,
 and logical variables are treated as categorical, numeric and integer variables
 are treated as numeric, and (unlabeled) character variables are treated as text.
+Summary tabs will be omitted if there are no variables of the relevant type.
 }

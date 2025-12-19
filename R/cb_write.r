@@ -6,6 +6,7 @@
 #' and categorical variables. For data summaires, variables with value labels, factors, 
 #' and logical variables are treated as categorical, numeric and integer variables 
 #' are treated as numeric, and (unlabeled) character variables are treated as text.
+#' Summary tabs will be omitted if there are no variables of the relevant type.
 #' 
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
@@ -43,12 +44,17 @@ cb_write <- function(cb,
     detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
   )
   summaries <- list(
-    num = cb_summarize_numeric(cb),
-    cat = cb_summarize_categorical(cb, detail_missing = detail_missing),
+    num = cb_summarize_numeric(cb, warn_if_none = FALSE),
+    cat = cb_summarize_categorical(
+      cb, 
+      detail_missing = detail_missing, 
+      warn_if_none = FALSE
+    ),
     txt = cb_summarize_text(
       cb, 
       n_text_vals = n_text_vals, 
-      detail_missing = detail_missing
+      detail_missing = detail_missing,
+      warn_if_none = FALSE
     )
   )
   group_by <- rlang::enquo(group_by)
@@ -62,8 +68,16 @@ cb_write <- function(cb,
       ))
     }
     summaries$grouped <- list(
-      num = cb_summarize_numeric(cb, group_by = !!group_by),
-      cat = cb_summarize_categorical(cb, group_by = !!group_by)
+      num = cb_summarize_numeric(
+        cb, 
+        group_by = !!group_by, 
+        warn_if_none = FALSE
+      ),
+      cat = cb_summarize_categorical(
+        cb, 
+        group_by = !!group_by, 
+        warn_if_none = FALSE
+      )
     )
   }
   cb_write_codebook(
@@ -492,87 +506,107 @@ cb_write_codebook <- function(cb,
   )
   on.exit(options(opts))
     
-  # write overview and ungrouped numeric sheets
+  # initialize workbook and write overview 
   overview <- cb_format_names(cb)
-  summaries$num <- cb_format_names(summaries$num)
   wb <- openxlsx2::wb_workbook() |>
     cb_write_sheet(
       overview, "Overview", header = h_overview, cols_pct = Missing
-    ) |>
-    cb_write_sheet(
-      summaries$num, "Summary - Numeric",
+    )
+  
+  # write ungrouped numeric sheet
+  if (!is.null(summaries$num)) {
+    summaries$num <- cb_format_names(summaries$num)
+    wb <- cb_write_sheet(
+      wb, summaries$num, "Summary - Numeric",
       header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
     )
-    
-  # write ungrouped categorical sheet 
-  detail_missing <- attr(summaries$cat, "detail_missing")
-  if (detail_missing) summaries$cat <- cb_valid_miss_col(summaries$cat)
-  summaries$cat <- cb_format_names(summaries$cat)
-  rows_border_by <- rows_sub_border_by <- NULL
-  if (detail_missing) {
-    rows_border_by <- rlang::sym("Name")
-    rows_sub_border_by <- rlang::sym("Valid / Missing")
   }
-  wb <- wb |>
-    cb_write_sheet(
-      summaries$cat, 
-      "Summary - Categorical", 
+  # write ungrouped categorical sheet
+  if (!is.null(summaries$cat)) {
+    detail_missing <- attr(summaries$cat, "detail_missing")
+    if (detail_missing) summaries$cat <- cb_valid_miss_col(summaries$cat)
+    summaries$cat <- cb_format_names(summaries$cat)
+    rows_border_by <- rows_sub_border_by <- NULL
+    if (detail_missing) {
+      rows_border_by <- rlang::sym("Name")
+      rows_sub_border_by <- rlang::sym("Valid / Missing")
+    }
+    wb <- cb_write_sheet(
+      wb,
+      summaries$cat,
+      "Summary - Categorical",
       header = h_summ_cat,
-      cols_pct = tidyselect::starts_with("%"), 
+      cols_pct = tidyselect::starts_with("%"),
       cols_int = n,
-      rows_border_by = !!rows_border_by, 
+      rows_border_by = !!rows_border_by,
       rows_sub_border_by = !!rows_sub_border_by,
       clear_repeats = tidyselect::any_of(
         c("Name", "Label Stem", "Label", "Valid / Missing")
       )
     )
-
-  # write ungrouped text sheet 
-  detail_missing <- attr(summaries$txt, "detail_missing")
-  if (detail_missing) summaries$txt <- cb_valid_miss_col(summaries$txt)
-  summaries$txt <- cb_format_names(summaries$txt)
-  rows_border_by <- rows_sub_border_by <- NULL
-  if (detail_missing) {
-    rows_border_by <- rlang::sym("Name")
-    rows_sub_border_by <- rlang::sym("Valid / Missing")
   }
-  wb <- wb |>
-    cb_write_sheet(
-      summaries$txt, 
-      "Summary - Text", 
+
+  # write ungrouped text sheet
+  if (!is.null(summaries$txt)) {
+    detail_missing <- attr(summaries$txt, "detail_missing")
+    if (detail_missing) summaries$txt <- cb_valid_miss_col(summaries$txt)
+    summaries$txt <- cb_format_names(summaries$txt)
+    rows_border_by <- rows_sub_border_by <- NULL
+    if (detail_missing) {
+      rows_border_by <- rlang::sym("Name")
+      rows_sub_border_by <- rlang::sym("Valid / Missing")
+    }
+    wb <- cb_write_sheet(
+      wb,
+      summaries$txt,
+      "Summary - Text",
       header = h_summ_txt,
-      cols_pct = tidyselect::starts_with("%"), 
+      cols_pct = tidyselect::starts_with("%"),
       cols_int = c(`Unique n`, n),
-      rows_border_by = !!rows_border_by, 
+      rows_border_by = !!rows_border_by,
       rows_sub_border_by = !!rows_sub_border_by,
       clear_repeats = tidyselect::any_of(
         c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
       )
     )
+  }
   
   # write grouped sheets
   grouped <- summaries$grouped
   if (!is.null(grouped)) {
-    group_by <- attr(grouped$num, "group_by")
-    group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!group_by)
-    h_summ_num_grp <- c(h_summ_num, paste("By ", toString(group_by_chr)))
-    h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(group_by_chr)))
-    grouped$num <- cb_format_names(grouped$num, !(!!group_by))
-    grouped$cat <- cb_format_names(grouped$cat, !(!!group_by))
-    wb <- wb |>
-      cb_write_sheet(
-        grouped$num, "Grouped Summary - Numeric", header = h_summ_num_grp, 
-        cols_pct = `Valid %`, cols_int = `Valid n`,
-        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")), 
-        group_by = !!group_by
-      ) |>
-      cb_write_sheet(
-        grouped$cat, "Grouped Summary - Categorical", header = h_summ_cat_grp,
-        cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")), 
-        group_by = !!group_by,  
+    if (!is.null(grouped$num)) {
+      num_group_by <- attr(grouped$num, "group_by")
+      num_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!num_group_by)
+      h_summ_num_grp <- c(h_summ_num, paste("By ", toString(num_group_by_chr)))
+      grouped$num <- cb_format_names(grouped$num, !(!!num_group_by))
+      wb <- cb_write_sheet(
+        wb, 
+        grouped$num, 
+        "Grouped Summary - Numeric",
+        header = h_summ_num_grp,
+        cols_pct = `Valid %`, 
+        cols_int = `Valid n`,
+        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")),
+        group_by = !!num_group_by
+      )
+    }
+    if (!is.null(grouped$cat)) {
+      cat_group_by <- attr(grouped$cat, "group_by")
+      cat_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!cat_group_by)
+      h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(cat_group_by_chr)))
+      grouped$cat <- cb_format_names(grouped$cat, !(!!cat_group_by))
+      wb <- cb_write_sheet(
+        wb,
+        grouped$cat, 
+        "Grouped Summary - Categorical",
+        header = h_summ_cat_grp,
+        cols_pct = tidyselect::starts_with("%"), 
+        cols_int = n,
+        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
+        group_by = !!cat_group_by,
         clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label"))
       )
+    }
   }
   openxlsx2::wb_save(wb, file, overwrite = overwrite)
   invisible(file)

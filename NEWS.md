@@ -37,6 +37,9 @@
   now return `NULL` when there are no variables of the relevant type, with an optional
   warning controlled by the `.warn_if_none` argument.
 
+* Categorical, numeric, and/or text summary tabs are now omitted when there are 
+  no variables of the relevant type.
+
 ## Interface changes
 
 * In `cb_create()` and variants, changed `.rmv_html` and `.rmv_line_breaks` arguments
