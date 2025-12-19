@@ -274,9 +274,12 @@ cb_summarize_text <- function(cb,
   ls <- var_labs[["label_stem"]]
   if (!is.null(ls) && all(is.na(ls))) var_labs[, label_stem := NULL]
   
+  user_missings <- list()
   if (detail_missing) {
     user_missings <- attr(cb, "user_missing")
     user_missings <- user_missings[intersect(cols_chr, names(user_missings))]
+  }
+  if (length(user_missings)) {
     missing_len <- sapply(user_missings, length)    
     all_missings <- data.table::data.table(
         name = rep(names(user_missings), missing_len),
@@ -298,7 +301,7 @@ cb_summarize_text <- function(cb,
   for (col in cols_chr) {
     data.table::set(data_dt, j = col, value = col_to_chr(data_dt[[col]]))
   }
-  
+
   freqs <- data.table::melt(
       data_dt,
       measure.vars = names(data_dt),
