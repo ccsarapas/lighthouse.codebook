@@ -61,7 +61,7 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
     ) |>
     dplyr::mutate(dplyr::across(
       {{ group_by }},
-      \(x) forcats::fct_na_value_to_level(factor(x), "(Missing)")
+      \(x) fct_replace_na(factor(x), "(Missing)")
     ))
   
   out |>
@@ -184,7 +184,7 @@ cb_summarize_categorical <- function(cb,
   for (col in cols_grp) {
     v <- data_dt[[col]]
     v <- labelled::to_factor(v, sort_levels = "values", user_na_to_na = TRUE)
-    if (anyNA(v)) v <- forcats::fct_na_value_to_level(v, "(Missing)")
+    if (anyNA(v)) v <- fct_replace_na(v, "(Missing)")
     grp_labs[[col]] <- sort(unique(v))
     data.table::set(data_dt, j = col, value = v)
   }
@@ -221,15 +221,17 @@ cb_summarize_categorical <- function(cb,
       value.name = "value_val", variable.factor = FALSE
     ) |> 
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
-  
+
   freqs <- merge(
-      all_vals, freqs,
-      by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
-    ) |> 
+    all_vals, freqs,
+    by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
+  ) |>
     # flag true `NA`s as missing
     _[is.na(value_val), is_missing := TRUE] |>
     # remove missing values if not observed in at least one group
-    _[, .SD[!(all(is.na(n)) & is_missing)], by = c("name", "value_val")] |>
+    _[, .SD[!(all(is.na(n)) & is_missing)], by = c("name", "value_val")] |> 
+    # remove group var combos if no observed values
+    _[, .SD[!(all(is.na(n)))], by = cols_grp] |>    
     _[order(match(name, unique(name)))] |> 
     _[is.na(n), n := 0L] |>
     _[,

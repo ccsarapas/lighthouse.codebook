@@ -59,6 +59,11 @@ strip_line_breaks <- function(x, replace = " / ", combine_multiple = TRUE) {
   stringr::str_replace_all(x, lb, replace)
 }
 
+fct_replace_na <- function(x, replace) {
+  x <- factor(x)
+  if (anyNA(x)) forcats::fct_na_value_to_level(x, level = replace) else x
+}
+
 
 names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
 
