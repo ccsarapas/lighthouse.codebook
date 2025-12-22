@@ -67,17 +67,15 @@ cb_write <- function(cb,
         )
       ))
     }
-    summaries$grouped <- list(
-      num = cb_summarize_numeric(
-        cb, 
-        group_by = !!group_by, 
-        warn_if_none = FALSE
-      ),
-      cat = cb_summarize_categorical(
-        cb, 
-        group_by = !!group_by, 
-        warn_if_none = FALSE
-      )
+    summaries$num_grp <- cb_summarize_numeric(
+      cb, 
+      group_by = !!group_by, 
+      warn_if_none = FALSE
+    )
+    summaries$cat_grp <- cb_summarize_categorical(
+      cb, 
+      group_by = !!group_by, 
+      warn_if_none = FALSE
     )
   }
   cb_write_codebook(
@@ -256,6 +254,7 @@ cb_prep_decked_cols <- function(data,
 
 
 cb_prep_sheet_data <- function(data,
+                               sheet_name = NULL, 
                                header = NULL,
                                cols_pct = NULL,
                                cols_int = NULL,
@@ -338,6 +337,8 @@ cb_prep_sheet_data <- function(data,
   list(
     data = data,
     data_nms = data_nms,
+    sheet_name = sheet_name,
+    header = header,
     cols = cols,
     rows = rows,
     num_fmts = num_fmts,
@@ -346,12 +347,12 @@ cb_prep_sheet_data <- function(data,
   )
 }
 
-cb_write_sheet <- function(wb, data, params, sheet_name, header = NULL) {
+cb_write_sheet <- function(wb, data, params) {
   pm <- params
-  
+
   # init sheet
   wb <- wb |>
-    openxlsx2::wb_add_worksheet(sheet_name)
+    openxlsx2::wb_add_worksheet(pm$sheet_name)
   
   ## apply styles
   wb <- wb |>
@@ -464,10 +465,10 @@ cb_write_sheet <- function(wb, data, params, sheet_name, header = NULL) {
       }
     }
   }
-  if (length(header)) {
+  if (length(pm$header)) {
     wb <- wb |>
       openxlsx2::wb_add_data(
-        x = header, start_row = 1, start_col = 1, na.strings = ""
+        x = pm$header, start_row = 1, start_col = 1, na.strings = ""
       ) |>
       openxlsx2::wb_add_font(
         dims = openxlsx2::wb_dims(pm$rows$header, 1), bold = TRUE
@@ -522,7 +523,8 @@ cb_write_codebook <- function(cb,
   cb_date <- if (incl_date) glue_chr("Codebook generated {Sys.Date()}")
   sheet_nms <- list(
     overview = "Overview", num = "Summary - Numeric", 
-    cat = "Summary - Categorical", txt = "Summary - Text"
+    cat = "Summary - Categorical", txt = "Summary - Text",
+    num_grp = "Grouped Summary - Numeric", cat_grp = "Grouped Summary - Categorical"
   )
   headers <- list(
     overview = c(dataset_name, cb_dims, cb_date),
@@ -541,28 +543,24 @@ cb_write_codebook <- function(cb,
   # initialize workbook 
   wb <- openxlsx2::wb_workbook()
   
-  # write overview
-  overview <- cb |> 
+  params <- list()
+ 
+  params$overview <- cb |>
     cb_format_names() |>
-    cb_prep_sheet_data(header = headers$overview, cols_pct = Missing)
-  wb <- cb_write_sheet(
-    wb, data = overview$data, params = overview, 
-    sheet_name = sheet_nms$overview, header = headers$overview
-  )
+    cb_prep_sheet_data(
+      sheet_name = sheet_nms$overview, header = headers$overview, 
+      cols_pct = Missing
+    )
   
-  # write ungrouped numeric sheet
   if (!is.null(summaries$num)) {
-    summaries$num <- summaries$num |> 
+    params$num <- summaries$num |>
       cb_format_names() |>
       cb_prep_sheet_data(
-        header = headers$num, cols_pct = `Valid %`, cols_int = `Valid n`
+        sheet_name = sheet_nms$num, header = headers$num, 
+        cols_pct = `Valid %`, cols_int = `Valid n`
       )
-    wb <- cb_write_sheet(
-      wb, data = summaries$num$data, params = summaries$num, 
-      sheet_name = sheet_nms$num, header = headers$num
-    )
   }
-  # write ungrouped categorical sheet
+  
   if (!is.null(summaries$cat)) {
     rows_border_by <- rows_sub_border_by <- NULL
     if (attr(summaries$cat, "detail_missing")) {
@@ -570,24 +568,19 @@ cb_write_codebook <- function(cb,
       rows_border_by <- rlang::sym("Name")
       rows_sub_border_by <- rlang::sym("Valid / Missing")
     }
-    summaries$cat <- summaries$cat |>
+    params$cat <- summaries$cat |>
       cb_format_names() |>
       cb_prep_sheet_data(
-        header = headers$cat, cols_pct = tidyselect::starts_with("%"), 
-        cols_int = n,
+        sheet_name = sheet_nms$cat, header = headers$cat, 
+        cols_pct = tidyselect::starts_with("%"), cols_int = n,
         clear_repeats = tidyselect::any_of(
           c("Name", "Label Stem", "Label", "Valid / Missing")
         ),
         rows_border_by = !!rows_border_by,
         rows_sub_border_by = !!rows_sub_border_by
       )
-    wb <- cb_write_sheet(
-      wb, data = summaries$cat$data, params = summaries$cat, 
-      sheet_name = sheet_nms$cat, header = headers$cat
-    )
   }
-
-  # write ungrouped text sheet
+  
   if (!is.null(summaries$txt)) {
     rows_border_by <- rows_sub_border_by <- NULL
     if (attr(summaries$txt, "detail_missing")) {
@@ -595,63 +588,57 @@ cb_write_codebook <- function(cb,
       rows_border_by <- rlang::sym("Name")
       rows_sub_border_by <- rlang::sym("Valid / Missing")
     }
-    summaries$txt <- summaries$txt |>
+    params$txt <- summaries$txt |>
       cb_format_names() |>
       cb_prep_sheet_data(
-        header = headers$txt, cols_pct = tidyselect::starts_with("%"), 
-        cols_int = n,
+        sheet_name = sheet_nms$txt, header = headers$txt, 
+        cols_pct = tidyselect::starts_with("%"), cols_int = n,
         clear_repeats = tidyselect::any_of(
           c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
         ),
         rows_border_by = !!rows_border_by,
         rows_sub_border_by = !!rows_sub_border_by
       )
+  }
+  
+  if (!is.null(summaries$num_grp)) {
+    num_group_by <- attr(summaries$num_grp, "group_by")
+    num_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!num_group_by)
+    sheet_nms$num_grp <- paste0("Grouped ", sheet_nms$num)
+    headers$num_grp <- c(headers$num, paste0("By ", toString(num_group_by_chr)))
+    params$num_grp <- summaries$num_grp |>
+      cb_format_names(!(!!num_group_by)) |>
+      cb_prep_sheet_data(
+        sheet_name = sheet_nms$num_grp, header = headers$num_grp, 
+        cols_pct = `Valid %`, cols_int = `Valid n`,
+        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")),
+        group_by = !!num_group_by
+      )
+  }
+
+  if (!is.null(summaries$cat_grp)) {
+    cat_group_by <- attr(summaries$cat_grp, "group_by")
+    cat_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!cat_group_by)
+    sheet_nms$cat_grp <- paste0("Grouped ", sheet_nms$cat)
+    headers$cat_grp <- c(headers$cat, paste("By ", toString(cat_group_by_chr)))
+    params$cat_grp <- summaries$cat_grp |>
+      cb_format_names(!(!!cat_group_by)) |>
+      cb_prep_sheet_data(
+        sheet_name = sheet_nms$cat_grp, header = headers$cat_grp, 
+        cols_pct = tidyselect::starts_with("%"), cols_int = n,
+        clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label")),
+        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
+        group_by = !!cat_group_by
+      )
+  }
+  
+  for (sheet in names(params)) {
     wb <- cb_write_sheet(
-      wb, data = summaries$txt$data, params = summaries$txt, 
-      sheet_name = sheet_nms$txt, header = headers$txt
+      wb, data = params[[sheet]]$data, params = params[[sheet]]
     )
   }
   
-  # write grouped sheets
-  grouped <- summaries$grouped
-  if (!is.null(grouped)) {
-    if (!is.null(grouped$num)) {
-      num_group_by <- attr(grouped$num, "group_by")
-      num_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!num_group_by)
-      sheet_nms$num_grp <- paste0("Grouped ", sheet_nms$num)
-      headers$num_grp <- c(headers$num, paste0("By ", toString(num_group_by_chr)))
-      grouped$num <- grouped$num |>
-        cb_format_names(!(!!num_group_by)) |>
-        cb_prep_sheet_data(
-          header = headers$num_grp, cols_pct = `Valid %`, cols_int = `Valid n`,
-          id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")),
-          group_by = !!num_group_by
-        )
-      wb <- cb_write_sheet(
-        wb, data = grouped$num$data, params = grouped$num, 
-        sheet_name = sheet_nms$num_grp, header = headers$num_grp
-      )
-    }
-    if (!is.null(grouped$cat)) {
-      cat_group_by <- attr(grouped$cat, "group_by")
-      cat_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!cat_group_by)
-      sheet_nms$cat_grp <- paste0("Grouped ", sheet_nms$cat)
-      headers$cat_grp <- c(headers$cat, paste("By ", toString(cat_group_by_chr)))
-      grouped$cat <- grouped$cat |>
-        cb_format_names(!(!!cat_group_by)) |>
-        cb_prep_sheet_data(
-          header = headers$cat_grp, cols_pct = tidyselect::starts_with("%"), 
-          cols_int = n,
-          clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label")), 
-          id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
-          group_by = !!cat_group_by
-        )
-      wb <- cb_write_sheet(
-        wb, data = grouped$cat$data, params = grouped$cat, 
-        sheet_name = sheet_nms$cat_grp, header = headers$cat_grp
-      )
-    }
-  }
   openxlsx2::wb_save(wb, file, overwrite = overwrite)
   invisible(file)
 }
+
