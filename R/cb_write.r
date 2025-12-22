@@ -143,41 +143,28 @@ wb_add_data_multi_na <- function(wb,
     wb
   }
 }
-  
-wb_banded_fill_by <- function(wb,
-                              sheet = openxlsx2::current_sheet(),
-                              dims,
-                              by,
-                              data,
-                              color = openxlsx2::wb_color(hex = "EEEEEE"),
-                              pattern = "solid",
-                              gradient_fill = "",
-                              every_nth_col = 1,
-                              bg_color = NULL,
-                              ...) {
-  rowcol <- openxlsx2::dims_to_rowcol(dims, as_integer = TRUE)
+
+compute_banded_rows <- function(rows, by, data) {
+  by <- rlang::enquo(by)
+  if (rlang::quo_is_null(by)) return(NULL)
   bands <- data |>
-    dplyr::mutate(bands = dplyr::consecutive_id(dplyr::pick({{ by }}))) |>
+    dplyr::mutate(bands = dplyr::consecutive_id(dplyr::pick(!!by))) |>
     with(dplyr::near(bands %% 2, 1))
-  rows <- rowcol$row[bands]
-  cols <- seq(min(rowcol$col), max(rowcol$col))
-  openxlsx2::wb_add_fill(
-    wb, sheet, dims = openxlsx2::wb_dims(rows, cols),
-    color = color, pattern = pattern, gradient_fill = gradient_fill,
-    every_nth_col = every_nth_col, bg_color = bg_color, ...
-  )
+  rows[bands]
 }
 
-wb_row_borders <- function(wb,
-                           sheet = openxlsx2::current_sheet(),
-                           dims,
-                           start_col = NULL,
-                           data,
-                           skip_first = TRUE,
-                           color = openxlsx2::wb_color("404040"),
-                           border = "thin",
-                           update = FALSE,
-                           ...) {
+compute_border_cols <- function(data, cols, start_col = NULL) {
+  start_quo <- rlang::enquo(start_col)
+  if (rlang::quo_is_null(start_quo))  return(NULL)
+  idx <- seq(tidyselect::eval_select(start_quo, data), ncol(data))
+  cols <- cols[idx]
+}
+
+wb_cond_row_borders <- function(wb,
+                                sheet = openxlsx2::current_sheet(),
+                                dims,
+                                color = openxlsx2::wb_color("404040"),
+                                border = "thin") {
   style_nm <- paste0(border, color)
   existing <- wb$styles_mgr$get_dxf_id(style_nm)
   if (is.null(existing) || is.na(existing)) {
@@ -188,23 +175,13 @@ wb_row_borders <- function(wb,
     )
     wb <- openxlsx2::wb_add_style(wb, style, style_nm)
   }
-  rowcol <- openxlsx2::dims_to_rowcol(dims, as_integer = TRUE)
-  rows <- rowcol$row
-  if (skip_first) rows <- rows[-1]
-  cols <- seq(min(rowcol$col), max(rowcol$col))
-  start_quo <- rlang::enquo(start_col)
-  if (!rlang::quo_is_null(start_quo)) {
-    idx <- seq(tidyselect::eval_select(start_quo, data), ncol(data))
-    cols <- cols[idx]
-  }
+  c(cols, rows) %<-% openxlsx2::dims_to_rowcol(dims, as_integer = TRUE)
   rule <- glue_chr(
     '{openxlsx2::wb_dims(min(rows), min(cols), fix = "col")}<>""'
   )
   wb |>
     openxlsx2::wb_add_conditional_formatting(
-      dims = openxlsx2::wb_dims(rows, cols),
-      rule = rule,
-      style = style_nm
+      sheet = sheet, dims = dims, rule = rule, style = style_nm
   )
 }
 
@@ -277,45 +254,48 @@ cb_prep_decked_cols <- function(data,
   list(decked, data_nms, decked_fmt)
 }
 
-cb_write_sheet <- function(wb,
-                           data, 
-                           sheet_name,
-                           header = NULL,
-                           cols_pct = NULL,
-                           cols_int = NULL,
-                           rows_banded_by = Name,
-                           rows_border_by = NULL,
-                           rows_sub_border_by = NULL, 
-                           clear_repeats = NULL,
-                           id_cols = NULL,
-                           group_by = NULL,
-                           incl_group_col_n = TRUE,
-                           incl_group_col_names = TRUE) {
-  # init sheet
-  wb <- wb |>
-    openxlsx2::wb_add_worksheet(sheet_name)
+
+cb_prep_sheet_data <- function(data,
+                               header = NULL,
+                               cols_pct = NULL,
+                               cols_int = NULL,
+                               clear_repeats = NULL,
+                               id_cols = NULL,
+                               group_by = NULL,
+                               incl_group_col_n = TRUE,
+                               incl_group_col_names = TRUE,
+                               rows_banded_by = Name,
+                               rows_border_by = NULL,
+                               rows_sub_border_by = NULL) {
   data_nms <- names(data)
   num_nms <- data_nms[sapply(data, is.numeric)]
   pct_nms <- untidyselect(data, {{ cols_pct }})
   int_nms <- untidyselect(data, {{ cols_int }})
-  group_var_nms <- decked <- NULL
+  group_var_nms <- decked <- decked_fmt <- NULL
   if (!missing(group_by)) {
     c(data, group_var_nms) %<-% cb_prep_grouped_data(
       data = data, group_by = {{ group_by }}, id_cols = {{ id_cols }}
     )
     c(decked, data_nms, decked_fmt) %<-% cb_prep_decked_cols(
-      data = data, group_var_nms = group_var_nms, 
-      incl_group_col_n = incl_group_col_n, 
+      data = data, group_var_nms = group_var_nms,
+      incl_group_col_n = incl_group_col_n,
       incl_group_col_names = incl_group_col_names
     )
   }
-  
-  cols <- list(
+
+  cols <- tibble::lst(
     all = seq_along(data),
     num = which(data_nms %in% num_nms),
     pct = which(data_nms %in% pct_nms),
-    int = which(data_nms %in% int_nms)
+    int = which(data_nms %in% int_nms),
+    border = compute_border_cols(
+      data, cols = all, start_col = {{ rows_border_by }}
+    ),
+    sub_border = compute_border_cols(
+      data, cols = all, start_col = {{ rows_sub_border_by }}
+    )
   )
+  
   nrows <- nrow(data)
   rows <- tibble::lst(
     dat_start = length(header) + length(group_var_nms) + 1,
@@ -323,66 +303,22 @@ cb_write_sheet <- function(wb,
     decked = seq_along(group_var_nms) + length(header),
     header = seq_along(header),
     dat = seq_len(nrows) + dat_start,
+    banded = compute_banded_rows(data, rows = dat, by = {{ rows_banded_by}}),
+    border = if (is.null(cols$border)) NULL else dat[-1],
+    sub_border = border,
     all = seq_len(nrows + dat_start)
   )
   
   num_fmts <- list(num = "0.00", pct = "0.0%", int = "0")
-  
-  ## prep data for writing
+
   data <- data |>
     nan_to_na() |>
     dplyr::mutate(
       dplyr::across(tidyselect::where(is.character), \(x) tidyr::replace_na(x, ""))
     )
   
-  ## Apply styles
-  wb <- wb |>
-    openxlsx2::wb_add_font(
-      dims = openxlsx2::wb_dims(rows$all, cols$all), name = "Aptos Narrow"
-    ) |>
-    openxlsx2::wb_add_font(
-      dims = openxlsx2::wb_dims(rows$dat_start, cols$all), italic = TRUE
-    ) |>
-    openxlsx2::wb_add_fill(
-      dims = openxlsx2::wb_dims(rows$all, cols$all),
-      color = openxlsx2::wb_color("white")
-    ) |>
-    openxlsx2::wb_add_border(
-      dims = openxlsx2::wb_dims(max(rows$header), cols$all),
-      bottom_color = openxlsx2::wb_color(hex = "808080"), 
-      top_border = NULL, left_border = NULL, right_border = NULL
-    ) |> 
-    openxlsx2::wb_add_border(
-      dims = openxlsx2::wb_dims(rows$dat_start, cols$all), 
-      bottom_border = "double",
-      top_border = NULL, left_border = NULL, right_border = NULL
-    )
-  rows_banded_by <- rlang::enquo(rows_banded_by)
-  rows_border_by <- rlang::enquo(rows_border_by)
-  rows_sub_border_by <- rlang::enquo(rows_sub_border_by)
-  if (!rlang::quo_is_null(rows_banded_by)) {
-    wb <- wb |>
-      wb_banded_fill_by(
-        dims = openxlsx2::wb_dims(rows$dat, cols$all), by = !!rows_banded_by, 
-        data = data
-      )
-  }
-  if (!rlang::quo_is_null(rows_sub_border_by)) {
-    wb <- wb |>
-      wb_row_borders(
-        dims = openxlsx2::wb_dims(rows$dat, cols$all), data = data,
-        start_col = !!rows_sub_border_by, 
-        color = openxlsx2::wb_color(hex = "808080")
-      )
-  }
-  if (!rlang::quo_is_null(rows_border_by)) {
-    wb <- wb |>
-      wb_row_borders(
-        dims = openxlsx2::wb_dims(rows$dat, cols$all), data = data,
-        start_col = !!rows_border_by
-      )
-  }
   clear_repeats <- untidyselect(data, {{ clear_repeats }})
+
   if (length(clear_repeats)) {
     for (i in seq(length(clear_repeats), 1)) {
       var <- clear_repeats[[i]]
@@ -395,72 +331,135 @@ cb_write_sheet <- function(wb,
         )
     }
   }
-  if (length(cols$num)) {
+
+  data <- as.data.frame(data)
+  names(data) <- data_nms
+  
+  list(
+    data = data,
+    data_nms = data_nms,
+    cols = cols,
+    rows = rows,
+    num_fmts = num_fmts,
+    decked = decked,
+    decked_fmt = decked_fmt
+  )
+}
+
+cb_write_sheet <- function(wb, data, params, sheet_name, header = NULL) {
+  pm <- params
+  
+  # init sheet
+  wb <- wb |>
+    openxlsx2::wb_add_worksheet(sheet_name)
+  
+  ## apply styles
+  wb <- wb |>
+    openxlsx2::wb_add_font(
+      dims = openxlsx2::wb_dims(pm$rows$all, pm$cols$all), name = "Aptos Narrow"
+    ) |>
+    openxlsx2::wb_add_font(
+      dims = openxlsx2::wb_dims(pm$rows$dat_start, pm$cols$all), italic = TRUE
+    ) |>
+    openxlsx2::wb_add_fill(
+      dims = openxlsx2::wb_dims(pm$rows$all, pm$cols$all),
+      color = openxlsx2::wb_color("white")
+    ) |>
+    openxlsx2::wb_add_border(
+      dims = openxlsx2::wb_dims(max(pm$rows$header), pm$cols$all),
+      bottom_color = openxlsx2::wb_color(hex = "808080"), 
+      top_border = NULL, left_border = NULL, right_border = NULL
+    ) |> 
+    openxlsx2::wb_add_border(
+      dims = openxlsx2::wb_dims(pm$rows$dat_start, pm$cols$all), 
+      bottom_border = "double",
+      top_border = NULL, left_border = NULL, right_border = NULL
+    )
+
+  if (!is.null(pm$rows$banded)) {
+    wb <- wb |>
+      openxlsx2::wb_add_fill(
+        dims = openxlsx2::wb_dims(pm$rows$banded, pm$cols$all),
+        color = openxlsx2::wb_color(hex = "EEEEEE")
+      )
+  }
+  if (!is.null(pm$cols$sub_border)) {
+    wb <- wb |>
+      wb_cond_row_borders(
+        dims = openxlsx2::wb_dims(pm$rows$sub_border, pm$cols$sub_border),
+        color = openxlsx2::wb_color(hex = "808080")
+      )
+  }
+  if (!is.null(pm$cols$border)) {
+    wb <- wb |>
+      wb_cond_row_borders(
+        dims = openxlsx2::wb_dims(pm$rows$border, pm$cols$border)
+      )
+  }
+  
+  if (length(pm$cols$num)) {
     wb <- wb |>
       openxlsx2::wb_add_cell_style(
-        dims = openxlsx2::wb_dims(c(rows$dat_start, rows$dat), cols$num),
+        dims = openxlsx2::wb_dims(c(pm$rows$dat_start, pm$rows$dat), pm$cols$num),
         horizontal = "right"
       )
       
-    for (nm in names(num_fmts)) {
-      cols_nm <- cols[[nm]]
+    for (nm in names(pm$num_fmts)) {
+      cols_nm <- pm$cols[[nm]]
       if (length(cols_nm)) {
         wb <- wb |>
           openxlsx2::wb_add_numfmt(
-            dims = openxlsx2::wb_dims(rows$dat, cols_nm), 
-            numfmt = num_fmts[[nm]]
+            dims = openxlsx2::wb_dims(pm$rows$dat, cols_nm), 
+            numfmt = pm$num_fmts[[nm]]
           )
       }
     }
   }
-
-  data <- as.data.frame(data)
-  names(data) <- data_nms
 
   ## Write data
 
   # the following, along with `wb_add_data_multi_na()`, is a workaround to use 
   # different `na.strings` for `Unique n` column
   na.strings <- "-"
-  if ("Unique n" %in% data_nms) {
+  if ("Unique n" %in% pm$data_nms) {
     na.strings <- rep(na.strings, ncol(data))
-    na.strings[data_nms == "Unique n"] <- ""
+    na.strings[pm$data_nms == "Unique n"] <- ""
   }
   
   wb <- wb |>
     wb_add_data_multi_na(
-      x = data, start_row = rows$dat_start, start_col = 1, 
+      x = data, start_row = pm$rows$dat_start, start_col = 1, 
       na.strings = na.strings
     )  
   
-  if (!is.null(decked)) {
+  if (!is.null(pm$decked)) {
     wb <- wb |>
       openxlsx2::wb_add_data(
-        x = decked, start_row = rows$decked_start, start_col = 1,
+        x = pm$decked, start_row = pm$rows$decked_start, start_col = 1,
         col_names = FALSE, na.strings = ""
       ) |>
       openxlsx2::wb_add_cell_style(
-        dims = openxlsx2::wb_dims(rows$decked, cols$all),
+        dims = openxlsx2::wb_dims(pm$rows$decked, pm$cols$all),
         horizontal = "center", wrap_text = TRUE
       ) |>
       openxlsx2::wb_set_row_heights(
-        rows = rows$decked, heights = 30
+        rows = pm$rows$decked, heights = 30
       ) |> 
       openxlsx2::wb_add_font(
-        dims = openxlsx2::wb_dims(rows$decked, cols$all),
+        dims = openxlsx2::wb_dims(pm$rows$decked, pm$cols$all),
         bold = TRUE, italic = TRUE
       )      
-    for (i in seq_along(decked_fmt)) {
-      fmt <- decked_fmt[[i]]
+    for (i in seq_along(pm$decked_fmt)) {
+      fmt <- pm$decked_fmt[[i]]
       wb <- wb |> 
         openxlsx2::wb_add_border(
-          dims = openxlsx2::wb_dims(i, fmt$rule, from_row = rows$decked_start),
+          dims = openxlsx2::wb_dims(i, fmt$rule, from_row = pm$rows$decked_start),
           top_border = NULL, left_border = NULL, right_border = NULL
         )
       for (cells in fmt$merge) {
         wb <- wb |>
           openxlsx2::wb_merge_cells(
-            dims = openxlsx2::wb_dims(i, cells, from_row = rows$decked_start)
+            dims = openxlsx2::wb_dims(i, cells, from_row = pm$rows$decked_start)
           )
       }
     }
@@ -471,14 +470,14 @@ cb_write_sheet <- function(wb,
         x = header, start_row = 1, start_col = 1, na.strings = ""
       ) |>
       openxlsx2::wb_add_font(
-        dims = openxlsx2::wb_dims(rows$header, 1), bold = TRUE
+        dims = openxlsx2::wb_dims(pm$rows$header, 1), bold = TRUE
       )
   }
   # Set column widths and freeze panes
   wb <- wb |>
-    openxlsx2::wb_set_col_widths(cols = cols$all, widths = "auto") |>
+    openxlsx2::wb_set_col_widths(cols = pm$cols$all, widths = "auto") |>
     openxlsx2::wb_freeze_pane(
-      first_active_row = rows$dat_start + 1,  first_active_col = 2
+      first_active_row = pm$rows$dat_start + 1,  first_active_col = 2
     )
     
   
@@ -521,10 +520,16 @@ cb_write_codebook <- function(cb,
     )
   }
   cb_date <- if (incl_date) glue_chr("Codebook generated {Sys.Date()}")
-  h_overview <- c(dataset_name, cb_dims, cb_date)
-  h_summ_num <- c(dataset_name, "Numeric variables summary")
-  h_summ_cat <- c(dataset_name, "Categorical variables summary")
-  h_summ_txt <- c(dataset_name, "Text variables summary")
+  sheet_nms <- list(
+    overview = "Overview", num = "Summary - Numeric", 
+    cat = "Summary - Categorical", txt = "Summary - Text"
+  )
+  headers <- list(
+    overview = c(dataset_name, cb_dims, cb_date),
+    num = c(dataset_name, "Numeric variables summary"),
+    cat = c(dataset_name, "Categorical variables summary"),
+    txt = c(dataset_name, "Text variables summary")
+  )
   
   # set max col width
   opts <- options(
@@ -533,68 +538,77 @@ cb_write_codebook <- function(cb,
   )
   on.exit(options(opts))
     
-  # initialize workbook and write overview 
-  overview <- cb_format_names(cb)
-  wb <- openxlsx2::wb_workbook() |>
-    cb_write_sheet(
-      overview, "Overview", header = h_overview, cols_pct = Missing
-    )
+  # initialize workbook 
+  wb <- openxlsx2::wb_workbook()
+  
+  # write overview
+  overview <- cb |> 
+    cb_format_names() |>
+    cb_prep_sheet_data(header = headers$overview, cols_pct = Missing)
+  wb <- cb_write_sheet(
+    wb, data = overview$data, params = overview, 
+    sheet_name = sheet_nms$overview, header = headers$overview
+  )
   
   # write ungrouped numeric sheet
   if (!is.null(summaries$num)) {
-    summaries$num <- cb_format_names(summaries$num)
+    summaries$num <- summaries$num |> 
+      cb_format_names() |>
+      cb_prep_sheet_data(
+        header = headers$num, cols_pct = `Valid %`, cols_int = `Valid n`
+      )
     wb <- cb_write_sheet(
-      wb, summaries$num, "Summary - Numeric",
-      header = h_summ_num, cols_pct = `Valid %`, cols_int = `Valid n`
+      wb, data = summaries$num$data, params = summaries$num, 
+      sheet_name = sheet_nms$num, header = headers$num
     )
   }
   # write ungrouped categorical sheet
   if (!is.null(summaries$cat)) {
-    detail_missing <- attr(summaries$cat, "detail_missing")
-    if (detail_missing) summaries$cat <- cb_valid_miss_col(summaries$cat)
-    summaries$cat <- cb_format_names(summaries$cat)
     rows_border_by <- rows_sub_border_by <- NULL
-    if (detail_missing) {
+    if (attr(summaries$cat, "detail_missing")) {
+      summaries$cat <- cb_valid_miss_col(summaries$cat)
       rows_border_by <- rlang::sym("Name")
       rows_sub_border_by <- rlang::sym("Valid / Missing")
     }
-    wb <- cb_write_sheet(
-      wb,
-      summaries$cat,
-      "Summary - Categorical",
-      header = h_summ_cat,
-      cols_pct = tidyselect::starts_with("%"),
-      cols_int = n,
-      rows_border_by = !!rows_border_by,
-      rows_sub_border_by = !!rows_sub_border_by,
-      clear_repeats = tidyselect::any_of(
-        c("Name", "Label Stem", "Label", "Valid / Missing")
+    summaries$cat <- summaries$cat |>
+      cb_format_names() |>
+      cb_prep_sheet_data(
+        header = headers$cat, cols_pct = tidyselect::starts_with("%"), 
+        cols_int = n,
+        clear_repeats = tidyselect::any_of(
+          c("Name", "Label Stem", "Label", "Valid / Missing")
+        ),
+        rows_border_by = !!rows_border_by,
+        rows_sub_border_by = !!rows_sub_border_by
       )
+    wb <- cb_write_sheet(
+      wb, data = summaries$cat$data, params = summaries$cat, 
+      sheet_name = sheet_nms$cat, header = headers$cat
     )
   }
 
   # write ungrouped text sheet
   if (!is.null(summaries$txt)) {
-    detail_missing <- attr(summaries$txt, "detail_missing")
-    if (detail_missing) summaries$txt <- cb_valid_miss_col(summaries$txt)
-    summaries$txt <- cb_format_names(summaries$txt)
     rows_border_by <- rows_sub_border_by <- NULL
-    if (detail_missing) {
+    if (attr(summaries$txt, "detail_missing")) {
+      summaries$txt <- cb_valid_miss_col(summaries$txt)
       rows_border_by <- rlang::sym("Name")
       rows_sub_border_by <- rlang::sym("Valid / Missing")
     }
-    wb <- cb_write_sheet(
-      wb,
-      summaries$txt,
-      "Summary - Text",
-      header = h_summ_txt,
-      cols_pct = tidyselect::starts_with("%"),
-      cols_int = c(`Unique n`, n),
-      rows_border_by = !!rows_border_by,
-      rows_sub_border_by = !!rows_sub_border_by,
-      clear_repeats = tidyselect::any_of(
-        c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
+    summaries$txt <- summaries$txt |>
+      cb_format_names() |>
+      cb_prep_sheet_data(
+        header = headers$txt, cols_pct = tidyselect::starts_with("%"), 
+        cols_int = n,
+        clear_repeats = tidyselect::any_of(
+          c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
+        ),
+        rows_border_by = !!rows_border_by,
+        rows_sub_border_by = !!rows_sub_border_by
       )
+    wb <- cb_write_sheet(
+      wb, data = summaries$txt$data, params = summaries$txt, 
+      sheet_name = sheet_nms$txt, header = headers$txt
     )
   }
   
@@ -604,34 +618,37 @@ cb_write_codebook <- function(cb,
     if (!is.null(grouped$num)) {
       num_group_by <- attr(grouped$num, "group_by")
       num_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!num_group_by)
-      h_summ_num_grp <- c(h_summ_num, paste("By ", toString(num_group_by_chr)))
-      grouped$num <- cb_format_names(grouped$num, !(!!num_group_by))
+      sheet_nms$num_grp <- paste0("Grouped ", sheet_nms$num)
+      headers$num_grp <- c(headers$num, paste0("By ", toString(num_group_by_chr)))
+      grouped$num <- grouped$num |>
+        cb_format_names(!(!!num_group_by)) |>
+        cb_prep_sheet_data(
+          header = headers$num_grp, cols_pct = `Valid %`, cols_int = `Valid n`,
+          id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")),
+          group_by = !!num_group_by
+        )
       wb <- cb_write_sheet(
-        wb, 
-        grouped$num, 
-        "Grouped Summary - Numeric",
-        header = h_summ_num_grp,
-        cols_pct = `Valid %`, 
-        cols_int = `Valid n`,
-        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")),
-        group_by = !!num_group_by
+        wb, data = grouped$num$data, params = grouped$num, 
+        sheet_name = sheet_nms$num_grp, header = headers$num_grp
       )
     }
     if (!is.null(grouped$cat)) {
       cat_group_by <- attr(grouped$cat, "group_by")
       cat_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!cat_group_by)
-      h_summ_cat_grp <- c(h_summ_cat, paste("By ", toString(cat_group_by_chr)))
-      grouped$cat <- cb_format_names(grouped$cat, !(!!cat_group_by))
+      sheet_nms$cat_grp <- paste0("Grouped ", sheet_nms$cat)
+      headers$cat_grp <- c(headers$cat, paste("By ", toString(cat_group_by_chr)))
+      grouped$cat <- grouped$cat |>
+        cb_format_names(!(!!cat_group_by)) |>
+        cb_prep_sheet_data(
+          header = headers$cat_grp, cols_pct = tidyselect::starts_with("%"), 
+          cols_int = n,
+          clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label")), 
+          id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
+          group_by = !!cat_group_by
+        )
       wb <- cb_write_sheet(
-        wb,
-        grouped$cat, 
-        "Grouped Summary - Categorical",
-        header = h_summ_cat_grp,
-        cols_pct = tidyselect::starts_with("%"), 
-        cols_int = n,
-        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
-        group_by = !!cat_group_by,
-        clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label"))
+        wb, data = grouped$cat$data, params = grouped$cat, 
+        sheet_name = sheet_nms$cat_grp, header = headers$cat_grp
       )
     }
   }
