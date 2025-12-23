@@ -13,7 +13,7 @@ n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis."
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@ n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis."
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/ccsarapas/lighthouse.codebook/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -34,7 +35,7 @@ n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis."
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Summarize numeric variables from a codebook object</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/R/summaries.r" class="external-link"><code>R/summaries.r</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/R/cb_summarize.r" class="external-link"><code>R/cb_summarize.r</code></a></small>
       <div class="d-none name"><code>cb_summarize_numeric.Rd</code></div>
     </div>
 
@@ -47,7 +48,7 @@ n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis.<
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cb_summarize_numeric</span><span class="op">(</span><span class="va">cb</span>, group_by <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cb_summarize_numeric</span><span class="op">(</span><span class="va">cb</span>, group_by <span class="op">=</span> <span class="cn">NULL</span>, warn_if_none <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -63,11 +64,26 @@ a variant.</p></dd>
 <dd><p>&lt;<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a></code>&gt; Column or columns to group
 by.</p></dd>
 
+
+<dt id="arg-warn-if-none">warn_if_none<a class="anchor" aria-label="anchor" href="#arg-warn-if-none"></a></dt>
+<dd><p>Should a warning be issued if there are no numeric variables
+in <code>cb</code>?</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with summary statistics for each numeric variable.</p>
-    </div>
+    <p>If there no numeric variables in <code>cb</code>, <code>NULL</code>. Otherwise, a tibble with
+columns:</p><ul><li><p>optional grouping column(s) if specified in <code>group_by</code></p></li>
+<li><p><code>name</code>: variable name</p></li>
+<li><p><code>label_stem</code>: optional column containing variable label stems; included if
+<code>cb</code> includes a <code>label_stem</code> column and at least one numeric variable has
+a non-missing label stem.</p></li>
+<li><p><code>label</code>: variable label</p></li>
+<li><p><code>valid_n</code>, <code>valid_pct</code>: number and proportion of non-missing values</p></li>
+<li><p>summary statistic columns: by default, these include <code>mean</code> and standard
+deviation (<code>SD</code>); <code>median</code>, median absolute deviation (<code>MAD</code>), <code>min</code>, <code>max</code>,
+and <code>range</code>; skewness (<code>skew</code>), and kurtosis (<code>kurt</code>).</p></li>
+</ul></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

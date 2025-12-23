@@ -8,9 +8,9 @@ summaries (using
 extract processed data
 ([`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)),
 or generate dataset summaries
-([`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md)
-and
-[`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md)).
+([`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md),
+[`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md),
+[`cb_summarize_text()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_text.md)).
 
 This variant of
 [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
@@ -38,10 +38,13 @@ cb_create_redcap(
   .val_labels = select_choices_or_calculations,
   .form = form_name,
   .user_missing = NULL,
+  .split_var_labels = NULL,
+  .include_types = !.include_r_classes,
+  .include_r_classes = FALSE,
   .val_labs_sep1 = ", ",
   .val_labs_sep2 = "\\|",
-  .rmv_html = !name,
-  .rmv_line_breaks = !name,
+  .rmv_html = TRUE,
+  .rmv_line_breaks = TRUE,
   .coerce_integers = TRUE,
   .checkbox_resp_values = FALSE,
   .propagate_checkbox_missings = TRUE,
@@ -89,6 +92,24 @@ cb_create_redcap(
   [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
   documentation for examples.
 
+- .split_var_labels:
+
+  A
+  [`tidyselect`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  expression or list of tidyselect expressions, indicating (sets of)
+  variable labels with a common stem that should be extracted into a
+  separate column.
+
+- .include_types:
+
+  Include a column listing simplified type for each variable? (e.g,.
+  `"categorical"`, `"date-time"`.)
+
+- .include_r_classes:
+
+  Include a column listing class(es) of each variable? (e.g.,
+  `"factor"`, `"POSIXct, POSIXt"`.)
+
 - .val_labs_sep1, .val_labs_sep2:
 
   Regex patterns separating value labels in `metadata`. `.val_labs_sep1`
@@ -99,13 +120,13 @@ cb_create_redcap(
 
 - .rmv_html:
 
-  \<[`tidy-select`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)\>
-  Codebook columns from which HTML tags should be removed.
+  Should HTML tags be removed from metadata (e.g., from variable and
+  value lables)?
 
 - .rmv_line_breaks:
 
-  \<[`tidy-select`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)\>
-  Codebook columns from which line breaks should be removed.
+  Should line breaks be removed from metadata (e.g., from variable and
+  value lables)? If `TRUE`, line breaks will be replaced with `" / "`.
 
 - .coerce_integers:
 
@@ -151,7 +172,12 @@ several formats) and additional metadata. Specifically:
 
   - `form`: form name
 
-  - `type`: variable type
+  - `type`: optional column containing simplified variable type
+
+  - `class`: optional column containing class(es) of each variable
+
+  - `label_stem`: optional column containing variable label stems, if
+    any variables are specified in `.split_var_labels`
 
   - `label`: variable label
 
@@ -169,9 +195,7 @@ several formats) and additional metadata. Specifically:
   - Transformed versions of the passed dataset. See
     [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md).
 
-  - Lookup tables and other metadata used internally: `"user_missing"`,
-    `"vals_by_label"`, `"labs_by_value"`, `"miss_propagate"`,
-    `"factors"`, `"n_obs"`, `"n_vars"`
+  - Lookup tables and other metadata used internally.
 
 ## Checkbox data handling
 

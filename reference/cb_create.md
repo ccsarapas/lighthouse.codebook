@@ -7,9 +7,9 @@ Excel workbook with variable and data summaries (using
 extract processed data
 ([`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)),
 or generate dataset summaries
-([`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md)
-and
-[`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md)).
+([`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md),
+[`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md),
+[`cb_summarize_text()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_text.md)).
 
 ## Usage
 
@@ -22,10 +22,13 @@ cb_create(
   .var_label = label,
   .val_labels = val_labels,
   .user_missing = NULL,
+  .split_var_labels = NULL,
+  .include_types = !.include_r_classes,
+  .include_r_classes = FALSE,
   .val_labs_sep1 = NULL,
   .val_labs_sep2 = NULL,
-  .rmv_html = !name,
-  .rmv_line_breaks = !name,
+  .rmv_html = TRUE,
+  .rmv_line_breaks = TRUE,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("metadata", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -67,6 +70,24 @@ cb_create(
   [`tidyselect::everything()`](https://tidyselect.r-lib.org/reference/everything.html).
   See "Specifying user missing values" below for examples.
 
+- .split_var_labels:
+
+  A
+  [`tidyselect`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  expression or list of tidyselect expressions, indicating (sets of)
+  variable labels with a common stem that should be extracted into a
+  separate column.
+
+- .include_types:
+
+  Include a column listing simplified type for each variable? (e.g,.
+  `"categorical"`, `"date-time"`.)
+
+- .include_r_classes:
+
+  Include a column listing class(es) of each variable? (e.g.,
+  `"factor"`, `"POSIXct, POSIXt"`.)
+
 - .val_labs_sep1, .val_labs_sep2:
 
   Regex patterns separating value labels in `metadata`. `.val_labs_sep1`
@@ -77,13 +98,13 @@ cb_create(
 
 - .rmv_html:
 
-  \<[`tidy-select`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)\>
-  Codebook columns from which HTML tags should be removed.
+  Should HTML tags be removed from metadata (e.g., from variable and
+  value lables)?
 
 - .rmv_line_breaks:
 
-  \<[`tidy-select`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)\>
-  Codebook columns from which line breaks should be removed.
+  Should line breaks be removed from metadata (e.g., from variable and
+  value lables)? If `TRUE`, line breaks will be replaced with `" / "`.
 
 - .user_missing_col:
 
@@ -111,7 +132,12 @@ several formats) and additional metadata. Specifically:
 
   - `name`: variable name
 
-  - `type`: variable type
+  - `type`: optional column containing simplified variable type
+
+  - `class`: optional column containing class(es) of each variable
+
+  - `label_stem`: optional column containing variable label stems, if
+    any variables are specified in `.split_var_labels`
 
   - `label`: variable label
 
@@ -127,11 +153,9 @@ several formats) and additional metadata. Specifically:
 - Attributes:
 
   - Transformed versions of the passed dataset. See
-    [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md).
+    [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)
 
-  - Lookup tables and other metadata used internally: `"user_missing"`,
-    `"vals_by_label"`, `"labs_by_value"`, `"miss_propagate"`,
-    `"factors"`, `"n_obs"`, `"n_vars"`
+  - Lookup tables and other metadata used internally.
 
 ## Specifying user missing values
 
@@ -140,7 +164,7 @@ to the `.user_missing` argument. Formulas should specify variables on
 the left-hand side and user missing values for those variables on the
 right-hand side:
 
-    cb <- cb_create_redcap(data, metadata, .user_missing = var1 ~ 99)
+    cb <- cb_create(data, metadata, .user_missing = var1 ~ 99)
 
 The same user missings can be applied to multiple variables using
 [tidyselect](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
@@ -196,9 +220,9 @@ cb_create(diamonds2)
 #>    name        type    value_labels                           missing
 #>    <chr>       <chr>   <chr>                                    <dbl>
 #>  1 carat       numeric NA                                           0
-#>  2 cut         ordered Fair; Good; Very Good; Premium; Ideal        0
-#>  3 color       ordered D; E; F; G; H; I; J                          0
-#>  4 clarity     ordered I1; SI2; SI1; VS2; VS1; VVS2; VVS1; IF       0
+#>  2 cut         ordinal Fair; Good; Very Good; Premium; Ideal        0
+#>  3 color       ordinal D; E; F; G; H; I; J                          0
+#>  4 clarity     ordinal I1; SI2; SI1; VS2; VS1; VVS2; VVS1; IF       0
 #>  5 depth       numeric NA                                           0
 #>  6 table       numeric NA                                           0
 #>  7 price       integer NA                                           0
@@ -216,20 +240,20 @@ diamonds2 |>
   ) |> 
   cb_create()
 #> # A tibble: 12 × 4
-#>    name        type    value_labels                           missing
-#>    <chr>       <chr>   <chr>                                    <dbl>
-#>  1 carat       numeric NA                                           0
-#>  2 cut         ordered Fair; Good; Very Good; Premium; Ideal        0
-#>  3 color       ordered D; E; F; G; H; I; J                          0
-#>  4 clarity     ordered I1; SI2; SI1; VS2; VS1; VVS2; VVS1; IF       0
-#>  5 depth       numeric NA                                           0
-#>  6 table       numeric NA                                           0
-#>  7 price       integer NA                                           0
-#>  8 x           numeric NA                                           0
-#>  9 y           numeric NA                                           0
-#> 10 z           numeric NA                                           0
-#> 11 carat_group factor  1; 2; 3                                      0
-#> 12 price_group factor  1; 2; 3; 4; 5; 6                             0
+#>    name        type        value_labels                           missing
+#>    <chr>       <chr>       <chr>                                    <dbl>
+#>  1 carat       numeric     NA                                           0
+#>  2 cut         ordinal     Fair; Good; Very Good; Premium; Ideal        0
+#>  3 color       ordinal     D; E; F; G; H; I; J                          0
+#>  4 clarity     ordinal     I1; SI2; SI1; VS2; VS1; VVS2; VVS1; IF       0
+#>  5 depth       numeric     NA                                           0
+#>  6 table       numeric     NA                                           0
+#>  7 price       integer     NA                                           0
+#>  8 x           numeric     NA                                           0
+#>  9 y           numeric     NA                                           0
+#> 10 z           numeric     NA                                           0
+#> 11 carat_group categorical 1; 2; 3                                      0
+#> 12 price_group categorical 1; 2; 3; 4; 5; 6                             0
 
 # provide metadata for variable and value labels
 diamonds_meta <- data.frame(
@@ -261,18 +285,18 @@ cb_create(
   .val_labs_sep1 = " = ", .val_labs_sep2 = "; "
 )
 #> # A tibble: 12 × 5
-#>    name        type    label                                value_labels missing
-#>    <chr>       <chr>   <chr>                                <chr>          <dbl>
-#>  1 carat       numeric price in US dollars ($326–$18,823)   NA                 0
-#>  2 cut         ordered weight of the diamond (0.2–5.01)     Fair; Good;…       0
-#>  3 color       ordered quality of the cut (Fair, Good, Ver… D; E; F; G;…       0
-#>  4 clarity     ordered diamond colour, from D (best) to J … I1; SI2; SI…       0
-#>  5 depth       numeric a measurement of how clear the diam… NA                 0
-#>  6 table       numeric length in mm (0–10.74)               NA                 0
-#>  7 price       integer width in mm (0–58.9)                 NA                 0
-#>  8 x           numeric depth in mm (0–31.8)                 NA                 0
-#>  9 y           numeric total depth percentage = z / mean(x… NA                 0
-#> 10 z           numeric width of top of diamond relative to… NA                 0
-#> 11 carat_group factor  diamond carat (3 groups)             [1] small; …       0
-#> 12 price_group factor  diamond price (6 groups)             [1] <$500; …       0
+#>    name        type        label                            value_labels missing
+#>    <chr>       <chr>       <chr>                            <chr>          <dbl>
+#>  1 carat       numeric     price in US dollars ($326–$18,8… NA                 0
+#>  2 cut         ordinal     weight of the diamond (0.2–5.01) Fair; Good;…       0
+#>  3 color       ordinal     quality of the cut (Fair, Good,… D; E; F; G;…       0
+#>  4 clarity     ordinal     diamond colour, from D (best) t… I1; SI2; SI…       0
+#>  5 depth       numeric     a measurement of how clear the … NA                 0
+#>  6 table       numeric     length in mm (0–10.74)           NA                 0
+#>  7 price       integer     width in mm (0–58.9)             NA                 0
+#>  8 x           numeric     depth in mm (0–31.8)             NA                 0
+#>  9 y           numeric     total depth percentage = z / me… NA                 0
+#> 10 z           numeric     width of top of diamond relativ… NA                 0
+#> 11 carat_group categorical diamond carat (3 groups)         [1] small; …       0
+#> 12 price_group categorical diamond price (6 groups)         [1] <$500; …       0
 ```

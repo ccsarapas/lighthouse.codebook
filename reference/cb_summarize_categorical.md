@@ -13,7 +13,8 @@ cb_summarize_categorical(
   group_by = NULL,
   prefixed = TRUE,
   detail_missing = missing(group_by),
-  detail_na_label = "NA"
+  detail_na_label = "NA",
+  warn_if_none = TRUE
 )
 ```
 
@@ -44,6 +45,38 @@ cb_summarize_categorical(
 
   Label used for `NA` values when `detail_missing` is `TRUE`.
 
+- warn_if_none:
+
+  Should a warning be issued if there are no categorical variables in
+  `cb`?
+
 ## Value
 
-A tibble with frequency information for each categorical variable.
+If there no categorical variables in `cb`, `NULL`. Otherwise, a tibble
+with columns:
+
+- optional grouping column(s) if specified in `group_by`
+
+- `name`: variable name
+
+- `label_stem`: optional column containing variable label stems;
+  included if `cb` includes a `label_stem` column and at least one
+  categorical variable has a non-missing label stem.
+
+- `label`: variable label
+
+- `is_missing`: optional column indicating if `value` is a missing
+  value. Included if `detail_missing` is `TRUE`.
+
+- `value`: variable value
+
+- `n`: number of observations
+
+- `pct_of_all`: proportion of all (non-missing and missing) observations
+
+- `pct_of_valid`: for non-missing values, proportion of all non-missing
+  observations
+
+- `pct_of_missing`: optional column showing, for missing values,
+  proportion of all missing observations. Included if `detail_missing`
+  is `TRUE`.

@@ -9,7 +9,7 @@ max, and range; skewness, and kurtosis.
 ## Usage
 
 ``` r
-cb_summarize_numeric(cb, group_by = NULL)
+cb_summarize_numeric(cb, group_by = NULL, warn_if_none = TRUE)
 ```
 
 ## Arguments
@@ -25,6 +25,28 @@ cb_summarize_numeric(cb, group_by = NULL)
   \<[`tidy-select`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)\>
   Column or columns to group by.
 
+- warn_if_none:
+
+  Should a warning be issued if there are no numeric variables in `cb`?
+
 ## Value
 
-A tibble with summary statistics for each numeric variable.
+If there no numeric variables in `cb`, `NULL`. Otherwise, a tibble with
+columns:
+
+- optional grouping column(s) if specified in `group_by`
+
+- `name`: variable name
+
+- `label_stem`: optional column containing variable label stems;
+  included if `cb` includes a `label_stem` column and at least one
+  numeric variable has a non-missing label stem.
+
+- `label`: variable label
+
+- `valid_n`, `valid_pct`: number and proportion of non-missing values
+
+- summary statistic columns: by default, these include `mean` and
+  standard deviation (`SD`); `median`, median absolute deviation
+  (`MAD`), `min`, `max`, and `range`; skewness (`skew`), and kurtosis
+  (`kurt`).

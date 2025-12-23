@@ -30,6 +30,8 @@ remotes::install_github("ccsarapas/lighthouse.codebook")
   : Summarize categorical variables from a codebook object
 - [`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md)
   : Summarize numeric variables from a codebook object
+- [`cb_summarize_text()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_text.md)
+  : Summarize character variables from a codebook object
 - [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
   : Write codebook and data summaries to an Excel workbook
 

@@ -14,9 +14,9 @@ variable and data summaries (using
 extract processed data
 ([`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)),
 or generate dataset summaries
-([`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md)
-and
-[`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md)).
+([`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md),
+[`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md),
+[`cb_summarize_text()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_text.md)).
 
 ## Usage
 
@@ -24,6 +24,9 @@ and
 cb_create_spss(
   data,
   .user_missing = NULL,
+  .split_var_labels = NULL,
+  .include_types = !.include_r_classes,
+  .include_r_classes = FALSE,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("val_label", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -47,6 +50,24 @@ cb_create_spss(
   See "Specifying user missing values" in
   [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
   documentation for examples.
+
+- .split_var_labels:
+
+  A
+  [`tidyselect`](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  expression or list of tidyselect expressions, indicating (sets of)
+  variable labels with a common stem that should be extracted into a
+  separate column.
+
+- .include_types:
+
+  Include a column listing simplified type for each variable? (e.g,.
+  `"categorical"`, `"date-time"`.)
+
+- .include_r_classes:
+
+  Include a column listing class(es) of each variable? (e.g.,
+  `"factor"`, `"POSIXct, POSIXt"`.)
 
 - .user_missing_col:
 
@@ -74,7 +95,12 @@ several formats) and additional metadata. Specifically:
 
   - `name`: variable name
 
-  - `type`: variable type
+  - `type`: optional column containing simplified variable type
+
+  - `class`: optional column containing class(es) of each variable
+
+  - `label_stem`: optional column containing variable label stems, if
+    any variables are specified in `.split_var_labels`
 
   - `label`: variable label
 
@@ -90,6 +116,4 @@ several formats) and additional metadata. Specifically:
   - Transformed versions of the passed dataset. See
     [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md).
 
-  - Lookup tables and other metadata used internally: `"user_missing"`,
-    `"vals_by_label"`, `"labs_by_value"`, `"miss_propagate"`,
-    `"factors"`, `"n_obs"`, `"n_vars"`\#'
+  - Lookup tables and other metadata used internally.
