@@ -1,4 +1,3 @@
-
 #' Summarize numeric variables from a codebook object
 #'
 #' `cb_summarize_numeric()` generates a summary table for all numeric variables

@@ -1,4 +1,4 @@
-# lighthouse.codebook 0.0.2
+# lighthouse.codebook 0.1.0
 
 ## New functionality
 
