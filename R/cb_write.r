@@ -14,6 +14,8 @@
 #' @param dataset_name Name of the dataset to display in workbook headers.
 #' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
 #'   in the Overview tab header?
+#' @param hyperlinks If `TRUE`, variable names on the Overview sheet will link 
+#'   to corresponding rows on summary tabs and vice versa.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by. If specified, additional numeric and categorical summary tabs will be included
 #'   with decked heads for specified groups. 
@@ -34,6 +36,7 @@ cb_write <- function(cb,
                      dataset_name = NULL,
                      incl_date = TRUE,
                      incl_dims = TRUE,
+                     hyperlinks = TRUE,
                      group_by = NULL,
                      detail_missing = c("if_any_user_missing", "yes", "no"),
                      n_text_vals = 5,
@@ -81,7 +84,7 @@ cb_write <- function(cb,
   cb_write_codebook(
     cb, summaries,
     file = file, dataset_name = dataset_name, incl_date = incl_date, 
-    incl_dims = incl_dims, overwrite = overwrite
+    incl_dims = incl_dims, hyperlinks = hyperlinks, overwrite = overwrite
   )
 }
 
@@ -153,7 +156,7 @@ compute_banded_rows <- function(rows, by, data) {
 
 compute_border_cols <- function(data, cols, start_col = NULL) {
   start_quo <- rlang::enquo(start_col)
-  if (rlang::quo_is_null(start_quo))  return(NULL)
+  if (rlang::quo_is_null(start_quo)) return(NULL)
   idx <- seq(tidyselect::eval_select(start_quo, data), ncol(data))
   cols <- cols[idx]
 }
@@ -252,6 +255,69 @@ cb_prep_decked_cols <- function(data,
   list(decked, data_nms, decked_fmt)
 }
 
+var_name_hyperlinks <- function(params) {
+  hl_rows <- intersect(names(params), c("overview", "num", "cat", "txt")) |>
+    setNames(nm = _) |>
+    lapply(\(nm) {
+      name <- params[[nm]]$data$Name
+      tibble::tibble(
+        name = name[name != ""],
+        "{paste0(nm, '_row')}" := params[[nm]]$rows$var_name
+      )
+    })
+
+  get_sheet_rows <- function(sheet, hl_rows) {
+    sheet <- sheet[[1]]
+    if (is.na(sheet)) NA else tibble::deframe(hl_rows[[sheet]])
+  }
+
+  hl <- hl_rows$overview |>
+    dplyr::mutate(
+      overview_nm = params$overview$sheet_name,
+      sheet = dplyr::case_match(
+        name,
+        hl_rows$num$name %||% NA ~ "num",
+        hl_rows$cat$name %||% NA ~ "cat",
+        hl_rows$txt$name %||% NA ~ "txt",
+        .default = NA
+      ),
+    ) |>
+    dplyr::mutate(
+      sheet_nm = params[[sheet[[1]]]]$sheet_name %||% NA,
+      sheet_row = get_sheet_rows(sheet, hl_rows)[name],
+      .by = sheet
+    ) |>
+    dplyr::mutate(
+      from_ov = ifelse(
+        is.na(sheet_nm),
+        NA,
+        openxlsx2::create_hyperlink(
+          sheet = sheet_nm, row = sheet_row, col = 1, text = name
+        )
+      ),
+      to_ov = openxlsx2::create_hyperlink(
+        sheet = overview_nm, row = overview_row, col = 1, text = name
+      )
+    )
+
+  hl <- hl |>
+    dplyr::transmute(sheet = "overview", row = overview_row, hl = from_ov) |>
+    dplyr::bind_rows(dplyr::select(hl, sheet, row = sheet_row, hl = to_ov)) |>
+    tidyr::drop_na() |>
+    dplyr::mutate(
+      chunk = cumsum(tidyr::replace_na(row != dplyr::lag(row) + 1, FALSE)),
+      .by = sheet
+    )
+
+  hl <- hl |>
+    split(hl$sheet) |>
+    lapply(\(x) split(x, x$chunk))
+  
+  for (nm in names(hl)) {
+    params[[nm]]$hyperlinks <- hl[[nm]]
+  }
+  params
+}
 
 cb_prep_sheet_data <- function(data,
                                sheet_name = NULL, 
@@ -330,6 +396,8 @@ cb_prep_sheet_data <- function(data,
         )
     }
   }
+  
+  rows$var_name <- rows$dat[data$Name != ""]
 
   data <- as.data.frame(data)
   names(data) <- data_nms
@@ -474,13 +542,20 @@ cb_write_sheet <- function(wb, data, params) {
         dims = openxlsx2::wb_dims(pm$rows$header, 1), bold = TRUE
       )
   }
+
+  for (chunk in params$hyperlinks) {
+    wb <- wb |>
+      openxlsx2::wb_add_formula(
+        x = chunk$hl, start_col = 1, start_row = min(chunk$row)
+      )
+  }
+  
   # Set column widths and freeze panes
   wb <- wb |>
     openxlsx2::wb_set_col_widths(cols = pm$cols$all, widths = "auto") |>
     openxlsx2::wb_freeze_pane(
       first_active_row = pm$rows$dat_start + 1,  first_active_col = 2
     )
-    
   
   wb
 }
@@ -509,6 +584,7 @@ cb_write_codebook <- function(cb,
                               dataset_name = NULL,
                               incl_date = TRUE,
                               incl_dims = TRUE,
+                              hyperlinks = TRUE,
                               overwrite = TRUE,
                               min_col_width = 7,
                               max_col_width = 70) {
@@ -532,16 +608,6 @@ cb_write_codebook <- function(cb,
     cat = c(dataset_name, "Categorical variables summary"),
     txt = c(dataset_name, "Text variables summary")
   )
-  
-  # set max col width
-  opts <- options(
-    openxlsx2.minWidth = min_col_width,
-    openxlsx2.maxWidth = max_col_width
-  )
-  on.exit(options(opts))
-    
-  # initialize workbook 
-  wb <- openxlsx2::wb_workbook()
   
   params <- list()
  
@@ -592,7 +658,7 @@ cb_write_codebook <- function(cb,
       cb_format_names() |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$txt, header = headers$txt, 
-        cols_pct = tidyselect::starts_with("%"), cols_int = n,
+        cols_pct = tidyselect::starts_with("%"), cols_int = c(`Unique n`, n),
         clear_repeats = tidyselect::any_of(
           c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
         ),
@@ -624,13 +690,24 @@ cb_write_codebook <- function(cb,
     params$cat_grp <- summaries$cat_grp |>
       cb_format_names(!(!!cat_group_by)) |>
       cb_prep_sheet_data(
-        sheet_name = sheet_nms$cat_grp, header = headers$cat_grp, 
+        sheet_name = sheet_nms$cat_grp, header = headers$cat_grp,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
         clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label")),
         id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
         group_by = !!cat_group_by
       )
   }
+  
+  if (hyperlinks) params <- var_name_hyperlinks(params)
+
+  opts <- options(
+    openxlsx2.minWidth = min_col_width,
+    openxlsx2.maxWidth = max_col_width
+  )
+  on.exit(options(opts))
+    
+  # initialize workbook 
+  wb <- openxlsx2::wb_workbook()
   
   for (sheet in names(params)) {
     wb <- cb_write_sheet(
@@ -639,6 +716,7 @@ cb_write_codebook <- function(cb,
   }
   
   openxlsx2::wb_save(wb, file, overwrite = overwrite)
+
   invisible(file)
 }
 

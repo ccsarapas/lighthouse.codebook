@@ -10,6 +10,7 @@ cb_write(
   dataset_name = NULL,
   incl_date = TRUE,
   incl_dims = TRUE,
+  hyperlinks = TRUE,
   group_by = NULL,
   detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
@@ -26,6 +27,9 @@ a variant.}
 
 \item{incl_date, incl_dims}{Should the date and/or dataset dimensions be included
 in the Overview tab header?}
+
+\item{hyperlinks}{If \code{TRUE}, variable names on the Overview sheet will link
+to corresponding rows on summary tabs and vice versa.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
 by. If specified, additional numeric and categorical summary tabs will be included

@@ -5,6 +5,10 @@
 * New function `cb_summarize_text()` returns a summary of text variables including
   unique values, frequencies for the most common values, and missing value information.
   A tab including this information is now included in workbooks created by `cb_write()`.
+  
+* In workbooks produced by `cb_write()`, variable names on the Overview sheet are 
+  now hyperlinked to corresponding rows on summary tabs and vice versa. This can 
+  be turned off by setting `hyperlinks` to `FALSE`. 
 
 * The `.split_var_labels` argument to `cb_create()` and variants splits variable 
   labels with a common prefix into separate columns. For example, given a set of 
