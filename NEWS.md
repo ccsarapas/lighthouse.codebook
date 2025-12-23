@@ -1,7 +1,5 @@
 # lighthouse.codebook 0.1.0
 
-## New functionality
-
 * New function `cb_summarize_text()` returns a summary of text variables including
   unique values, frequencies for the most common values, and missing value information.
   A tab including this information is now included in workbooks created by `cb_write()`.
@@ -49,8 +47,6 @@
 
 * Categorical, numeric, and/or text summary tabs are now omitted when there are 
   no variables of the relevant type.
-
-## Interface changes
 
 * In `cb_create()` and variants, changed `.rmv_html` and `.rmv_line_breaks` arguments
   to logical rather than tidyselect.
