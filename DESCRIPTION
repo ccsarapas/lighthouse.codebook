@@ -1,6 +1,6 @@
 Package: lighthouse.codebook
 Title: Summarize Datasets for Lighthouse Institute Projects
-Version: 0.0.1
+Version: 0.1.0
 Authors@R: 
     person("Casey", "Sarapas", 
            email = "ccsarapas@chestnut.org", 
