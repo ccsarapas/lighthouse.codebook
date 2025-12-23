@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/ccsarapas/lighthouse.codebook/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/ccsarapas/lighthouse.codebook/blob/v0.1.0/DESCRIPTION)
 
 Sarapas C (2025). *lighthouse.codebook: Summarize Datasets for
 Lighthouse Institute Projects*. R package version 0.1.0,
