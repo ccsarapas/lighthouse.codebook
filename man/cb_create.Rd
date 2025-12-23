@@ -13,6 +13,8 @@ cb_create(
   .val_labels = val_labels,
   .user_missing = NULL,
   .split_var_labels = NULL,
+  .include_types = !.include_r_classes,
+  .include_r_classes = FALSE,
   .val_labs_sep1 = NULL,
   .val_labs_sep2 = NULL,
   .rmv_html = TRUE,
@@ -47,6 +49,12 @@ See "Specifying user missing values" below for examples.}
 expressions, indicating (sets of) variable labels with a common stem that should
 be extracted into a separate column.}
 
+\item{.include_types}{Include a column listing simplified type for each variable?
+(e.g,. \code{"categorical"}, \code{"date-time"}.)}
+
+\item{.include_r_classes}{Include a column listing class(es) of each variable?
+(e.g., \code{"factor"}, \code{"POSIXct, POSIXt"}.)}
+
 \item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
 in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
 separates value/label pairs. e.g., if value labels are in format \code{"1, First label|2, Second label"},
@@ -76,7 +84,8 @@ and additional metadata. Specifically:
 \item A tibble with columns:
 \itemize{
 \item \code{name}: variable name
-\item \code{type}: variable type
+\item \code{type}: optional column containing simplified variable type
+\item \code{class}: optional column containing class(es) of each variable
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label

@@ -25,6 +25,10 @@
 #' @param .split_var_labels A [`tidyselect`][dplyr_tidy_select] expression or list of tidyselect
 #'   expressions, indicating (sets of) variable labels with a common stem that should 
 #'   be extracted into a separate column.
+#' @param .include_r_classes Include a column listing class(es) of each variable? 
+#'   (e.g., `"factor"`, `"POSIXct, POSIXt"`.)
+#' @param .include_types Include a column listing simplified type for each variable?
+#'   (e.g,. `"categorical"`, `"date-time"`.)
 #' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
 #'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2` 
 #'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
@@ -47,7 +51,8 @@
 #' and additional metadata. Specifically:
 #' - A tibble with columns:
 #'     - `name`: variable name
-#'     - `type`: variable type
+#'     - `type`: optional column containing simplified variable type
+#'     - `class`: optional column containing class(es) of each variable
 #'     - `label_stem`: optional column containing variable label stems, if any variables 
 #'       are specified in `.split_var_labels`
 #'     - `label`: variable label
@@ -160,6 +165,8 @@ cb_create <- function(data,
                       .val_labels = val_labels,
                       .user_missing = NULL,
                       .split_var_labels = NULL,
+                      .include_types = !.include_r_classes,
+                      .include_r_classes = FALSE,
                       .val_labs_sep1 = NULL,
                       .val_labs_sep2 = NULL,
                       .rmv_html = TRUE,
@@ -184,7 +191,10 @@ cb_create <- function(data,
     cb_zap_data() |>
     cb_add_dims() |>
     cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
-    cb_add_type_col() |>
+    cb_add_type_col(
+      include_r_classes = .include_r_classes,
+      include_types = .include_types
+    ) |>
     cb_add_missing_col() |>
     cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels))
 }
@@ -565,14 +575,39 @@ cb_split_labels_col <- function(cb, split_var_labels = NULL) {
 }
 
 ## should maybe generalize this pattern of [get attr data] -> [sort by cb$name] -> [sapply fx]
-cb_add_type_col <- function(cb) {
-  data <- attr(cb, "data_zapped")[cb$name]
-  cb |>
-    dplyr::mutate(
-      type = vapply(data, class_collapse, character(1)), 
-      type = stringr::str_replace(type, "ordered, factor", "ordered"),
-      .after = name
-    )
+cb_add_type_col <- function(cb, include_r_classes = FALSE, include_types = FALSE) {
+  relabel_classes <- function(x) {
+        classes <- class(x)
+        if ("ordered" %in% classes) return("ordinal")
+        if ("factor" %in% classes) return("categorical")
+        if ("logical" %in% classes) return("boolean")
+        if ("character" %in% classes) return("text")
+        if ("Date" %in% classes) return("date")
+        if ("POSIXt" %in% classes) return("date-time")
+        if ("hms" %in% classes) return("time")
+        if (any(c("difftime", "Period", "Duration", "Interval") %in% classes)) {
+          return("duration")
+        }
+        # numeric and integer stay as is, as does any unknown type
+        paste(classes, collapse = ", ")
+      }
+    if (include_r_classes) {
+      data <- attr(cb, "data")[cb$name]
+      cb <- cb |>
+        dplyr::mutate(
+          class = vapply(data, class_collapse, character(1)),
+          .after = name
+        )
+    }
+    if (include_types) {
+      data <- attr(cb, "data_zapped")[cb$name]
+      cb <- cb |>
+        dplyr::mutate(
+          type = vapply(data, relabel_classes, character(1)),
+          .after = name
+        )
+    }
+    cb
 }
 
 cb_add_missing_col <- function(cb) {

@@ -28,7 +28,8 @@
 #' and additional metadata. Specifically:
 #' - A tibble with columns:
 #'     - `name`: variable name
-#'     - `type`: variable type
+#'     - `type`: optional column containing simplified variable type
+#'     - `class`: optional column containing class(es) of each variable
 #'     - `label_stem`: optional column containing variable label stems, if any variables 
 #'       are specified in `.split_var_labels`
 #'     - `label`: variable label
@@ -44,6 +45,8 @@
 cb_create_spss <- function(data,
                            .user_missing = NULL,
                            .split_var_labels = NULL,
+                           .include_types = !.include_r_classes,
+                           .include_r_classes = FALSE,
                            # these would require a different implementation -- omitted for now
                            #   .rmv_html = TRUE,
                            #   .rmv_line_breaks = TRUE,
@@ -62,7 +65,10 @@ cb_create_spss <- function(data,
     cb_zap_data_spss() |>
     cb_add_dims() |>
     cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
-    cb_add_type_col() |>
+    cb_add_type_col(
+      include_r_classes = .include_r_classes,
+      include_types = .include_types
+    ) |>
     cb_add_missing_col() |>
     cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels))
 }

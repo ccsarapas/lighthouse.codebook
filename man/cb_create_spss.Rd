@@ -8,6 +8,8 @@ cb_create_spss(
   data,
   .user_missing = NULL,
   .split_var_labels = NULL,
+  .include_types = !.include_r_classes,
+  .include_r_classes = FALSE,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("val_label", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -25,6 +27,12 @@ See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} do
 \item{.split_var_labels}{A \code{\link[dplyr:dplyr_tidy_select]{tidyselect}} expression or list of tidyselect
 expressions, indicating (sets of) variable labels with a common stem that should
 be extracted into a separate column.}
+
+\item{.include_types}{Include a column listing simplified type for each variable?
+(e.g,. \code{"categorical"}, \code{"date-time"}.)}
+
+\item{.include_r_classes}{Include a column listing class(es) of each variable?
+(e.g., \code{"factor"}, \code{"POSIXct, POSIXt"}.)}
 
 \item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are
@@ -44,7 +52,8 @@ and additional metadata. Specifically:
 \item A tibble with columns:
 \itemize{
 \item \code{name}: variable name
-\item \code{type}: variable type
+\item \code{type}: optional column containing simplified variable type
+\item \code{class}: optional column containing class(es) of each variable
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label

@@ -29,8 +29,12 @@
 #' @export
 cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   check_codebook(cb)
+  
+  data <- attr(cb, "data_zapped")[cb$name]
+  nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
+
   out <- cb |>
-    dplyr::filter(type %in% c("numeric", "integer")) |>
+    dplyr::filter(name %in% nms_num) |>
     dplyr::select(tidyselect::any_of(c("name", "label_stem", "label")))
   
     if (!nrow(out)) {
@@ -46,10 +50,7 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   if ("label_stem" %in% names(out) && all(is.na(out$label_stem))) {
     out$label_stem <- NULL
   }
-  
-  nms_num <- out$name
-  data <- attr(cb, "data_zapped")
-  
+    
   res <- lighthouse::summary_table(
       data,
       valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
@@ -324,17 +325,23 @@ cb_summarize_text <- function(cb,
                               detail_na_label = "NA",
                               warn_if_none = TRUE) {
   check_codebook(cb)
-  cb <- data.table::as.data.table(cb)[type == "character"]
-  if (!nrow(cb)) {
+
+  data <- attr(cb, "data_zapped")[cb$name]
+  nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
+
+  data_dt <- data.table::as.data.table(attr(cb, "data_labelled")[cb$name])
+  cols_chr <- names(data_dt)[vapply(data_dt, is.character, logical(1))]
+
+  if (!length(cols_chr)) {
     if (warn_if_none) {
       cli::cli_warn("No character variables in codebook; returning `NULL`.")
     }
     return(NULL)
   }
-  cols_chr <- cb[["name"]]
-  data_dt <- attr(cb, "data_labelled") |> 
-    data.table::as.data.table() |> 
-    _[, cols_chr, with = FALSE]
+
+  data_dt <- data_dt[, ..cols_chr]
+
+  cb <- data.table::as.data.table(cb)[name %in% cols_chr]
     
   label_cols <- intersect(c("name", "label_stem", "label"), names(cb))
   var_labs <- cb[, label_cols, with = FALSE]

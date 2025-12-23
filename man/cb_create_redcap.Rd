@@ -14,6 +14,8 @@ cb_create_redcap(
   .form = form_name,
   .user_missing = NULL,
   .split_var_labels = NULL,
+  .include_types = !.include_r_classes,
+  .include_r_classes = FALSE,
   .val_labs_sep1 = ", ",
   .val_labs_sep2 = "\\\\|",
   .rmv_html = TRUE,
@@ -49,6 +51,12 @@ See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} do
 \item{.split_var_labels}{A \code{\link[dplyr:dplyr_tidy_select]{tidyselect}} expression or list of tidyselect
 expressions, indicating (sets of) variable labels with a common stem that should
 be extracted into a separate column.}
+
+\item{.include_types}{Include a column listing simplified type for each variable?
+(e.g,. \code{"categorical"}, \code{"date-time"}.)}
+
+\item{.include_r_classes}{Include a column listing class(es) of each variable?
+(e.g., \code{"factor"}, \code{"POSIXct, POSIXt"}.)}
 
 \item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
 in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
@@ -90,7 +98,8 @@ and additional metadata. Specifically:
 \itemize{
 \item \code{name}: variable name
 \item \code{form}: form name
-\item \code{type}: variable type
+\item \code{type}: optional column containing simplified variable type
+\item \code{class}: optional column containing class(es) of each variable
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label

@@ -34,6 +34,10 @@
   Multiple sets of variables with common prefixes can be specified by passing a 
   list of tidyselect expressions.
 
+* `cb_create()` and variants now return more general type information (e.g., `"date-time`"
+  rather than `"POSIXct, POSIXt"`) when `.include_types` is `TRUE` (the default). 
+  Detailed class information can be requested by setting `.include_r_classes` to `TRUE`.
+
 * _n_ for each subgroup are now included in decked headers for grouped summaries.
 
 * In `cb_write()`, changed `detail_missing` argument from logical to options `"if_any_user_missing"`, 
