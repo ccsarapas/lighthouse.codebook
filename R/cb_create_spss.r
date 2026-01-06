@@ -1,11 +1,10 @@
 #' Generate a codebook object from an SPSS dataset
 #'
 #' @description
-#' `cb_create_spss()` builds an object of class `"li_codebook"` from an SPSS dataset
-#' (imported using `haven::read_spss()`, `read_sav()`, or `read_por()`). Metadata
-#' including variable labels, value labels, and user missing values are extracted
-#' from the imported dataset. (User missing values can also be set using the `.user_missing`
-#' argument.)`
+#' `cb_create_spss()` builds an object of class `"li_codebook"` from an imported 
+#' SPSS dataset. Metadata including variable labels, value labels, and user missing 
+#' values are extracted from the imported dataset. (User missing values can also 
+#' be set using the `.user_missing` argument.)`
 #'
 #' The resulting object can be used to write an Excel workbook with variable and
 #' data summaries (using [`cb_write()`]), extract processed data ([`cb_get_data()`]),
@@ -13,14 +12,15 @@
 #' [`cb_summarize_text()`]).
 #'
 #' @inheritParams cb_create
-#' @param data A data frame exported or retrieved from REDCap.
+#' @param data A data frame imported from SPSS using (imported using `haven::read_spss()`, 
+#'   `read_sav()`, or `read_por()`).
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
 #'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
 #'   See "Specifying user missing values" in [`cb_create()`] documentation for examples.
 #' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with
-#'   a value label in the `data`, which should be used?
+#'   a value label in `data`, which should be used?
 #' 
 #' @return
 #' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
