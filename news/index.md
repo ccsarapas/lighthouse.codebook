@@ -1,5 +1,20 @@
 # Changelog
 
+## lighthouse.codebook 0.1.1
+
+- [`cb_summarize_text()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_text.md)
+  now works as expected when codebook doesn’t include a `label` column
+  (fixes
+  [\#5](https://github.com/ccsarapas/lighthouse.codebook/issues/5)).
+
+- Added dependency on R \>= 4.3.0 for base pipe placeholder.
+
+- Fixed typos and tweaked wording in docs for
+  [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md),
+  [`cb_create_spss()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_spss.md),
+  and
+  [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md).
+
 ## lighthouse.codebook 0.1.0
 
 - New function

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,9 +29,15 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.1.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.1" id="lighthousecodebook-011">lighthouse.codebook 0.1.1<a class="anchor" aria-label="anchor" href="#lighthousecodebook-011"></a></h2>
+<ul><li><p><code><a href="../reference/cb_summarize_text.html">cb_summarize_text()</a></code> now works as expected when codebook doesn’t include a <code>label</code> column (fixes <a href="https://github.com/ccsarapas/lighthouse.codebook/issues/5" class="external-link">#5</a>).</p></li>
+<li><p>Added dependency on R &gt;= 4.3.0 for base pipe placeholder.</p></li>
+<li><p>Fixed typos and tweaked wording in docs for <code><a href="../reference/cb_create.html">cb_create()</a></code>, <code><a href="../reference/cb_create_spss.html">cb_create_spss()</a></code>, and <code><a href="../reference/cb_write.html">cb_write()</a></code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="lighthousecodebook-010">lighthouse.codebook 0.1.0<a class="anchor" aria-label="anchor" href="#lighthousecodebook-010"></a></h2>
 <ul><li><p>New function <code><a href="../reference/cb_summarize_text.html">cb_summarize_text()</a></code> returns a summary of text variables including unique values, frequencies for the most common values, and missing value information. A tab including this information is now included in workbooks created by <code><a href="../reference/cb_write.html">cb_write()</a></code>.</p></li>
@@ -73,7 +79,8 @@
 <li><p>Categorical, numeric, and/or text summary tabs are now omitted when there are no variables of the relevant type.</p></li>
 <li><p>In <code><a href="../reference/cb_create.html">cb_create()</a></code> and variants, changed <code>.rmv_html</code> and <code>.rmv_line_breaks</code> arguments to logical rather than tidyselect.</p></li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
