@@ -1,3 +1,7 @@
+# lighthouse.codebook 0.1.1
+  
+* Added dependency on R >= 4.3.0 for base pipe placeholder.
+
 # lighthouse.codebook 0.1.0
 
 * New function `cb_summarize_text()` returns a summary of text variables including
