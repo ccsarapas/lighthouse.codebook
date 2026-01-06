@@ -1,5 +1,8 @@
 # lighthouse.codebook 0.1.1
-  
+
+* `cb_summarize_text()` now works as expected when codebook doesn't include a `label` 
+  column (fixes #5).
+
 * Added dependency on R >= 4.3.0 for base pipe placeholder.
 
 * Fixed typos and tweaked wording in docs for `cb_create()`, `cb_create_spss()`, 

@@ -233,10 +233,11 @@ cb_summarize_categorical <- function(cb,
     ) |> 
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
 
-  freqs <- merge(
-    all_vals, freqs,
-    by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
-  ) |>
+  freqs <- all_vals |> 
+    merge(
+      freqs,
+      by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
+    ) |>
     # flag true `NA`s as missing
     _[is.na(value_val), is_missing := TRUE] |>
     # remove missing values if not observed in at least one group
@@ -380,12 +381,15 @@ cb_summarize_text <- function(cb,
       measure.vars = names(data_dt),
       variable.name = "name", value.name = "value_val", variable.factor = FALSE
     ) |>
-    _[, list(n = .N), by = c("name", "value_val")] |>
+    _[, list(n = .N), by = c("name", "value_val")] 
+  
+  freqs <- freqs |>
     merge(var_labs, by = "name", all.x = TRUE, sort = FALSE) |>
     merge(
       all_missings,
       by = c("name", "value_val"), all.x = TRUE, sort = FALSE
     ) |>
+    # flag true `NA`s as missing
     _[, is_missing := lighthouse::is_TRUE(is_missing) | is.na(value_val)] |>
     _[order(match(name, unique(name)), is_missing, -n * !is_missing, value_val)] |>
     _[,
@@ -403,10 +407,14 @@ cb_summarize_text <- function(cb,
         default = stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val))
       ),
       by = c("name", "is_missing")
-    ] |>
-    _[,
-      list(n = sum(n)),
-      by = c("name", "label", "unique_n", "is_missing", "value")] |> 
+    ]
+
+  # I believe this is to collapse missings when `detail_missing = FALSE`
+  by_vars <- intersect(
+    c("name", "label", "unique_n", "is_missing", "value"), names(freqs)
+  )
+  freqs <- freqs |> 
+    _[, list(n = sum(n)), by = by_vars] |> 
     _[, pct_of_all := n / sum(n), by = "name"] |>
     _[!(is_missing), pct_of_valid := n / sum(n), by = "name"]
       
