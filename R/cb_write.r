@@ -26,7 +26,7 @@
 #'   + 1 unique values, the `n_text_vals` most common non-missing values will be included. 
 #' @param overwrite Overwrite existing file?
 #'
-#' @return Invisibly returns the path to the written Excel file. See []`cb_create()`]
+#' @return Invisibly returns the path to the written Excel file. See [`cb_create()`]
 #'   and variants, [`cb_summarize_numeric()`], [`cb_summarize_categorical()`], and 
 #'   [`cb_summarize_text()`] for details on the objects written to the file.
 #' 

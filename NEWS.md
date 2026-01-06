@@ -2,6 +2,9 @@
   
 * Added dependency on R >= 4.3.0 for base pipe placeholder.
 
+* Fixed typos and tweaked wording in docs for `cb_create()`, `cb_create_spss()`, 
+  and `cb_write()`.
+
 # lighthouse.codebook 0.1.0
 
 * New function `cb_summarize_text()` returns a summary of text variables including

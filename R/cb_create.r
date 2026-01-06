@@ -7,7 +7,7 @@
 #' or generate dataset summaries ([`cb_summarize_numeric()`], [`cb_summarize_categorical()`],
 #' [`cb_summarize_text()`]).
 #'
-#' @param data A data frame exported or retrieved from REDCap.
+#' @param data A data frame.
 #' @param metadata A data frame containing metadata, such as variable labels and value
 #' labels.
 #' @param ... Additional columns from `metadata` to preserve in the final codebook.
