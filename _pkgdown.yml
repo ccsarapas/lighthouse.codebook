@@ -6,4 +6,8 @@ footer:
   structure:
     left: package
     right: built_with
-
+authors:
+  Casey Sarapas:
+    href: "https://chestnut.org/li/scientists-and-project-directors/category/research-scientists/profile/casey-sarapas-phd"
+  Chestnut Health Systems:
+    href: "https://chestnut.org/"
