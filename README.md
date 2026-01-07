@@ -11,3 +11,6 @@ Install lighthouse.codebook by running:
 # install.packages("remotes")
 remotes::install_github("ccsarapas/lighthouse.codebook")
 ```
+## SPSS extension
+
+Functionality from this package is also available as an SPSS extension command [here](https://github.com/ccsarapas/lighthouse.codebook.spss).
