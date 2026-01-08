@@ -1,12 +1,13 @@
 Package: lighthouse.codebook
 Title: Summarize Datasets for Lighthouse Institute Projects
 Version: 0.1.1
-Authors@R: 
+Authors@R: c(
     person("Casey", "Sarapas", 
            email = "ccsarapas@chestnut.org", 
            role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8668-1462")),
     person("Chestnut Health Systems", role = "cph")
+  )
 Description: Functions to generate codebooks and dataset summaries for Lighthouse Institute projects.
 Depends:
     R (>= 4.3.0)

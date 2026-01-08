@@ -20,5 +20,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Casey Sarapas \email{ccsarapas@chestnut.org} (\href{https://orcid.org/0000-0002-8668-1462}{ORCID})
 
+Other contributors:
+\itemize{
+  \item Chestnut Health Systems [copyright holder]
+}
+
 }
 \keyword{internal}
