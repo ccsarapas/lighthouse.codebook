@@ -28,7 +28,14 @@
 #' @export
 cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   check_codebook(cb)
-  
+  cb_summarize_numeric_impl(
+    cb = cb, group_by = {{ group_by }}, warn_if_none = warn_if_none
+  )
+}
+
+cb_summarize_numeric_impl <- function(cb, 
+                                      group_by = NULL, 
+                                      warn_if_none = FALSE) {
   data <- attr(cb, "data_zapped")[cb$name]
   nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
 
@@ -96,15 +103,15 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
 #' @param detail_missing Include detailed missing value information? Currently supported
 #'   only when no grouping variables are specified.
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
-#' @param warn_if_none Should a warning be issued if there are no categorical 
+#' @param warn_if_none Should a warning be issued if there are no categorical
 #'   variables in `cb`?
 #'
-#' @return If there no categorical variables in `cb`, `NULL`. Otherwise, a tibble 
+#' @return If there no categorical variables in `cb`, `NULL`. Otherwise, a tibble
 #'   with columns:
 #'   - optional grouping column(s) if specified in `group_by`
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
-#'      `cb` includes a `label_stem` column and at least one categorical variable 
+#'      `cb` includes a `label_stem` column and at least one categorical variable
 #'      has a non-missing label stem.
 #'   - `label`: variable label
 #'   - `is_missing`: optional column indicating if `value` is a missing value. Included
@@ -113,9 +120,9 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
 #'   - `n`: number of observations
 #'   - `pct_of_all`: proportion of all (non-missing and missing) observations
 #'   - `pct_of_valid`: for non-missing values, proportion of all non-missing observations
-#'   - `pct_of_missing`: optional column showing, for missing values, proportion 
+#'   - `pct_of_missing`: optional column showing, for missing values, proportion
 #'     of all missing observations. Included if `detail_missing` is `TRUE`.
-#' 
+#'
 #' @export
 cb_summarize_categorical <- function(cb,
                                      group_by = NULL,
@@ -124,6 +131,22 @@ cb_summarize_categorical <- function(cb,
                                      detail_na_label = "NA",
                                      warn_if_none = TRUE) {
   check_codebook(cb)
+  cb_summarize_categorical_impl(
+    cb,
+    group_by = {{ group_by }},
+    prefixed = prefixed,
+    detail_missing = detail_missing,
+    detail_na_label = detail_na_label,
+    warn_if_none = warn_if_none
+  )
+}
+
+cb_summarize_categorical_impl <- function(cb,
+                                          group_by = NULL,
+                                          prefixed = TRUE,
+                                          detail_missing = missing(group_by),
+                                          detail_na_label = "NA",
+                                          warn_if_none = FALSE) {
   factors <- attr(cb, "factors")
   val_labs <- attr(cb, "vals_by_label")
   data <- attr(cb, "data_labelled")
@@ -286,38 +309,38 @@ cb_summarize_categorical <- function(cb,
 
 #' Summarize character variables from a codebook object
 #'
-#' `cb_summarize_text()` generates a summary table for all character variables 
-#' from a codebook object, including number of unique values, frequencies for the 
-#' most common values, and missing value information. Note that character variables 
+#' `cb_summarize_text()` generates a summary table for all character variables
+#' from a codebook object, including number of unique values, frequencies for the
+#' most common values, and missing value information. Note that character variables
 #' of class `"haven_labelled"` are treated as categorical; see `cb_summarize_categorical()`.
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
-#' @param n_text_vals How many unique non-missing values should be included for 
+#' @param n_text_vals How many unique non-missing values should be included for
 #'   each variable?
 #' @param detail_missing Include detailed missing value information?
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
 #' @param warn_if_none Should a warning be issued if there are no text variables in `cb`?
-#' 
-#' @return If there no text variables in `cb`, `NULL`. Otherwise, a tibble with 
+#'
+#' @return If there no text variables in `cb`, `NULL`. Otherwise, a tibble with
 #'   columns:
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
-#'      `cb` includes a `label_stem` column and at least one character variable 
+#'      `cb` includes a `label_stem` column and at least one character variable
 #'      has a non-missing label stem.
 #'   - `label`: variable label
 #'   - `unique_n`: number of unique non-missing values
 #'   - `is_missing`: optional column indicating if `value` is a missing value. Included
 #'      if `detail_missing` is `TRUE`.
-#'   - `value`: the most prevalent unique values for the variable. If there are 
+#'   - `value`: the most prevalent unique values for the variable. If there are
 #'     more than `n_text_vals` + 1 unique values, the `n_text_vals` most common
 #'     non-missing values will be included. (All missing values will always be included.)
 #'   - `n`: number of observations
 #'   - `pct_of_all`: proportion of all (non-missing and missing) observations
 #'   - `pct_of_valid`: for non-missing values, proportion of all non-missing observations
-#'   - `pct_of_missing`: optional column showing, for missing values, proportion 
+#'   - `pct_of_missing`: optional column showing, for missing values, proportion
 #'     of all missing observations. Included if `detail_missing` is `TRUE`.
-#' 
+#'
 #' @export
 cb_summarize_text <- function(cb,
                               n_text_vals = 5,
@@ -325,7 +348,20 @@ cb_summarize_text <- function(cb,
                               detail_na_label = "NA",
                               warn_if_none = TRUE) {
   check_codebook(cb)
+  cb_summarize_text_impl(
+    cb,
+    n_text_vals = n_text_vals,
+    detail_missing = detail_missing,
+    detail_na_label = detail_na_label,
+    warn_if_none = warn_if_none
+  )
+}
 
+cb_summarize_text_impl <- function(cb,
+                                   n_text_vals = 5,
+                                   detail_missing = TRUE,
+                                   detail_na_label = "NA",
+                                   warn_if_none = FALSE) {
   data <- attr(cb, "data_zapped")[cb$name]
   nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
 
