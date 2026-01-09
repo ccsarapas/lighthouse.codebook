@@ -36,7 +36,8 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
 
 cb_summarize_numeric_impl <- function(cb, 
                                       group_by = NULL, 
-                                      warn_if_none = FALSE) {
+                                      warn_if_none = FALSE,
+                                      group_rows = NULL) {
   data <- attr(cb, "data_zapped")[cb$name]
   nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
 
@@ -74,10 +75,18 @@ cb_summarize_numeric_impl <- function(cb,
       \(x) fct_replace_na(factor(x), "(Missing)")
     ))
   
+  group_cols <- setdiff(group_by, group_rows)
+  if (!length(group_cols)) group_cols <- NULL
+  
   out |>
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    dplyr::relocate(all_of(group_by)) |> 
-    set_attrs(group_by = group_by, group_counts = group_counts(cb, group_by))
+    dplyr::relocate(all_of(group_by)) |>
+    set_attrs(
+      group_by = group_by, 
+      group_rows = group_rows,
+      group_cols = group_cols,
+      group_counts = group_counts(cb, group_cols)
+    )
 
 }
 
