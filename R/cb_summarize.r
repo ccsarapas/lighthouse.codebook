@@ -28,8 +28,9 @@
 #' @export
 cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   check_codebook(cb)
+  group_by <- cb_untidyselect(cb, {{ group_by }})
   cb_summarize_numeric_impl(
-    cb = cb, group_by = {{ group_by }}, warn_if_none = warn_if_none
+    cb = cb, group_by = group_by, warn_if_none = warn_if_none
   )
 }
 
@@ -43,7 +44,7 @@ cb_summarize_numeric_impl <- function(cb,
     dplyr::filter(name %in% nms_num) |>
     dplyr::select(any_of(c("name", "label_stem", "label")))
   
-    if (!nrow(out)) {
+  if (!nrow(out)) {
     if (warn_if_none) {
       cli::cli_warn(c(
         "!" = "No numeric variables in codebook; returning `NULL`."
@@ -66,26 +67,18 @@ cb_summarize_numeric_impl <- function(cb,
       skew = moments::skewness, kurt = moments::kurtosis,
       na.rm = TRUE,
       .vars = all_of(nms_num),
-      .rows_group_by = {{ group_by }}
+      .rows_group_by = all_of(group_by)
     ) |>
     dplyr::mutate(dplyr::across(
-      {{ group_by }},
+      all_of(group_by),
       \(x) fct_replace_na(factor(x), "(Missing)")
     ))
   
-  out <- out |>
+  out |>
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    dplyr::relocate({{ group_by }}) 
-  
-  group_by_quo <- rlang::enquo(group_by)
-  if (!rlang::quo_is_null(group_by_quo)) {
-    out <- set_attrs(
-      out,
-      group_by = group_by_quo, group_counts = group_counts(cb, {{ group_by }})
-    )
-  }
-  
-  out
+    dplyr::relocate(all_of(group_by)) |> 
+    set_attrs(group_by = group_by, group_counts = group_counts(cb, group_by))
+
 }
 
 #' Summarize categorical variables from a codebook object
@@ -131,9 +124,10 @@ cb_summarize_categorical <- function(cb,
                                      detail_na_label = "NA",
                                      warn_if_none = TRUE) {
   check_codebook(cb)
+  group_by <- cb_untidyselect(cb, {{ group_by }})
   cb_summarize_categorical_impl(
     cb,
-    group_by = {{ group_by }},
+    group_by = group_by,
     prefixed = prefixed,
     detail_missing = detail_missing,
     detail_na_label = detail_na_label,
@@ -154,7 +148,7 @@ cb_summarize_categorical_impl <- function(cb,
   
   ## define column groups
   val_labs <- attr(cb, "vals_by_label")
-  cols_grp <- untidyselect(data, {{ group_by }})
+  cols_grp <- group_by %||% character()
   cols_cat <- setdiff(names(val_labs), cols_grp)
   cols_lgl <- setdiff(
     names(data_dt)[vapply(data_dt, is.logical, logical(1))],
@@ -292,19 +286,13 @@ cb_summarize_categorical_impl <- function(cb,
   )
   freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
   
-  out <- freqs |>
+  freqs |>
     tibble::as_tibble() |>
-    set_attrs(detail_missing = detail_missing)
-  
-  group_by_quo <- rlang::enquo(group_by)
-  if (!rlang::quo_is_null(group_by_quo)) {
-    out <- set_attrs(
-      out,
-      group_by = group_by_quo, group_counts = group_counts(cb, {{ group_by }})
+    set_attrs(
+      detail_missing = detail_missing,
+      group_by = group_by, 
+      group_counts = group_counts(cb, group_by)
     )
-  }
-
-  out
 }
 
 #' Summarize character variables from a codebook object
@@ -469,15 +457,4 @@ cb_summarize_text_impl <- function(cb,
   freqs |>
     tibble::as_tibble() |>
     set_attrs(detail_missing = detail_missing)
-}
-
-group_counts <- function(cb, group_by) {
-  cb |>
-    attr("data_zapped") |>
-    dplyr::count(dplyr::pick({{ group_by }})) |>
-    dplyr::mutate(dplyr::across(
-      {{ group_by }},
-      \(x) fct_replace_na(factor(x), "(Missing)")
-    )) |>
-    deframe_nest()
 }

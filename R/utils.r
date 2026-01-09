@@ -65,8 +65,26 @@ fct_replace_na <- function(x, replace) {
 }
 
 deframe_nest <- function(x) {
-  if (ncol(x) == 2) return(tibble::deframe(x))
+  if (ncol(x) <= 2) return(tibble::deframe(x))
   lapply(split(x[, -1], x[, 1]), deframe_nest)
+}
+
+group_counts <- function(cb, group_by) {
+  if (is.null(group_by)) return(NULL)
+  cb |>
+    attr("data_zapped") |>
+    dplyr::count(dplyr::pick(all_of(group_by))) |>
+    dplyr::mutate(dplyr::across(
+      all_of(group_by),
+      \(x) fct_replace_na(factor(x), "(Missing)")
+    )) |>
+    deframe_nest()
+}
+
+cb_untidyselect <- function(cb, selection, syms = FALSE, null_if_empty = TRUE) {
+  dat <- attr(cb, "data_labelled") %||% attr(cb, "data")
+  out <- untidyselect(dat, {{ selection }}, syms = syms)
+  if (null_if_empty && !length(out)) NULL else out
 }
 
 names_if_any <- function(x) dplyr::na_if(names(x) %||% NA_character_, "")
