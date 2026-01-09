@@ -47,21 +47,16 @@ cb_write <- function(cb,
     detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
   )
   summaries <- list(
-    num = cb_summarize_numeric(cb, warn_if_none = FALSE),
-    cat = cb_summarize_categorical(
-      cb, 
-      detail_missing = detail_missing, 
-      warn_if_none = FALSE
-    ),
-    txt = cb_summarize_text(
+    num = cb_summarize_numeric_impl(cb),
+    cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
+    txt = cb_summarize_text_impl(
       cb, 
       n_text_vals = n_text_vals, 
-      detail_missing = detail_missing,
-      warn_if_none = FALSE
+      detail_missing = detail_missing
     )
   )
-  group_by <- rlang::enquo(group_by)
-  if (!rlang::quo_is_null(group_by)) {
+  group_by <- cb_untidyselect(cb, {{ group_by }})
+  if (!is.null(group_by)) {
     if (detail_missing) {
       cli::cli_inform(c(
         "i" = paste0(
@@ -70,16 +65,8 @@ cb_write <- function(cb,
         )
       ))
     }
-    summaries$num_grp <- cb_summarize_numeric(
-      cb, 
-      group_by = !!group_by, 
-      warn_if_none = FALSE
-    )
-    summaries$cat_grp <- cb_summarize_categorical(
-      cb, 
-      group_by = !!group_by, 
-      warn_if_none = FALSE
-    )
+    summaries$num_grp <- cb_summarize_numeric_impl(cb, group_by = group_by)
+    summaries$cat_grp <- cb_summarize_categorical_impl(cb, group_by = group_by)
   }
   cb_write_codebook(
     cb, summaries,
@@ -88,8 +75,8 @@ cb_write <- function(cb,
   )
 }
 
-cb_format_names <- function(cb,
-                            cols = tidyselect::everything(),
+cb_format_names <- function(data,
+                            skip = NULL,
                             replace = c("pct" = "%"),
                             keep_lower = c("n", "of")) {
   format_fx <- function(x, keep_lower) {
@@ -101,13 +88,13 @@ cb_format_names <- function(cb,
       ) |>
       stringr::str_c(collapse = " ")
   }
-  old <- untidyselect(cb, {{ cols }})
+  old <- setdiff(names(data), skip)
   new <- old |>
     stringr::str_replace_all(replace) |>
     stringr::str_split("_") |>
     vapply(format_fx, character(1), keep_lower = keep_lower)
   new <- setNames(old, new)
-  dplyr::rename(cb, !!!new)
+  dplyr::rename(data, !!!new)
 }
 
 wb_add_data_multi_na <- function(wb,
@@ -146,18 +133,16 @@ wb_add_data_multi_na <- function(wb,
 }
 
 compute_banded_rows <- function(rows, by, data) {
-  by <- rlang::enquo(by)
-  if (rlang::quo_is_null(by)) return(NULL)
+  if (is.null(by)) return(NULL)
   bands <- data |>
-    dplyr::mutate(bands = dplyr::consecutive_id(dplyr::pick(!!by))) |>
+    dplyr::mutate(bands = dplyr::consecutive_id(dplyr::pick(all_of(by)))) |>
     with(dplyr::near(bands %% 2, 1))
   rows[bands]
 }
 
 compute_border_cols <- function(data, cols, start_col = NULL) {
-  start_quo <- rlang::enquo(start_col)
-  if (rlang::quo_is_null(start_quo)) return(NULL)
-  idx <- seq(tidyselect::eval_select(start_quo, data), ncol(data))
+  if (is.null(start_col)) return(NULL)
+  idx <- seq(match(start_col, names(data)), ncol(data))
   cols <- cols[idx]
 }
 
@@ -190,27 +175,26 @@ cb_prep_grouped_data <- function(data, group_by, id_cols) {
   attrs_keep <- c("detail_missing", "group_by", "group_counts")
   attrs <- attributes(data)
   attrs <- attrs[intersect(names(attrs), attrs_keep)]
-  group_var_nms <- untidyselect(data, {{ group_by }})
-  val_cols <- rlang::quo(!c({{ group_by }}, {{ id_cols }}))
+  val_cols <- setdiff(names(data), c(group_by, id_cols))
   data <- data |>
     dplyr::mutate(..spacer = NA_character_) |>
     # needed to ensure correct column order when >1 group var
-    dplyr::arrange(dplyr::pick({{ group_by }})) |>
+    dplyr::arrange(dplyr::pick(all_of(group_by))) |>
     tidyr::pivot_wider(
-      id_cols = {{ id_cols }},
-      names_from = all_of(rev(group_var_nms)),
-      values_from = c(..spacer, {{ val_cols }}),
+      id_cols = all_of(id_cols),
+      names_from = all_of(rev(group_by)),
+      values_from = c(..spacer, all_of(val_cols)),
       names_sep = "_SEP_",
       names_vary = "slowest"
     ) |>
     set_attrs(!!!attrs)
   first_spacer <- grep("^\\.\\.spacer", names(data))[[1]]
   data[, first_spacer] <- NULL
-  list(data, group_var_nms)
+  data
 }
 
 cb_prep_decked_cols <- function(data, 
-                                group_var_nms, 
+                                group_by, 
                                 incl_group_col_n, 
                                 incl_group_col_names) {
   decked <- strsplit(names(data), "_SEP_")
@@ -237,7 +221,7 @@ cb_prep_decked_cols <- function(data,
   }
 
   if (incl_group_col_names) {
-    decked <- apply(decked, 2, \(x) stringr::str_c(group_var_nms, " = ", x))
+    decked <- apply(decked, 2, \(x) stringr::str_c(group_by, " = ", x))
     # if decked has only one row, `apply` returns vector, so coerce back to matrix
     if (!is.matrix(decked)) decked <- matrix(decked, nrow = 1)
   }
@@ -329,20 +313,18 @@ cb_prep_sheet_data <- function(data,
                                group_by = NULL,
                                incl_group_col_n = TRUE,
                                incl_group_col_names = TRUE,
-                               rows_banded_by = Name,
+                               rows_banded_by = "Name",
                                rows_border_by = NULL,
                                rows_sub_border_by = NULL) {
   data_nms <- names(data)
-  num_nms <- data_nms[sapply(data, is.numeric)]
-  pct_nms <- untidyselect(data, {{ cols_pct }})
-  int_nms <- untidyselect(data, {{ cols_int }})
-  group_var_nms <- decked <- decked_fmt <- NULL
-  if (!missing(group_by)) {
-    c(data, group_var_nms) %<-% cb_prep_grouped_data(
-      data = data, group_by = {{ group_by }}, id_cols = {{ id_cols }}
+  cols_num <- data_nms[sapply(data, is.numeric)]
+  decked <- decked_fmt <- NULL
+  if (!is.null(group_by)) {
+    data <- cb_prep_grouped_data(
+      data = data, group_by = group_by, id_cols = id_cols
     )
     c(decked, data_nms, decked_fmt) %<-% cb_prep_decked_cols(
-      data = data, group_var_nms = group_var_nms,
+      data = data, group_by = group_by,
       incl_group_col_n = incl_group_col_n,
       incl_group_col_names = incl_group_col_names
     )
@@ -350,25 +332,23 @@ cb_prep_sheet_data <- function(data,
 
   cols <- tibble::lst(
     all = seq_along(data),
-    num = which(data_nms %in% num_nms),
-    pct = which(data_nms %in% pct_nms),
-    int = which(data_nms %in% int_nms),
-    border = compute_border_cols(
-      data, cols = all, start_col = {{ rows_border_by }}
-    ),
+    num = which(data_nms %in% cols_num),
+    pct = which(data_nms %in% cols_pct),
+    int = which(data_nms %in% cols_int),
+    border = compute_border_cols(data, cols = all, start_col = rows_border_by),
     sub_border = compute_border_cols(
-      data, cols = all, start_col = {{ rows_sub_border_by }}
+      data, cols = all, start_col = rows_sub_border_by
     )
   )
-  
+
   nrows <- nrow(data)
   rows <- tibble::lst(
-    dat_start = length(header) + length(group_var_nms) + 1,
+    dat_start = length(header) + length(group_by) + 1,
     decked_start = length(header) + 1,
-    decked = seq_along(group_var_nms) + length(header),
+    decked = seq_along(group_by) + length(header),
     header = seq_along(header),
     dat = seq_len(nrows) + dat_start,
-    banded = compute_banded_rows(data, rows = dat, by = {{ rows_banded_by}}),
+    banded = compute_banded_rows(data, rows = dat, by = rows_banded_by),
     border = if (is.null(cols$border)) NULL else dat[-1],
     sub_border = border,
     all = seq_len(nrows + dat_start)
@@ -378,12 +358,11 @@ cb_prep_sheet_data <- function(data,
 
   data <- data |>
     nan_to_na() |>
-    dplyr::mutate(
-      dplyr::across(tidyselect::where(is.character), \(x) tidyr::replace_na(x, ""))
-    )
+    dplyr::mutate(dplyr::across(
+      tidyselect::where(is.character), 
+      \(x) tidyr::replace_na(x, "")
+    ))
   
-  clear_repeats <- untidyselect(data, {{ clear_repeats }})
-
   if (length(clear_repeats)) {
     for (i in seq(length(clear_repeats), 1)) {
       var <- clear_repeats[[i]]
@@ -615,7 +594,7 @@ cb_write_codebook <- function(cb,
     cb_format_names() |>
     cb_prep_sheet_data(
       sheet_name = sheet_nms$overview, header = headers$overview, 
-      cols_pct = Missing
+      cols_pct = "Missing"
     )
   
   if (!is.null(summaries$num)) {
@@ -623,7 +602,7 @@ cb_write_codebook <- function(cb,
       cb_format_names() |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$num, header = headers$num, 
-        cols_pct = `Valid %`, cols_int = `Valid n`
+        cols_pct = "Valid %", cols_int = "Valid n"
       )
   }
   
@@ -631,19 +610,21 @@ cb_write_codebook <- function(cb,
     rows_border_by <- rows_sub_border_by <- NULL
     if (attr(summaries$cat, "detail_missing")) {
       summaries$cat <- cb_valid_miss_col(summaries$cat)
-      rows_border_by <- rlang::sym("Name")
-      rows_sub_border_by <- rlang::sym("Valid / Missing")
+      rows_border_by <- "Name"
+      rows_sub_border_by <- "Valid / Missing"
     }
+    summaries$cat <- cb_format_names(summaries$cat)
+    cols_pct <- summaries$cat |>
+      untidyselect(tidyselect::starts_with("%"))
+    clear_repeats <- summaries$cat |>
+      untidyselect(any_of(c("Name", "Label Stem", "Label", "Valid / Missing")))
     params$cat <- summaries$cat |>
-      cb_format_names() |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$cat, header = headers$cat, 
-        cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        clear_repeats = any_of(
-          c("Name", "Label Stem", "Label", "Valid / Missing")
-        ),
-        rows_border_by = !!rows_border_by,
-        rows_sub_border_by = !!rows_sub_border_by
+        cols_pct = cols_pct, cols_int = "n",
+        clear_repeats = clear_repeats,
+        rows_border_by = rows_border_by,
+        rows_sub_border_by = rows_sub_border_by
       )
   }
   
@@ -651,50 +632,60 @@ cb_write_codebook <- function(cb,
     rows_border_by <- rows_sub_border_by <- NULL
     if (attr(summaries$txt, "detail_missing")) {
       summaries$txt <- cb_valid_miss_col(summaries$txt)
-      rows_border_by <- rlang::sym("Name")
-      rows_sub_border_by <- rlang::sym("Valid / Missing")
+      rows_border_by <- "Name"
+      rows_sub_border_by <- "Valid / Missing"
     }
+    summaries$txt <- cb_format_names(summaries$txt)
+    cols_pct <- summaries$txt |>
+      untidyselect(tidyselect::starts_with("%"))
+    clear_repeats <- summaries$txt |> 
+      untidyselect(any_of(
+        c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
+      ))
     params$txt <- summaries$txt |>
-      cb_format_names() |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$txt, header = headers$txt, 
-        cols_pct = tidyselect::starts_with("%"), cols_int = c(`Unique n`, n),
-        clear_repeats = any_of(
-          c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
-        ),
-        rows_border_by = !!rows_border_by,
-        rows_sub_border_by = !!rows_sub_border_by
+        cols_pct = cols_pct, cols_int = c("Unique n", "n"),
+        clear_repeats = clear_repeats,
+        rows_border_by = rows_border_by,
+        rows_sub_border_by = rows_sub_border_by
       )
   }
   
   if (!is.null(summaries$num_grp)) {
-    num_group_by <- attr(summaries$num_grp, "group_by")
-    num_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!num_group_by)
+    group_by <- attr(summaries$num_grp, "group_by")
     sheet_nms$num_grp <- paste0("Grouped ", sheet_nms$num)
-    headers$num_grp <- c(headers$num, paste0("By ", toString(num_group_by_chr)))
+    headers$num_grp <- c(headers$num, paste0("By ", toString(group_by)))
+    summaries$num_grp <- cb_format_names(summaries$num_grp, skip = group_by)
+    id_cols <- summaries$num_grp |>
+      untidyselect(any_of(c("Name", "Label Stem", "Label")))
     params$num_grp <- summaries$num_grp |>
-      cb_format_names(!(!!num_group_by)) |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$num_grp, header = headers$num_grp, 
-        cols_pct = `Valid %`, cols_int = `Valid n`,
-        id_cols = any_of(c("Name", "Label Stem", "Label")),
-        group_by = !!num_group_by
+        cols_pct = "Valid %", cols_int = "Valid n",
+        id_cols = id_cols,
+        group_by = group_by
       )
   }
 
   if (!is.null(summaries$cat_grp)) {
-    cat_group_by <- attr(summaries$cat_grp, "group_by")
-    cat_group_by_chr <- untidyselect(attr(cb, "data_zapped"), !!cat_group_by)
+    group_by <- attr(summaries$cat_grp, "group_by")
     sheet_nms$cat_grp <- paste0("Grouped ", sheet_nms$cat)
-    headers$cat_grp <- c(headers$cat, paste("By ", toString(cat_group_by_chr)))
+    headers$cat_grp <- c(headers$cat, paste("By ", toString(group_by)))
+    summaries$cat_grp <- cb_format_names(summaries$cat_grp, skip = group_by)
+    cols_pct <- summaries$cat_grp |>
+      untidyselect(tidyselect::starts_with("%"))
+    clear_repeats <- summaries$cat_grp |>  
+      untidyselect(any_of(c("Name", "Label Stem", "Label")))
+    id_cols <- summaries$cat_grp |>
+      untidyselect(any_of(c("Name", "Label Stem", "Label", "Value")))
     params$cat_grp <- summaries$cat_grp |>
-      cb_format_names(!(!!cat_group_by)) |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$cat_grp, header = headers$cat_grp,
-        cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        clear_repeats = any_of(c("Name", "Label Stem", "Label")),
-        id_cols = any_of(c("Name", "Label Stem", "Label", "Value")),
-        group_by = !!cat_group_by
+        cols_pct = cols_pct, cols_int = "n",
+        clear_repeats = clear_repeats,
+        id_cols = id_cols,
+        group_by = group_by
       )
   }
   
