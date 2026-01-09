@@ -198,7 +198,7 @@ cb_prep_grouped_data <- function(data, group_by, id_cols) {
     dplyr::arrange(dplyr::pick({{ group_by }})) |>
     tidyr::pivot_wider(
       id_cols = {{ id_cols }},
-      names_from = tidyselect::all_of(rev(group_var_nms)),
+      names_from = all_of(rev(group_var_nms)),
       values_from = c(..spacer, {{ val_cols }}),
       names_sep = "_SEP_",
       names_vary = "slowest"
@@ -392,7 +392,7 @@ cb_prep_sheet_data <- function(data,
       data <- data |>
         dplyr::mutate(
           "{var}" := repeats_to_blank(.data[[var]], replace = replace),
-          .by = tidyselect::all_of(grp)
+          .by = all_of(grp)
         )
     }
   }
@@ -639,7 +639,7 @@ cb_write_codebook <- function(cb,
       cb_prep_sheet_data(
         sheet_name = sheet_nms$cat, header = headers$cat, 
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        clear_repeats = tidyselect::any_of(
+        clear_repeats = any_of(
           c("Name", "Label Stem", "Label", "Valid / Missing")
         ),
         rows_border_by = !!rows_border_by,
@@ -659,7 +659,7 @@ cb_write_codebook <- function(cb,
       cb_prep_sheet_data(
         sheet_name = sheet_nms$txt, header = headers$txt, 
         cols_pct = tidyselect::starts_with("%"), cols_int = c(`Unique n`, n),
-        clear_repeats = tidyselect::any_of(
+        clear_repeats = any_of(
           c("Name", "Label Stem", "Label", "Valid / Missing", "Unique n")
         ),
         rows_border_by = !!rows_border_by,
@@ -677,7 +677,7 @@ cb_write_codebook <- function(cb,
       cb_prep_sheet_data(
         sheet_name = sheet_nms$num_grp, header = headers$num_grp, 
         cols_pct = `Valid %`, cols_int = `Valid n`,
-        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label")),
+        id_cols = any_of(c("Name", "Label Stem", "Label")),
         group_by = !!num_group_by
       )
   }
@@ -692,8 +692,8 @@ cb_write_codebook <- function(cb,
       cb_prep_sheet_data(
         sheet_name = sheet_nms$cat_grp, header = headers$cat_grp,
         cols_pct = tidyselect::starts_with("%"), cols_int = n,
-        clear_repeats = tidyselect::any_of(c("Name", "Label Stem", "Label")),
-        id_cols = tidyselect::any_of(c("Name", "Label Stem", "Label", "Value")),
+        clear_repeats = any_of(c("Name", "Label Stem", "Label")),
+        id_cols = any_of(c("Name", "Label Stem", "Label", "Value")),
         group_by = !!cat_group_by
       )
   }

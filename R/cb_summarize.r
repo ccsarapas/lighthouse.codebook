@@ -41,7 +41,7 @@ cb_summarize_numeric_impl <- function(cb,
 
   out <- cb |>
     dplyr::filter(name %in% nms_num) |>
-    dplyr::select(tidyselect::any_of(c("name", "label_stem", "label")))
+    dplyr::select(any_of(c("name", "label_stem", "label")))
   
     if (!nrow(out)) {
     if (warn_if_none) {
@@ -65,7 +65,7 @@ cb_summarize_numeric_impl <- function(cb,
       range = spread_if_any,
       skew = moments::skewness, kurt = moments::kurtosis,
       na.rm = TRUE,
-      .vars = tidyselect::all_of(nms_num),
+      .vars = all_of(nms_num),
       .rows_group_by = {{ group_by }}
     ) |>
     dplyr::mutate(dplyr::across(

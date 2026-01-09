@@ -141,7 +141,7 @@ cb_create_redcap <- function(data,
     ) |>
     cb_add_missing_col() |>
     cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels)) |> 
-    dplyr::relocate(tidyselect::any_of(c("form", "type", "class")), .after = name)
+    dplyr::relocate(any_of(c("form", "type", "class")), .after = name)
 }
 
 ## `field_name` and `field_type` are hard-coded -- do they always have these names?
@@ -171,7 +171,7 @@ cb_coerce_integers_rc <- function(cb) {
   data
   integers <- cb$name[cb$..rc_validate_type %in% "integer"]
   data <- data |>
-    dplyr::mutate(dplyr::across(tidyselect::any_of(integers), as.integer))
+    dplyr::mutate(dplyr::across(any_of(integers), as.integer))
   set_attrs(cb, data = data)
 }
 
