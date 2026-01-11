@@ -362,20 +362,26 @@ cb_prep_sheet_data <- function(data,
   data_nms <- names(data)
   cols_num <- data_nms[sapply(data, is.numeric)]
   decked <- decked_fmt <- NULL
-  group_cols <- attr(data, "group_cols")
   group_by <- attr(data, "group_by")
+  group_cols <- attr(data, "group_cols")
+  group_rows <- attr(data, "group_rows")
+  id_cols <- attr(data, "id_cols")
   if (!is.null(group_by)) {
     data <- cb_prep_grouped_data(
       data = data,
-      group_rows = attr(data, "group_rows"),
+      group_rows = group_rows,
       group_cols = group_cols,
-      id_cols = attr(data, "id_cols")
+      id_cols = id_cols
     )
     c(data_nms, decked, decked_fmt) %<-% cb_prep_decked_cols(
       data = data, group_cols = group_cols,
       incl_group_col_n = incl_group_col_n,
       incl_group_col_names = incl_group_col_names
     )
+    if (length(group_rows) > 1) {
+      rows_border_by <- union("Name", rows_border_by)
+      rows_sub_border_by <- union(head(group_rows, -1), rows_sub_border_by)
+    }
   }
 
   cols <- tibble::lst(
@@ -383,9 +389,13 @@ cb_prep_sheet_data <- function(data,
     num = which(data_nms %in% cols_num),
     pct = which(data_nms %in% cols_pct),
     int = which(data_nms %in% cols_int),
-    border = compute_border_cols(data, cols = all, start_col = rows_border_by),
-    sub_border = compute_border_cols(
-      data, cols = all, start_col = rows_sub_border_by
+    border = lapply(
+      rows_border_by, 
+      \(rbb) compute_border_cols(data, cols = all, start_col = rbb)
+    ),
+    sub_border = lapply(
+      rows_sub_border_by, 
+      \(rsbb) compute_border_cols(data, cols = all, start_col = rsbb)
     )
   )
   
@@ -445,9 +455,6 @@ cb_prep_sheet_data <- function(data,
   )
 }
 
-#### for row groups:
-# if one group, no lines
-# if >1 group, lines between vars and sub-lines between group levels
 cb_write_sheet <- function(wb, data, params) {
   pm <- params
 
@@ -485,18 +492,16 @@ cb_write_sheet <- function(wb, data, params) {
         color = openxlsx2::wb_color(hex = "EEEEEE")
       )
   }
-  if (!is.null(pm$cols$sub_border)) {
+  for (sb_cols in pm$cols$sub_border) {
     wb <- wb |>
       wb_cond_row_borders(
-        dims = openxlsx2::wb_dims(pm$rows$sub_border, pm$cols$sub_border),
+        dims = openxlsx2::wb_dims(pm$rows$sub_border, sb_cols),
         color = openxlsx2::wb_color(hex = "808080")
       )
   }
-  if (!is.null(pm$cols$border)) {
+  for (b_cols in pm$cols$border) {
     wb <- wb |>
-      wb_cond_row_borders(
-        dims = openxlsx2::wb_dims(pm$rows$border, pm$cols$border)
-      )
+      wb_cond_row_borders(dims = openxlsx2::wb_dims(pm$rows$border, b_cols))
   }
   
   if (length(pm$cols$num)) {
