@@ -40,10 +40,10 @@ cb_summarize_numeric_impl <- function(cb,
                                       group_rows = NULL) {
   data <- attr(cb, "data_zapped")[cb$name]
   nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
-
+  id_cols <- intersect(c("name", "label_stem", "label"), names(cb))
   out <- cb |>
     dplyr::filter(name %in% nms_num) |>
-    dplyr::select(any_of(c("name", "label_stem", "label")))
+    dplyr::select(all_of(id_cols))
   
   if (!nrow(out)) {
     if (warn_if_none) {
@@ -82,6 +82,7 @@ cb_summarize_numeric_impl <- function(cb,
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
     dplyr::relocate(all_of(group_by)) |>
     set_attrs(
+      id_cols = id_cols,
       group_by = group_by, 
       group_rows = group_rows,
       group_cols = group_cols,
@@ -289,17 +290,20 @@ cb_summarize_categorical_impl <- function(cb,
     freqs[, is_missing := NULL]
   }
   
-  cols_out <- c(
-    cols_grp, "name", "label_stem", "label", "is_missing", "value", "n", 
-    "pct_of_all", "pct_of_valid", "pct_of_missing"
+  cols_out <- intersect(
+    c(cols_grp, "name", label_cols, "is_missing", "value", "n", "pct_of_all", 
+      "pct_of_valid", "pct_of_missing"),
+    names(freqs)
   )
-  freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
+  freqs <- freqs[, cols_out, with = FALSE]
   
   freqs |>
     tibble::as_tibble() |>
     set_attrs(
       detail_missing = detail_missing,
+      id_cols = c("name", label_cols, "value"),
       group_by = group_by, 
+      group_cols = group_by,
       group_counts = group_counts(cb, group_by)
     )
 }
@@ -457,13 +461,18 @@ cb_summarize_text_impl <- function(cb,
     freqs[, is_missing := NULL]
   }
   
-  cols_out <- c(
-    "name", "label_stem", "label", "is_missing", "unique_n", "value", "n", 
-    "pct_of_all", "pct_of_valid", "pct_of_missing"
+  cols_out <- intersect(
+    c(label_cols, "is_missing", "unique_n", "value", "n", "pct_of_all", 
+      "pct_of_valid", "pct_of_missing"),
+    names(freqs)
   )
-  freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
+  freqs <- freqs[, cols_out, with = FALSE]
   
   freqs |>
     tibble::as_tibble() |>
-    set_attrs(detail_missing = detail_missing)
+    set_attrs(
+      detail_missing = detail_missing, 
+      id_cols = c(label_cols, "value")
+    )
 }
+
