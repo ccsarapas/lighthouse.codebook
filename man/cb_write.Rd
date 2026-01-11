@@ -12,6 +12,7 @@ cb_write(
   incl_dims = TRUE,
   hyperlinks = TRUE,
   group_by = NULL,
+  group_rows_numeric = NULL,
   detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
   overwrite = TRUE
@@ -33,7 +34,13 @@ to corresponding rows on summary tabs and vice versa.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
 by. If specified, additional numeric and categorical summary tabs will be included
-with decked heads for specified groups.}
+with grouped summaries. Subgroups are shown in columns by default. For the numeric
+summary tab, subgroups for some or all grouping variables can instead be shown
+in rows if specified in \code{group_rows_numeric}.}
+
+\item{group_rows_numeric}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns
+to group by in rows on the grouped numeric summary tab. All columns must also
+be specified in \code{group_by}.}
 
 \item{detail_missing}{Include detailed missing value information on categorical
 and text summary tabs?}
@@ -47,7 +54,7 @@ should be included for each variable? If there are more than \code{n_text_vals}
 \item{overwrite}{Overwrite existing file?}
 }
 \value{
-Invisibly returns the path to the written Excel file. See []\code{cb_create()}]
+Invisibly returns the path to the written Excel file. See \code{\link[=cb_create]{cb_create()}}
 and variants, \code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}}, \code{\link[=cb_summarize_categorical]{cb_summarize_categorical()}}, and
 \code{\link[=cb_summarize_text]{cb_summarize_text()}} for details on the objects written to the file.
 }
