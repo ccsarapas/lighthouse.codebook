@@ -18,7 +18,12 @@
 #'   to corresponding rows on summary tabs and vice versa.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by. If specified, additional numeric and categorical summary tabs will be included
-#'   with decked heads for specified groups. 
+#'   with grouped summaries. Subgroups are shown in columns by default. For the numeric 
+#'   summary tab, subgroups for some or all grouping variables can instead be shown 
+#'   in rows if specified in `group_rows_numeric`.
+#' @param group_rows_numeric <[`tidy-select`][dplyr_tidy_select]> Column or columns
+#'   to group by in rows on the grouped numeric summary tab. All columns must also 
+#'   be specified in `group_by`.
 #' @param detail_missing Include detailed missing value information on categorical 
 #'   and text summary tabs?
 #' @param n_text_vals On the text summary tab, how many unique non-missing values 
