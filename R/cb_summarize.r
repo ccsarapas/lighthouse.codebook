@@ -369,9 +369,7 @@ cb_summarize_text_impl <- function(cb,
                                    detail_na_label = "NA",
                                    warn_if_none = FALSE) {
   data <- attr(cb, "data_zapped")[cb$name]
-  nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
-
-  data_dt <- data.table::as.data.table(attr(cb, "data_labelled")[cb$name])
+  data_dt <- data.table::as.data.table(data)
   cols_chr <- names(data_dt)[vapply(data_dt, is.character, logical(1))]
 
   if (!length(cols_chr)) {
