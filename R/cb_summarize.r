@@ -275,10 +275,15 @@ cb_summarize_categorical_impl <- function(cb,
     _[is.na(n), n := 0L] |>
     _[,
       value := data.table::fcase(
+        ## if missing, show "(Missing)" or user missing values depending on `detail_missing`
         is.na(value_val) & detail_missing, detail_na_label,
         is.na(value_val), "(Missing)",
+        ## if no labels for any value, show values without prefix / brackets
         rep(all(is.na(value_lab) | is.na(value_val) | value_lab == value_val), .N), value_val,
-        default = stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val))
+        ## if `prefixed`, prefix with value in brackets
+        rep(prefixed, .N), stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val)),
+        ## otherwise show un-prefixed labels, or value if no label
+        default = data.table::fcoalesce(value_lab, value_val)
       ),
       by = c("name", "is_missing")] |>
     _[, pct_of_all := n / sum(n), by = c(cols_grp, "name")] |>
