@@ -534,7 +534,11 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
   )
   if (user_missing_col) {
     missings <- lapply(missings, try_sort_numeric)
-    val_labs <- mapply(\(v, m) v[!(v %in% m)], v = val_labs, m = missings)
+    val_labs <- mapply(
+      \(v, m) v[!(v %in% m)],
+      v = val_labs, m = missings, 
+      SIMPLIFY = FALSE
+    )
     missings <- string_from_lookups(missings)
   } else {
     missings <- NULL
