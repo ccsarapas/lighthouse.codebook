@@ -134,6 +134,7 @@ cb_summarize_categorical <- function(cb,
                                      detail_na_label = "NA",
                                      warn_if_none = TRUE) {
   check_codebook(cb)
+  force(detail_missing)
   group_by <- cb_untidyselect(cb, {{ group_by }})
   cb_summarize_categorical_impl(
     cb,
@@ -151,6 +152,7 @@ cb_summarize_categorical_impl <- function(cb,
                                           detail_missing = missing(group_by),
                                           detail_na_label = "NA",
                                           warn_if_none = FALSE) {
+  force(detail_missing)
   data <- attr(cb, "data_labelled")
   data_dt <- data.table::as.data.table(data)
   val_labs <- labelled::val_labels(data)
