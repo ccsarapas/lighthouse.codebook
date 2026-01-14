@@ -226,6 +226,12 @@ cb_summarize_categorical_impl <- function(cb,
     grp_labs[[col]] <- sort(unique(v))
     data.table::set(data_dt, j = col, value = v)
   }
+
+  label_cols <- intersect(c("name", "label_stem", "label"), names(cb))
+  var_labs <- cb[, label_cols, with = FALSE]
+  ls <- var_labs[["label_stem"]]
+  if (!is.null(ls) && all(is.na(ls))) var_labs[, label_stem := NULL]
+
   all_vals <- data.table::data.table(
     name = rep(names(val_labs), val_labs_len),
     value_lab = unlist(lapply(unname(val_labs), names)),
@@ -233,15 +239,6 @@ cb_summarize_categorical_impl <- function(cb,
     is_missing = unlist(is_missing)
   )
   
-  label_cols <- intersect(c("label_stem", "label"), names(cb))
-  if (length(label_cols)) {
-    all_vals <- cb |>
-      data.table::as.data.table() |>
-      _[, c("name", label_cols), with = FALSE] |>
-      merge(all_vals, by = "name", all.y = TRUE, sort = FALSE)
-    ls <- all_vals[["label_stem"]]
-    if (!is.null(ls) && all(is.na(ls))) all_vals[, label_stem := NULL]
-  }
   all_vals <- do.call(expand_dt, c(list(all_vals), grp_labs))
 
   if (detail_missing) {
@@ -265,8 +262,10 @@ cb_summarize_categorical_impl <- function(cb,
       freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
     ) |>
-    # flag true `NA`s as missing
-    _[is.na(value_val), is_missing := TRUE] |>
+    merge(var_labs, by = "name", all.x = TRUE, sort = FALSE) |>
+    # if `is_missing` is NA, this is an observed value that wasn't in val labs 
+    #   or user missings; therefore is NOT missing
+    _[is.na(is_missing), is_missing := FALSE] |>
     # remove missing values if not observed in at least one group
     _[, .SD[!(all(is.na(n)) & is_missing)], by = c("name", "value_val")] |> 
     # remove group var combos if no observed values
@@ -281,7 +280,7 @@ cb_summarize_categorical_impl <- function(cb,
         ## if no labels for any value, show values without prefix / brackets
         rep(all(is.na(value_lab) | is.na(value_val) | value_lab == value_val), .N), value_val,
         ## if `prefixed`, prefix with value in brackets
-        rep(prefixed, .N), stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val)),
+        rep(prefixed, .N), stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, "")),
         ## otherwise show un-prefixed labels, or value if no label
         default = data.table::fcoalesce(value_lab, value_val)
       ),
