@@ -367,9 +367,10 @@ cb_summarize_text_impl <- function(cb,
                                    detail_missing = TRUE,
                                    detail_na_label = "NA",
                                    warn_if_none = FALSE) {
-  data <- attr(cb, "data_zapped")[cb$name]
-  data_dt <- data.table::as.data.table(data)
-  cols_chr <- names(data_dt)[vapply(data_dt, is.character, logical(1))]
+  data_labelled <- attr(cb, "data_labelled")[cb$name]
+  data_zapped <- attr(cb, "data_zapped")[cb$name]
+  data_dt <- data.table::as.data.table(data_labelled)
+  cols_chr <- names(data_zapped)[vapply(data_zapped, is.character, logical(1))]
 
   if (!length(cols_chr)) {
     if (warn_if_none) {
@@ -389,7 +390,7 @@ cb_summarize_text_impl <- function(cb,
   
   user_missings <- list()
   if (detail_missing) {
-    user_missings <- attr(cb, "user_missing")
+    user_missings <- labelled::na_values(data_labelled)
     user_missings <- user_missings[intersect(cols_chr, names(user_missings))]
   }
   if (length(user_missings)) {
