@@ -151,20 +151,21 @@ cb_summarize_categorical_impl <- function(cb,
                                           detail_missing = missing(group_by),
                                           detail_na_label = "NA",
                                           warn_if_none = FALSE) {
-  factors <- attr(cb, "factors")
-  val_labs <- attr(cb, "vals_by_label")
   data <- attr(cb, "data_labelled")
   data_dt <- data.table::as.data.table(data)
-  
+  val_labs <- labelled::val_labels(data)
+  user_missings <- labelled::na_values(data)
+
   ## define column groups
   val_labs <- attr(cb, "vals_by_label")
+  cols_fct <- attr(cb, "factors")
   cols_grp <- group_by %||% character()
   cols_cat <- setdiff(names(val_labs), cols_grp)
   cols_lgl <- setdiff(
     names(data_dt)[vapply(data_dt, is.logical, logical(1))],
     cols_grp
   )
-  
+
   if (!length(c(cols_cat, cols_lgl))) {
     if (warn_if_none) {
       if (!length(cols_grp)) {
@@ -179,17 +180,16 @@ cb_summarize_categorical_impl <- function(cb,
     }
     return(NULL)
   }
-  
+
   ## define labels and is_missing
   val_labs <- val_labs[cols_cat]
   is_missing <- list()
-  user_missings <- attr(cb, "user_missing")
   for (nm in names(val_labs)) {
     labs <- val_labs[[nm]]
     miss <- user_missings[[nm]]
     if (!is.null(miss)) {
       if (detail_missing) {
-        if (nm %in% factors) {
+        if (nm %in% cols_fct) {
           labs <- c(labs[!(labs %in% miss)], miss)
         } else {
           labs <- c(labs, miss[!(miss %in% labs)])
@@ -216,8 +216,8 @@ cb_summarize_categorical_impl <- function(cb,
     c(cols_grp, cols_cat, cols_lgl),
     with = FALSE
   ]
-  
-  ## define group labels  
+
+  ## define group labels
   grp_labs <- list()
   for (col in cols_grp) {
     v <- data_dt[[col]]
@@ -238,7 +238,7 @@ cb_summarize_categorical_impl <- function(cb,
     value_val = as.character(unlist(val_labs)),
     is_missing = unlist(is_missing)
   )
-  
+
   all_vals <- do.call(expand_dt, c(list(all_vals), grp_labs))
 
   if (detail_missing) {
@@ -250,14 +250,14 @@ cb_summarize_categorical_impl <- function(cb,
   for (col in c(cols_cat, cols_lgl)) {
     data.table::set(data_dt, j = col, value = col_to_chr(data_dt[[col]]))
   }
-  
+
   freqs <- data.table::melt(
       data_dt, id.vars = cols_grp, variable.name = "name", 
-      value.name = "value_val", variable.factor = FALSE
-    ) |> 
+    value.name = "value_val", variable.factor = FALSE
+  ) |>
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
-
-  freqs <- all_vals |> 
+  
+  freqs <- all_vals |>
     merge(
       freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
