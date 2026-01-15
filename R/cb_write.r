@@ -680,7 +680,10 @@ cb_write_codebook <- function(cb,
     summaries$cat <- cb_format_names(summaries$cat, attrs = "id_cols")
     cols_pct <- untidyselect(summaries$cat, tidyselect::starts_with("%"))
     id_cols <- attr(summaries$cat, "id_cols")
-    clear_repeats <- c(setdiff(id_cols, "Value"), "Valid / Missing")
+    clear_repeats <- c(
+      setdiff(id_cols, "Value"), 
+      intersect("Valid / Missing", names(summaries$cat))
+    )
     params$cat <- summaries$cat |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$cat, header = headers$cat, 
@@ -701,7 +704,11 @@ cb_write_codebook <- function(cb,
     summaries$txt <- cb_format_names(summaries$txt, attrs = "id_cols")
     cols_pct <- untidyselect(summaries$txt, tidyselect::starts_with("%"))
     id_cols <- attr(summaries$txt, "id_cols")
-    clear_repeats <- c(setdiff(id_cols, "Value"), "Valid / Missing", "Unique n")
+    clear_repeats <- c(
+      setdiff(id_cols, "Value"), 
+      intersect("Valid / Missing", names(summaries$txt)),
+      "Unique n"
+    )
     params$txt <- summaries$txt |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$txt, header = headers$txt, 
