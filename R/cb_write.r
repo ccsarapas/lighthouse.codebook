@@ -734,9 +734,9 @@ cb_write_codebook <- function(cb,
 
   if (!is.null(summaries$cat_grp)) {
     group_by <- attr(summaries$cat_grp, "group_by")
-    cols_pct <- untidyselect(summaries$cat_grp, tidyselect::starts_with("%"))
     summaries$cat_grp <- summaries$cat_grp |>
       cb_format_names(skip = group_by, attrs = "id_cols")
+    cols_pct <- untidyselect(summaries$cat_grp, tidyselect::starts_with("%"))
     clear_repeats <- setdiff(attr(summaries$cat_grp, "id_cols"), "Value")
     sheet_nms$cat_grp <- paste0("Grouped ", sheet_nms$cat)
     headers$cat_grp <- c(headers$cat, paste("By ", toString(group_by)))
