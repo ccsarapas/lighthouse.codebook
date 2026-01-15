@@ -285,6 +285,28 @@ cb_prep_decked_cols <- function(data,
   list(data_nms = data_nms, decked = decked, decked_fmt = decked_fmt)
 }
 
+label_nonresponse <- function(params) {
+  names(params$overview$data) <- stringr::str_replace_all(
+    names(params$overview$data),
+    c("User Missings" = "Nonresponse Codes", "Missing" = "Excluded")
+  )
+  for (sheet in c("cat", "txt", "cat_grp", "txt_grp")) {
+    if (is.null(params[[sheet]])) next
+    if (attr(params[[sheet]]$data, "detail_missing")) {
+      names(params[[sheet]]$data) <- stringr::str_replace(
+        names(params[[sheet]]$data), "Missing", "Excluded"
+      )
+      params[[sheet]]$data$`Valid / Excluded` <- stringr::str_replace(
+        params[[sheet]]$data$`Valid / Excluded`, "Missing", "Excluded"
+      )
+    } else {
+      idx_miss <- params[[sheet]]$data$Value == "(Missing)"
+      params[[sheet]]$data$Value[idx_miss] <- "(Excluded)"
+    }
+  }
+  params
+}
+
 var_name_hyperlinks <- function(params) {
   hl_rows <- intersect(names(params), c("overview", "num", "cat", "txt")) |>
     setNames(nm = _) |>
@@ -445,7 +467,6 @@ cb_prep_sheet_data <- function(data,
   
   list(
     data = data,
-    data_nms = data_nms,
     sheet_name = sheet_name,
     header = header,
     cols = cols,
@@ -529,9 +550,9 @@ cb_write_sheet <- function(wb, data, params) {
   # the following, along with `wb_add_data_multi_na()`, is a workaround to use 
   # different `na.strings` for `Unique n` column
   na.strings <- "-"
-  if ("Unique n" %in% pm$data_nms) {
+  if ("Unique n" %in% names(data)) {
     na.strings <- rep(na.strings, ncol(data))
-    na.strings[pm$data_nms == "Unique n"] <- ""
+    na.strings[names(data) == "Unique n"] <- ""
   }
   
   wb <- wb |>
@@ -748,6 +769,10 @@ cb_write_codebook <- function(cb,
       )
   }
   
+  if (getOption("lighthouse.codebook.nonresponse", FALSE)) {
+    params <- label_nonresponse(params)
+  }
+  
   if (hyperlinks) params <- var_name_hyperlinks(params)
 
   opts <- options(
@@ -758,7 +783,6 @@ cb_write_codebook <- function(cb,
     
   # initialize workbook 
   wb <- openxlsx2::wb_workbook()
-  
   for (sheet in names(params)) {
     wb <- cb_write_sheet(
       wb, data = params[[sheet]]$data, params = params[[sheet]]
