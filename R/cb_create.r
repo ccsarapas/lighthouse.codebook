@@ -56,9 +56,9 @@
 #'     - `label_stem`: optional column containing variable label stems, if any variables 
 #'       are specified in `.split_var_labels`
 #'     - `label`: variable label
-#'     - `value_labels`: value labels
+#'     - `values`: values, with labels if applicable
 #'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
-#'        with value labels for user missing values
+#'        showing user missing values, with labels if applicable
 #'     - `missing`: proportion missing
 #'     - additional columns if specified in `...`
 #' - Attributes:
@@ -247,12 +247,12 @@ cb_init <- function(data,
       dplyr::left_join(meta, dplyr::join_by(name == !!meta_var_name)) |>
       dplyr::select(
         name,
-        label = {{ meta_var_label }}, value_labels = {{ meta_val_labels }},
+        label = {{ meta_var_label }}, values = {{ meta_val_labels }},
         ...
       )
   } else {
     out <- out |>
-      dplyr::mutate(value_labels = NA_character_)
+      dplyr::mutate(values = NA_character_)
   }
   out <- set_attrs(out, data = data)
   class(out) <- c("li_codebook", class(out))
@@ -372,7 +372,7 @@ lookups_from_string <- function(cb, data, sep1, sep2) {
     labs <- x[, 2]
     setNames(vals, labs)
   }
-  val_labels <- na.omit(setNames(cb$value_labels, cb$name))
+  val_labels <- na.omit(setNames(cb$values, cb$name))
   if (!length(val_labels)) return(val_labels)
   if (is.null(sep1) || is.null(sep2)) {
     cli::cli_abort(
@@ -544,7 +544,7 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
     missings <- NULL
   }
   val_labs <- string_from_lookups(val_labs, no_prefix = attr(cb, "factors"))
-  dplyr::mutate(cb, value_labels = val_labs, user_missings = missings)
+  dplyr::mutate(cb, values = val_labs, user_missings = missings)
 }
 
 cb_split_labels_col <- function(cb, split_var_labels = NULL) {

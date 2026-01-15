@@ -16,7 +16,8 @@ cb_create_spss(
 )
 }
 \arguments{
-\item{data}{A data frame exported or retrieved from REDCap.}
+\item{data}{A data frame imported from SPSS using (imported using \code{haven::read_spss()},
+\code{read_sav()}, or \code{read_por()}).}
 
 \item{.user_missing}{A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
@@ -39,7 +40,7 @@ column? The default, \code{"if_any"}, adds the column only if user missings are
 specified for at least one variable.}
 
 \item{.user_missing_conflict}{If labels passed to \code{.user_missing} conflicts with
-a value label in the \code{data}, which should be used?}
+a value label in \code{data}, which should be used?}
 
 \item{.user_missing_incompatible}{How to handle variables specified in \code{.user_missing}
 that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?}
@@ -57,9 +58,9 @@ and additional metadata. Specifically:
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label
-\item \code{value_labels}: value labels
+\item \code{values}: values, with labels if applicable
 \item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
-with value labels for user missing values
+showing user missing values, with labels if applicable
 \item \code{missing}: proportion missing
 }
 \item Attributes:
@@ -70,11 +71,10 @@ with value labels for user missing values
 }
 }
 \description{
-\code{cb_create_spss()} builds an object of class \code{"li_codebook"} from an SPSS dataset
-(imported using \code{haven::read_spss()}, \code{read_sav()}, or \code{read_por()}). Metadata
-including variable labels, value labels, and user missing values are extracted
-from the imported dataset. (User missing values can also be set using the \code{.user_missing}
-argument.)`
+\code{cb_create_spss()} builds an object of class \code{"li_codebook"} from an imported
+SPSS dataset. Metadata including variable labels, value labels, and user missing
+values are extracted from the imported dataset. (User missing values can also
+be set using the \code{.user_missing} argument.)`
 
 The resulting object can be used to write an Excel workbook with variable and
 data summaries (using \code{\link[=cb_write]{cb_write()}}), extract processed data (\code{\link[=cb_get_data]{cb_get_data()}}),

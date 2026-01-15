@@ -48,9 +48,9 @@
 #'     - `label_stem`: optional column containing variable label stems, if any variables
 #'       are specified in `.split_var_labels`
 #'     - `label`: variable label
-#'     - `value_labels`: value labels
+#'     - `values`: values, with labels if applicable
 #'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
-#'        with value labels for user missing values
+#'        showing user missing values, with labels if applicable
 #'     - `missing`: proportion missing
 #'     - additional columns if specified in `...`
 #' - Attributes:
