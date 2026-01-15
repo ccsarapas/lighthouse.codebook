@@ -1,9 +1,12 @@
 #' Write codebook and data summaries to an Excel workbook
 #' 
+#' @description
 #' `cb_write()` writes an Excel workbook to disk with tabs including a codebook; 
 #' summary statistics for numeric variables; frequencies for categorical variables; 
 #' truncated frequencies for text variables; and optional grouped summaries for numeric
-#' and categorical variables. For data summaires, variables with value labels, factors, 
+#' and categorical variables. 
+#' 
+#' For data summaires, variables with value labels, factors, 
 #' and logical variables are treated as categorical, numeric and integer variables 
 #' are treated as numeric, and (unlabeled) character variables are treated as text.
 #' Summary tabs will be omitted if there are no variables of the relevant type.
@@ -24,8 +27,9 @@
 #' @param group_rows_numeric <[`tidy-select`][dplyr_tidy_select]> Column or columns
 #'   to group by in rows on the grouped numeric summary tab. All columns must also 
 #'   be specified in `group_by`.
-#' @param detail_missing Include detailed missing value information on categorical 
-#'   and text summary tabs?
+#' @param detail_missing Include detailed missing value information on ungrouped 
+#'   categorical and text summary tabs? (Detailed missing information for grouped 
+#'   summary tabs is not currently supported.)
 #' @param n_text_vals On the text summary tab, how many unique non-missing values 
 #'   should be included for each variable? If there are more than `n_text_vals` 
 #'   + 1 unique values, the `n_text_vals` most common non-missing values will be included. 
@@ -76,14 +80,6 @@ cb_write <- function(cb,
     }
   }
   if (!is.null(group_by)) {
-    if (detail_missing) {
-      cli::cli_inform(c(
-        "i" = paste0(
-          "Detailed missing value information is not currently supported for ", 
-          "grouped summaries, so will be included only for ungrouped summaries."
-        )
-      ))
-    }
     summaries$num_grp <- cb_summarize_numeric_impl(
       cb, 
       group_by = group_by, 

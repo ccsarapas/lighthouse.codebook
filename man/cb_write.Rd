@@ -42,8 +42,9 @@ in rows if specified in \code{group_rows_numeric}.}
 to group by in rows on the grouped numeric summary tab. All columns must also
 be specified in \code{group_by}.}
 
-\item{detail_missing}{Include detailed missing value information on categorical
-and text summary tabs?}
+\item{detail_missing}{Include detailed missing value information on ungrouped
+categorical and text summary tabs? (Detailed missing information for grouped
+summary tabs is not currently supported.)}
 
 \item{n_text_vals}{On the text summary tab, how many unique non-missing values
 should be included for each variable? If there are more than \code{n_text_vals}
@@ -62,7 +63,9 @@ and variants, \code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}}, \code
 \code{cb_write()} writes an Excel workbook to disk with tabs including a codebook;
 summary statistics for numeric variables; frequencies for categorical variables;
 truncated frequencies for text variables; and optional grouped summaries for numeric
-and categorical variables. For data summaires, variables with value labels, factors,
+and categorical variables.
+
+For data summaires, variables with value labels, factors,
 and logical variables are treated as categorical, numeric and integer variables
 are treated as numeric, and (unlabeled) character variables are treated as text.
 Summary tabs will be omitted if there are no variables of the relevant type.
