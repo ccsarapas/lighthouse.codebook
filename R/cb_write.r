@@ -217,22 +217,18 @@ cb_prep_grouped_data <- function(data, group_rows, group_cols, id_cols) {
   attrs <- attributes(data)
   attrs <- attrs[intersect(names(attrs), attrs_keep)]
   value_cols <- setdiff(names(data), c(group_rows, group_cols, id_cols))
+
   data <- data |>
     dplyr::mutate(..spacer = NA_character_) |>
     # needed to ensure correct column order when >1 group var
-    dplyr::arrange(dplyr::pick(all_of(group_cols))) |>
+    dplyr::arrange(forcats::fct_inorder(Name), dplyr::pick(all_of(group_cols))) |>
     tidyr::pivot_wider(
       id_cols = all_of(c(id_cols, group_rows)),
       names_from = all_of(rev(group_cols)),
       values_from = c(..spacer, all_of(value_cols)),
       names_sep = "_SEP_",
       names_vary = "slowest"
-    )
-  arrange_by <- data |>
-    dplyr::mutate(dplyr::across(all_of(id_cols), forcats::fct_inorder)) |> 
-    dplyr::select(all_of(c(id_cols, group_rows)))
-  data <- data |>
-    dplyr::arrange(arrange_by) |>
+    ) |>
     set_attrs(!!!attrs)
   first_spacer <- grep("^\\.\\.spacer", names(data))[[1]]
   data[, first_spacer] <- NULL
