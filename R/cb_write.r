@@ -300,6 +300,12 @@ label_nonresponse <- function(params) {
       params[[sheet]]$data$Value[idx_miss] <- "(Excluded)"
     }
   }
+  for (sheet in c("num", "num_grp")) {
+    if (is.null(params[[sheet]])) next
+    params[[sheet]]$footer <- stringr::str_replace(
+      params[[sheet]]$footer, "Missing", "Nonresponse"
+    )
+  }
   params
 }
 
@@ -370,6 +376,7 @@ var_name_hyperlinks <- function(params) {
 cb_prep_sheet_data <- function(data,
                                sheet_name = NULL, 
                                header = NULL,
+                               footer = NULL,
                                cols_pct = NULL,
                                cols_int = NULL,
                                clear_repeats = NULL,
@@ -423,12 +430,13 @@ cb_prep_sheet_data <- function(data,
     dat_start = length(header) + length(group_cols) + 1,
     decked_start = length(header) + 1,
     decked = seq_along(group_cols) + length(header),
-    header = seq_along(header),
     dat = seq_len(nrows) + dat_start,
+    header = seq_along(header),
+    footer = seq_along(footer) + nrows + dat_start,
     banded = compute_banded_rows(data, rows = dat, by = rows_banded_by),
     border = if (is.null(cols$border)) NULL else dat[-1],
     sub_border = border,
-    all = seq_len(nrows + dat_start)
+    all = seq_len(nrows + dat_start + length(footer))
   )
   
   num_fmts <- list(num = "0.00", pct = "0.0%", int = "0")
@@ -465,6 +473,7 @@ cb_prep_sheet_data <- function(data,
     data = data,
     sheet_name = sheet_name,
     header = header,
+    footer = footer,
     cols = cols,
     rows = rows,
     num_fmts = num_fmts,
@@ -598,6 +607,15 @@ cb_write_sheet <- function(wb, data, params) {
         dims = openxlsx2::wb_dims(pm$rows$header, 1), bold = TRUE
       )
   }
+  if (length(pm$footer)) {
+      wb <- wb |>
+        openxlsx2::wb_add_data(
+          x = pm$footer, dims = openxlsx2::wb_dims(pm$rows$footer, 1), na.strings = ""
+        ) |>
+        openxlsx2::wb_add_font(
+          dims = openxlsx2::wb_dims(pm$rows$footer, 1), italic = TRUE
+        )
+    }
 
   for (chunk in params$hyperlinks) {
     wb <- wb |>
@@ -664,6 +682,9 @@ cb_write_codebook <- function(cb,
     cat = c(dataset_name, "Categorical variables summary"),
     txt = c(dataset_name, "Text variables summary")
   )
+  footers <- list(
+    num = "Missing values are excluded from summary statistics."
+  )
   
   params <- list()
  
@@ -678,7 +699,7 @@ cb_write_codebook <- function(cb,
     params$num <- summaries$num |>
       cb_format_names() |>
       cb_prep_sheet_data(
-        sheet_name = sheet_nms$num, header = headers$num, 
+        sheet_name = sheet_nms$num, header = headers$num, footer = footers$num, 
         cols_pct = "Valid %", cols_int = "Valid n"
       )
   }
@@ -741,10 +762,11 @@ cb_write_codebook <- function(cb,
     )
     sheet_nms$num_grp <- paste0("Grouped ", sheet_nms$num)
     headers$num_grp <- c(headers$num, paste0("By ", toString(group_by)))
+    footers$num_grp <- footers$num
     params$num_grp <- summaries$num_grp |>
       cb_prep_sheet_data(
         sheet_name = sheet_nms$num_grp, header = headers$num_grp, 
-        cols_pct = "Valid %", cols_int = "Valid n",
+        footer = footers$num_grp, cols_pct = "Valid %", cols_int = "Valid n",
         clear_repeats = clear_repeats
       )
     }
