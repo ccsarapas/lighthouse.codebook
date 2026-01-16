@@ -28,15 +28,24 @@
 #' @export
 cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
   check_codebook(cb)
-  
+  group_by <- cb_untidyselect(cb, {{ group_by }})
+  cb_summarize_numeric_impl(
+    cb = cb, group_by = group_by, warn_if_none = warn_if_none
+  )
+}
+
+cb_summarize_numeric_impl <- function(cb, 
+                                      group_by = NULL, 
+                                      warn_if_none = FALSE,
+                                      group_rows = NULL) {
   data <- attr(cb, "data_zapped")[cb$name]
   nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
-
+  id_cols <- intersect(c("name", "label_stem", "label"), names(cb))
   out <- cb |>
     dplyr::filter(name %in% nms_num) |>
-    dplyr::select(tidyselect::any_of(c("name", "label_stem", "label")))
+    dplyr::select(all_of(id_cols))
   
-    if (!nrow(out)) {
+  if (!nrow(out)) {
     if (warn_if_none) {
       cli::cli_warn(c(
         "!" = "No numeric variables in codebook; returning `NULL`."
@@ -58,27 +67,28 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
       range = spread_if_any,
       skew = moments::skewness, kurt = moments::kurtosis,
       na.rm = TRUE,
-      .vars = tidyselect::all_of(nms_num),
-      .rows_group_by = {{ group_by }}
+      .vars = all_of(nms_num),
+      .rows_group_by = all_of(group_by)
     ) |>
     dplyr::mutate(dplyr::across(
-      {{ group_by }},
+      all_of(group_by),
       \(x) fct_replace_na(factor(x), "(Missing)")
     ))
   
-  out <- out |>
+  group_cols <- setdiff(group_by, group_rows)
+  if (!length(group_cols)) group_cols <- NULL
+  
+  out |>
     dplyr::left_join(res, dplyr::join_by(name == Variable)) |>
-    dplyr::relocate({{ group_by }}) 
-  
-  group_by_quo <- rlang::enquo(group_by)
-  if (!rlang::quo_is_null(group_by_quo)) {
-    out <- set_attrs(
-      out,
-      group_by = group_by_quo, group_counts = group_counts(cb, {{ group_by }})
+    dplyr::relocate(all_of(group_by)) |>
+    set_attrs(
+      id_cols = id_cols,
+      group_by = group_by, 
+      group_rows = group_rows,
+      group_cols = group_cols,
+      group_counts = group_counts(cb, group_cols)
     )
-  }
-  
-  out
+
 }
 
 #' Summarize categorical variables from a codebook object
@@ -96,15 +106,15 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
 #' @param detail_missing Include detailed missing value information? Currently supported
 #'   only when no grouping variables are specified.
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
-#' @param warn_if_none Should a warning be issued if there are no categorical 
+#' @param warn_if_none Should a warning be issued if there are no categorical
 #'   variables in `cb`?
 #'
-#' @return If there no categorical variables in `cb`, `NULL`. Otherwise, a tibble 
+#' @return If there no categorical variables in `cb`, `NULL`. Otherwise, a tibble
 #'   with columns:
 #'   - optional grouping column(s) if specified in `group_by`
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
-#'      `cb` includes a `label_stem` column and at least one categorical variable 
+#'      `cb` includes a `label_stem` column and at least one categorical variable
 #'      has a non-missing label stem.
 #'   - `label`: variable label
 #'   - `is_missing`: optional column indicating if `value` is a missing value. Included
@@ -113,9 +123,9 @@ cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
 #'   - `n`: number of observations
 #'   - `pct_of_all`: proportion of all (non-missing and missing) observations
 #'   - `pct_of_valid`: for non-missing values, proportion of all non-missing observations
-#'   - `pct_of_missing`: optional column showing, for missing values, proportion 
+#'   - `pct_of_missing`: optional column showing, for missing values, proportion
 #'     of all missing observations. Included if `detail_missing` is `TRUE`.
-#' 
+#'
 #' @export
 cb_summarize_categorical <- function(cb,
                                      group_by = NULL,
@@ -124,20 +134,40 @@ cb_summarize_categorical <- function(cb,
                                      detail_na_label = "NA",
                                      warn_if_none = TRUE) {
   check_codebook(cb)
-  factors <- attr(cb, "factors")
-  val_labs <- attr(cb, "vals_by_label")
+  force(detail_missing)
+  group_by <- cb_untidyselect(cb, {{ group_by }})
+  cb_summarize_categorical_impl(
+    cb,
+    group_by = group_by,
+    prefixed = prefixed,
+    detail_missing = detail_missing,
+    detail_na_label = detail_na_label,
+    warn_if_none = warn_if_none
+  )
+}
+
+cb_summarize_categorical_impl <- function(cb,
+                                          group_by = NULL,
+                                          prefixed = TRUE,
+                                          detail_missing = missing(group_by),
+                                          detail_na_label = "NA",
+                                          warn_if_none = FALSE) {
+  force(detail_missing)
   data <- attr(cb, "data_labelled")
   data_dt <- data.table::as.data.table(data)
-  
+  val_labs <- labelled::val_labels(data)
+  user_missings <- labelled::na_values(data)
+
   ## define column groups
   val_labs <- attr(cb, "vals_by_label")
-  cols_grp <- untidyselect(data, {{ group_by }})
+  cols_fct <- attr(cb, "factors")
+  cols_grp <- group_by %||% character()
   cols_cat <- setdiff(names(val_labs), cols_grp)
   cols_lgl <- setdiff(
     names(data_dt)[vapply(data_dt, is.logical, logical(1))],
     cols_grp
   )
-  
+
   if (!length(c(cols_cat, cols_lgl))) {
     if (warn_if_none) {
       if (!length(cols_grp)) {
@@ -152,17 +182,16 @@ cb_summarize_categorical <- function(cb,
     }
     return(NULL)
   }
-  
+
   ## define labels and is_missing
   val_labs <- val_labs[cols_cat]
   is_missing <- list()
-  user_missings <- attr(cb, "user_missing")
   for (nm in names(val_labs)) {
     labs <- val_labs[[nm]]
     miss <- user_missings[[nm]]
     if (!is.null(miss)) {
       if (detail_missing) {
-        if (nm %in% factors) {
+        if (nm %in% cols_fct) {
           labs <- c(labs[!(labs %in% miss)], miss)
         } else {
           labs <- c(labs, miss[!(miss %in% labs)])
@@ -189,8 +218,8 @@ cb_summarize_categorical <- function(cb,
     c(cols_grp, cols_cat, cols_lgl),
     with = FALSE
   ]
-  
-  ## define group labels  
+
+  ## define group labels
   grp_labs <- list()
   for (col in cols_grp) {
     v <- data_dt[[col]]
@@ -199,22 +228,19 @@ cb_summarize_categorical <- function(cb,
     grp_labs[[col]] <- sort(unique(v))
     data.table::set(data_dt, j = col, value = v)
   }
+
+  label_cols <- intersect(c("name", "label_stem", "label"), names(cb))
+  var_labs <- cb[, label_cols, with = FALSE]
+  ls <- var_labs[["label_stem"]]
+  if (!is.null(ls) && all(is.na(ls))) var_labs[, label_stem := NULL]
+
   all_vals <- data.table::data.table(
     name = rep(names(val_labs), val_labs_len),
     value_lab = unlist(lapply(unname(val_labs), names)),
     value_val = as.character(unlist(val_labs)),
     is_missing = unlist(is_missing)
   )
-  
-  label_cols <- intersect(c("label_stem", "label"), names(cb))
-  if (length(label_cols)) {
-    all_vals <- cb |>
-      data.table::as.data.table() |>
-      _[, c("name", label_cols), with = FALSE] |>
-      merge(all_vals, by = "name", all.y = TRUE, sort = FALSE)
-    ls <- all_vals[["label_stem"]]
-    if (!is.null(ls) && all(is.na(ls))) all_vals[, label_stem := NULL]
-  }
+
   all_vals <- do.call(expand_dt, c(list(all_vals), grp_labs))
 
   if (detail_missing) {
@@ -226,20 +252,22 @@ cb_summarize_categorical <- function(cb,
   for (col in c(cols_cat, cols_lgl)) {
     data.table::set(data_dt, j = col, value = col_to_chr(data_dt[[col]]))
   }
-  
+
   freqs <- data.table::melt(
       data_dt, id.vars = cols_grp, variable.name = "name", 
-      value.name = "value_val", variable.factor = FALSE
-    ) |> 
+    value.name = "value_val", variable.factor = FALSE
+  ) |>
     _[, list(n = .N), by = c(cols_grp, "name", "value_val")]
-
-  freqs <- all_vals |> 
+  
+  freqs <- all_vals |>
     merge(
       freqs,
       by = c(cols_grp, "name", "value_val"), all = TRUE, sort = FALSE
     ) |>
-    # flag true `NA`s as missing
-    _[is.na(value_val), is_missing := TRUE] |>
+    merge(var_labs, by = "name", all.x = TRUE, sort = FALSE) |>
+    # if `is_missing` is NA, this is an observed value that wasn't in val labs 
+    #   or user missings; therefore is NOT missing
+    _[is.na(is_missing), is_missing := FALSE] |>
     # remove missing values if not observed in at least one group
     _[, .SD[!(all(is.na(n)) & is_missing)], by = c("name", "value_val")] |> 
     # remove group var combos if no observed values
@@ -248,10 +276,15 @@ cb_summarize_categorical <- function(cb,
     _[is.na(n), n := 0L] |>
     _[,
       value := data.table::fcase(
+        ## if missing, show "(Missing)" or user missing values depending on `detail_missing`
         is.na(value_val) & detail_missing, detail_na_label,
         is.na(value_val), "(Missing)",
+        ## if no labels for any value, show values without prefix / brackets
         rep(all(is.na(value_lab) | is.na(value_val) | value_lab == value_val), .N), value_val,
-        default = stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, value_val))
+        ## if `prefixed`, prefix with value in brackets
+        rep(prefixed, .N), stringr::str_c("[", value_val, "] ", data.table::fcoalesce(value_lab, "")),
+        ## otherwise show un-prefixed labels, or value if no label
+        default = data.table::fcoalesce(value_lab, value_val)
       ),
       by = c("name", "is_missing")] |>
     _[, pct_of_all := n / sum(n), by = c(cols_grp, "name")] |>
@@ -263,61 +296,58 @@ cb_summarize_categorical <- function(cb,
     freqs[, is_missing := NULL]
   }
   
-  cols_out <- c(
-    cols_grp, "name", "label_stem", "label", "is_missing", "value", "n", 
-    "pct_of_all", "pct_of_valid", "pct_of_missing"
+  cols_out <- intersect(
+    c(cols_grp, "name", label_cols, "is_missing", "value", "n", "pct_of_all", 
+      "pct_of_valid", "pct_of_missing"),
+    names(freqs)
   )
-  freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
+  freqs <- freqs[, cols_out, with = FALSE]
   
-  out <- freqs |>
+  freqs |>
     tibble::as_tibble() |>
-    set_attrs(detail_missing = detail_missing)
-  
-  group_by_quo <- rlang::enquo(group_by)
-  if (!rlang::quo_is_null(group_by_quo)) {
-    out <- set_attrs(
-      out,
-      group_by = group_by_quo, group_counts = group_counts(cb, {{ group_by }})
+    set_attrs(
+      detail_missing = detail_missing,
+      id_cols = c("name", label_cols, "value"),
+      group_by = group_by, 
+      group_cols = group_by,
+      group_counts = group_counts(cb, group_by)
     )
-  }
-
-  out
 }
 
 #' Summarize character variables from a codebook object
 #'
-#' `cb_summarize_text()` generates a summary table for all character variables 
-#' from a codebook object, including number of unique values, frequencies for the 
-#' most common values, and missing value information. Note that character variables 
+#' `cb_summarize_text()` generates a summary table for all character variables
+#' from a codebook object, including number of unique values, frequencies for the
+#' most common values, and missing value information. Note that character variables
 #' of class `"haven_labelled"` are treated as categorical; see `cb_summarize_categorical()`.
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
-#' @param n_text_vals How many unique non-missing values should be included for 
+#' @param n_text_vals How many unique non-missing values should be included for
 #'   each variable?
 #' @param detail_missing Include detailed missing value information?
 #' @param detail_na_label Label used for `NA` values when `detail_missing` is `TRUE`.
 #' @param warn_if_none Should a warning be issued if there are no text variables in `cb`?
-#' 
-#' @return If there no text variables in `cb`, `NULL`. Otherwise, a tibble with 
+#'
+#' @return If there no text variables in `cb`, `NULL`. Otherwise, a tibble with
 #'   columns:
 #'   - `name`: variable name
 #'   - `label_stem`: optional column containing variable label stems; included if
-#'      `cb` includes a `label_stem` column and at least one character variable 
+#'      `cb` includes a `label_stem` column and at least one character variable
 #'      has a non-missing label stem.
 #'   - `label`: variable label
 #'   - `unique_n`: number of unique non-missing values
 #'   - `is_missing`: optional column indicating if `value` is a missing value. Included
 #'      if `detail_missing` is `TRUE`.
-#'   - `value`: the most prevalent unique values for the variable. If there are 
+#'   - `value`: the most prevalent unique values for the variable. If there are
 #'     more than `n_text_vals` + 1 unique values, the `n_text_vals` most common
 #'     non-missing values will be included. (All missing values will always be included.)
 #'   - `n`: number of observations
 #'   - `pct_of_all`: proportion of all (non-missing and missing) observations
 #'   - `pct_of_valid`: for non-missing values, proportion of all non-missing observations
-#'   - `pct_of_missing`: optional column showing, for missing values, proportion 
+#'   - `pct_of_missing`: optional column showing, for missing values, proportion
 #'     of all missing observations. Included if `detail_missing` is `TRUE`.
-#' 
+#'
 #' @export
 cb_summarize_text <- function(cb,
                               n_text_vals = 5,
@@ -325,12 +355,24 @@ cb_summarize_text <- function(cb,
                               detail_na_label = "NA",
                               warn_if_none = TRUE) {
   check_codebook(cb)
+  cb_summarize_text_impl(
+    cb,
+    n_text_vals = n_text_vals,
+    detail_missing = detail_missing,
+    detail_na_label = detail_na_label,
+    warn_if_none = warn_if_none
+  )
+}
 
-  data <- attr(cb, "data_zapped")[cb$name]
-  nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
-
-  data_dt <- data.table::as.data.table(attr(cb, "data_labelled")[cb$name])
-  cols_chr <- names(data_dt)[vapply(data_dt, is.character, logical(1))]
+cb_summarize_text_impl <- function(cb,
+                                   n_text_vals = 5,
+                                   detail_missing = TRUE,
+                                   detail_na_label = "NA",
+                                   warn_if_none = FALSE) {
+  data_labelled <- attr(cb, "data_labelled")[cb$name]
+  data_zapped <- attr(cb, "data_zapped")[cb$name]
+  data_dt <- data.table::as.data.table(data_labelled)
+  cols_chr <- names(data_zapped)[vapply(data_zapped, is.character, logical(1))]
 
   if (!length(cols_chr)) {
     if (warn_if_none) {
@@ -350,7 +392,7 @@ cb_summarize_text <- function(cb,
   
   user_missings <- list()
   if (detail_missing) {
-    user_missings <- attr(cb, "user_missing")
+    user_missings <- labelled::na_values(data_labelled)
     user_missings <- user_missings[intersect(cols_chr, names(user_missings))]
   }
   if (length(user_missings)) {
@@ -424,24 +466,18 @@ cb_summarize_text <- function(cb,
     freqs[, is_missing := NULL]
   }
   
-  cols_out <- c(
-    "name", "label_stem", "label", "is_missing", "unique_n", "value", "n", 
-    "pct_of_all", "pct_of_valid", "pct_of_missing"
+  cols_out <- intersect(
+    c(label_cols, "is_missing", "unique_n", "value", "n", "pct_of_all", 
+      "pct_of_valid", "pct_of_missing"),
+    names(freqs)
   )
-  freqs <- freqs[, intersect(cols_out, names(freqs)), with = FALSE]
+  freqs <- freqs[, cols_out, with = FALSE]
   
   freqs |>
     tibble::as_tibble() |>
-    set_attrs(detail_missing = detail_missing)
+    set_attrs(
+      detail_missing = detail_missing, 
+      id_cols = c(label_cols, "value")
+    )
 }
 
-group_counts <- function(cb, group_by) {
-  cb |>
-    attr("data_zapped") |>
-    dplyr::count(dplyr::pick({{ group_by }})) |>
-    dplyr::mutate(dplyr::across(
-      {{ group_by }},
-      \(x) fct_replace_na(factor(x), "(Missing)")
-    )) |>
-    deframe_nest()
-}

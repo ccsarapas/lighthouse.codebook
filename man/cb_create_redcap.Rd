@@ -103,9 +103,9 @@ and additional metadata. Specifically:
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label
-\item \code{value_labels}: value labels
+\item \code{values}: values, with labels if applicable
 \item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
-with value labels for user missing values
+showing user missing values, with labels if applicable
 \item \code{missing}: proportion missing
 \item additional columns if specified in \code{...}
 }

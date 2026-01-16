@@ -12,6 +12,7 @@ cb_write(
   incl_dims = TRUE,
   hyperlinks = TRUE,
   group_by = NULL,
+  group_rows_numeric = NULL,
   detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
   overwrite = TRUE
@@ -33,30 +34,49 @@ to corresponding rows on summary tabs and vice versa.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
 by. If specified, additional numeric and categorical summary tabs will be included
-with decked heads for specified groups.}
+with grouped summaries. Subgroups are shown in columns by default. For the numeric
+summary tab, subgroups for some or all grouping variables can instead be shown
+in rows if specified in \code{group_rows_numeric}.}
 
-\item{detail_missing}{Include detailed missing value information on categorical
-and text summary tabs?}
+\item{group_rows_numeric}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns
+to group by in rows on the grouped numeric summary tab. All columns must also
+be specified in \code{group_by}.}
+
+\item{detail_missing}{Include detailed missing value information on ungrouped
+categorical and text summary tabs? (Detailed missing information for grouped
+summary tabs is not currently supported.)}
 
 \item{n_text_vals}{On the text summary tab, how many unique non-missing values
-should be included for each variable? If there are more than \code{n_text_vals}
-\itemize{
-\item 1 unique values, the \code{n_text_vals} most common non-missing values will be included.
-}}
+should be included for each variable? If there are more than \code{n_text_vals} + 1
+unique values, the \code{n_text_vals} most common non-missing values will be included.}
 
 \item{overwrite}{Overwrite existing file?}
 }
 \value{
-Invisibly returns the path to the written Excel file. See []\code{cb_create()}]
-and variants, \code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}}, \code{\link[=cb_summarize_categorical]{cb_summarize_categorical()}}, and
-\code{\link[=cb_summarize_text]{cb_summarize_text()}} for details on the objects written to the file.
+Invisibly returns the path to the written Excel file. The Excel workbook itself
+will contain an "Overview" tab (see \code{\link[=cb_create]{cb_create()}} and variants for details);
+"Summary - Numeric", "Summary - Categorical", and "Summary - Text" tabs if the
+dataset includes variables of the relevant type (see \code{\link[=cb_summarize_numeric]{cb_summarize_numeric()}},
+\code{\link[=cb_summarize_categorical]{cb_summarize_categorical()}}, and \code{\link[=cb_summarize_text]{cb_summarize_text()}}); and "Grouped Summary - Numeric"
+and "Grouped Summary - Categorical" tabs if \code{group_by} is specified.
 }
 \description{
 \code{cb_write()} writes an Excel workbook to disk with tabs including a codebook;
 summary statistics for numeric variables; frequencies for categorical variables;
 truncated frequencies for text variables; and optional grouped summaries for numeric
-and categorical variables. For data summaires, variables with value labels, factors,
-and logical variables are treated as categorical, numeric and integer variables
-are treated as numeric, and (unlabeled) character variables are treated as text.
-Summary tabs will be omitted if there are no variables of the relevant type.
+and categorical variables.
+
+For data summaries, variables with value labels, factors, and logical variables
+are treated as categorical; numeric and integer variables are treated as numeric;
+and (unlabeled) character variables are treated as text. Summary tabs will be
+omitted if there are no variables of the relevant type.
 }
+\section{Alternative labelling for user missing values}{
+
+
+Different terminology for user missing values can be used by setting
+\code{options(lighthouse.codebook.nonresponse = TRUE)}. If set, the "User Missings"
+column on the Overview sheet is instead called "Nonresponse Codes," and "Missing"
+values are instead referred to as "Excluded" values on overview and summary tabs.
+}
+
