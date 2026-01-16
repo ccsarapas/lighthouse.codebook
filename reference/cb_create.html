@@ -15,7 +15,7 @@ cb_summarize_text()).'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@ cb_summarize_text()).'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Generate a codebook object</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/c0.1.1/R/cb_create.r" class="external-link"><code>R/cb_create.r</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/R/cb_create.r" class="external-link"><code>R/cb_create.r</code></a></small>
       <div class="d-none name"><code>cb_create.Rd</code></div>
     </div>
 
@@ -77,7 +77,7 @@ or generate dataset summaries (<code><a href="cb_summarize_numeric.html">cb_summ
 
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A data frame exported or retrieved from REDCap.</p></dd>
+<dd><p>A data frame.</p></dd>
 
 
 <dt id="arg-metadata">metadata<a class="anchor" aria-label="anchor" href="#arg-metadata"></a></dt>
@@ -165,9 +165,9 @@ and additional metadata. Specifically:</p><ul><li><p>A tibble with columns:</p><
 <li><p><code>label_stem</code>: optional column containing variable label stems, if any variables
 are specified in <code>.split_var_labels</code></p></li>
 <li><p><code>label</code>: variable label</p></li>
-<li><p><code>value_labels</code>: value labels</p></li>
+<li><p><code>values</code>: values, with labels if applicable</p></li>
 <li><p><code>user_missing</code>: optional column, depending on value of <code>.user_missing_col</code>,
-with value labels for user missing values</p></li>
+showing user missing values, with labels if applicable</p></li>
 <li><p><code>missing</code>: proportion missing</p></li>
 <li><p>additional columns if specified in <code>...</code></p></li>
 </ul></li>
@@ -221,7 +221,7 @@ can be changed using the <code>.user_missing_incompatible</code> argument.</p>
 <span class="r-in"><span><span class="co"># basic codebook</span></span></span>
 <span class="r-in"><span><span class="fu">cb_create</span><span class="op">(</span><span class="va">diamonds2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 4</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type    value_labels                           missing</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type    values                                 missing</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric <span style="color: #BB0000;">NA</span>                                           0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordinal Fair; Good; Very Good; Premium; Ideal        0</span>
@@ -244,7 +244,7 @@ can be changed using the <code>.user_missing_incompatible</code> argument.</p>
 <span class="r-in"><span>  <span class="op">)</span> <span class="op">|&gt;</span> </span></span>
 <span class="r-in"><span>  <span class="fu">cb_create</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 4</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type        value_labels                           missing</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type        values                                 missing</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric     <span style="color: #BB0000;">NA</span>                                           0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordinal     Fair; Good; Very Good; Premium; Ideal        0</span>
@@ -289,20 +289,20 @@ can be changed using the <code>.user_missing_incompatible</code> argument.</p>
 <span class="r-in"><span>  .val_labs_sep1 <span class="op">=</span> <span class="st">" = "</span>, .val_labs_sep2 <span class="op">=</span> <span class="st">"; "</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type        label                            value_labels missing</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                            <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric     price in US dollars ($326–$18,8… <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordinal     weight of the diamond (0.2–5.01) Fair; Good;…       0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> color       ordinal     quality of the cut (Fair, Good,… D; E; F; G;…       0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> clarity     ordinal     diamond colour, from D (best) t… I1; SI2; SI…       0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> depth       numeric     a measurement of how clear the … <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> table       numeric     length in mm (0–10.74)           <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> price       integer     width in mm (0–58.9)             <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> x           numeric     depth in mm (0–31.8)             <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> y           numeric     total depth percentage = z / me… <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> z           numeric     width of top of diamond relativ… <span style="color: #BB0000;">NA</span>                 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> carat_group categorical diamond carat (3 groups)         [1] small; …       0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> price_group categorical diamond price (6 groups)         [1] &lt;$500; …       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    name        type        label                                  values missing</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> carat       numeric     price in US dollars ($326–$18,823)     <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> cut         ordinal     weight of the diamond (0.2–5.01)       Fair;…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> color       ordinal     quality of the cut (Fair, Good, Very … D; E;…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> clarity     ordinal     diamond colour, from D (best) to J (w… I1; S…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> depth       numeric     a measurement of how clear the diamon… <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> table       numeric     length in mm (0–10.74)                 <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> price       integer     width in mm (0–58.9)                   <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> x           numeric     depth in mm (0–31.8)                   <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> y           numeric     total depth percentage = z / mean(x, … <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> z           numeric     width of top of diamond relative to w… <span style="color: #BB0000;">NA</span>           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> carat_group categorical diamond carat (3 groups)               [1] s…       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> price_group categorical diamond price (6 groups)               [1] &lt;…       0</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

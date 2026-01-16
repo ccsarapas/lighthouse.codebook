@@ -31,7 +31,7 @@ Optional coercion for character variables marked as "integer" in metedata$text_v
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ Optional coercion for character variables marked as "integer" in metedata$text_v
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Generate a codebook object from REDCap data</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/c0.1.1/R/cb_create_redcap.r" class="external-link"><code>R/cb_create_redcap.r</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/R/cb_create_redcap.r" class="external-link"><code>R/cb_create_redcap.r</code></a></small>
       <div class="d-none name"><code>cb_create_redcap.Rd</code></div>
     </div>
 
@@ -208,9 +208,9 @@ and additional metadata. Specifically:</p><ul><li><p>A tibble with columns:</p><
 <li><p><code>label_stem</code>: optional column containing variable label stems, if any variables
 are specified in <code>.split_var_labels</code></p></li>
 <li><p><code>label</code>: variable label</p></li>
-<li><p><code>value_labels</code>: value labels</p></li>
+<li><p><code>values</code>: values, with labels if applicable</p></li>
 <li><p><code>user_missing</code>: optional column, depending on value of <code>.user_missing_col</code>,
-with value labels for user missing values</p></li>
+showing user missing values, with labels if applicable</p></li>
 <li><p><code>missing</code>: proportion missing</p></li>
 <li><p>additional columns if specified in <code>...</code></p></li>
 </ul></li>

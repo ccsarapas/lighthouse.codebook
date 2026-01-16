@@ -1,4 +1,4 @@
 # License
 
-    YEAR: 2025
-    COPYRIGHT HOLDER: lighthouse.profile authors
+    YEAR: 2025-2026
+    COPYRIGHT HOLDER: Chestnut Health Systems

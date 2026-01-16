@@ -181,10 +181,11 @@ several formats) and additional metadata. Specifically:
 
   - `label`: variable label
 
-  - `value_labels`: value labels
+  - `values`: values, with labels if applicable
 
   - `user_missing`: optional column, depending on value of
-    `.user_missing_col`, with value labels for user missing values
+    `.user_missing_col`, showing user missing values, with labels if
+    applicable
 
   - `missing`: proportion missing
 

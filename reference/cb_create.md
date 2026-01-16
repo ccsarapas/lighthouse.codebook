@@ -39,7 +39,7 @@ cb_create(
 
 - data:
 
-  A data frame exported or retrieved from REDCap.
+  A data frame.
 
 - metadata:
 
@@ -141,10 +141,11 @@ several formats) and additional metadata. Specifically:
 
   - `label`: variable label
 
-  - `value_labels`: value labels
+  - `values`: values, with labels if applicable
 
   - `user_missing`: optional column, depending on value of
-    `.user_missing_col`, with value labels for user missing values
+    `.user_missing_col`, showing user missing values, with labels if
+    applicable
 
   - `missing`: proportion missing
 
@@ -217,7 +218,7 @@ diamonds2 <- ggplot2::diamonds |>
 # basic codebook
 cb_create(diamonds2)
 #> # A tibble: 12 × 4
-#>    name        type    value_labels                           missing
+#>    name        type    values                                 missing
 #>    <chr>       <chr>   <chr>                                    <dbl>
 #>  1 carat       numeric NA                                           0
 #>  2 cut         ordinal Fair; Good; Very Good; Premium; Ideal        0
@@ -240,7 +241,7 @@ diamonds2 |>
   ) |> 
   cb_create()
 #> # A tibble: 12 × 4
-#>    name        type        value_labels                           missing
+#>    name        type        values                                 missing
 #>    <chr>       <chr>       <chr>                                    <dbl>
 #>  1 carat       numeric     NA                                           0
 #>  2 cut         ordinal     Fair; Good; Very Good; Premium; Ideal        0
@@ -285,18 +286,18 @@ cb_create(
   .val_labs_sep1 = " = ", .val_labs_sep2 = "; "
 )
 #> # A tibble: 12 × 5
-#>    name        type        label                            value_labels missing
-#>    <chr>       <chr>       <chr>                            <chr>          <dbl>
-#>  1 carat       numeric     price in US dollars ($326–$18,8… NA                 0
-#>  2 cut         ordinal     weight of the diamond (0.2–5.01) Fair; Good;…       0
-#>  3 color       ordinal     quality of the cut (Fair, Good,… D; E; F; G;…       0
-#>  4 clarity     ordinal     diamond colour, from D (best) t… I1; SI2; SI…       0
-#>  5 depth       numeric     a measurement of how clear the … NA                 0
-#>  6 table       numeric     length in mm (0–10.74)           NA                 0
-#>  7 price       integer     width in mm (0–58.9)             NA                 0
-#>  8 x           numeric     depth in mm (0–31.8)             NA                 0
-#>  9 y           numeric     total depth percentage = z / me… NA                 0
-#> 10 z           numeric     width of top of diamond relativ… NA                 0
-#> 11 carat_group categorical diamond carat (3 groups)         [1] small; …       0
-#> 12 price_group categorical diamond price (6 groups)         [1] <$500; …       0
+#>    name        type        label                                  values missing
+#>    <chr>       <chr>       <chr>                                  <chr>    <dbl>
+#>  1 carat       numeric     price in US dollars ($326–$18,823)     NA           0
+#>  2 cut         ordinal     weight of the diamond (0.2–5.01)       Fair;…       0
+#>  3 color       ordinal     quality of the cut (Fair, Good, Very … D; E;…       0
+#>  4 clarity     ordinal     diamond colour, from D (best) to J (w… I1; S…       0
+#>  5 depth       numeric     a measurement of how clear the diamon… NA           0
+#>  6 table       numeric     length in mm (0–10.74)                 NA           0
+#>  7 price       integer     width in mm (0–58.9)                   NA           0
+#>  8 x           numeric     depth in mm (0–31.8)                   NA           0
+#>  9 y           numeric     total depth percentage = z / mean(x, … NA           0
+#> 10 z           numeric     width of top of diamond relative to w… NA           0
+#> 11 carat_group categorical diamond carat (3 groups)               [1] s…       0
+#> 12 price_group categorical diamond price (6 groups)               [1] <…       0
 ```

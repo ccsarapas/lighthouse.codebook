@@ -18,3 +18,7 @@ Useful links:
 
 **Maintainer**: Casey Sarapas <ccsarapas@chestnut.org>
 ([ORCID](https://orcid.org/0000-0002-8668-1462))
+
+Other contributors:
+
+- Chestnut Health Systems \[copyright holder\]

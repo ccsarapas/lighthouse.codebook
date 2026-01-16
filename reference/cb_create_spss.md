@@ -1,12 +1,9 @@
 # Generate a codebook object from an SPSS dataset
 
 `cb_create_spss()` builds an object of class `"li_codebook"` from an
-SPSS dataset (imported using
-[`haven::read_spss()`](https://haven.tidyverse.org/reference/read_spss.html),
-`read_sav()`, or `read_por()`). Metadata including variable labels,
-value labels, and user missing values are extracted from the imported
-dataset. (User missing values can also be set using the `.user_missing`
-argument.)\`
+imported SPSS dataset. Metadata including variable labels, value labels,
+and user missing values are extracted from the imported dataset. (User
+missing values can also be set using the `.user_missing` argument.)\`
 
 The resulting object can be used to write an Excel workbook with
 variable and data summaries (using
@@ -37,7 +34,9 @@ cb_create_spss(
 
 - data:
 
-  A data frame exported or retrieved from REDCap.
+  A data frame imported from SPSS using (imported using
+  [`haven::read_spss()`](https://haven.tidyverse.org/reference/read_spss.html),
+  `read_sav()`, or `read_por()`).
 
 - .user_missing:
 
@@ -78,7 +77,7 @@ cb_create_spss(
 - .user_missing_conflict:
 
   If labels passed to `.user_missing` conflicts with a value label in
-  the `data`, which should be used?
+  `data`, which should be used?
 
 - .user_missing_incompatible:
 
@@ -104,10 +103,11 @@ several formats) and additional metadata. Specifically:
 
   - `label`: variable label
 
-  - `value_labels`: value labels
+  - `values`: values, with labels if applicable
 
   - `user_missing`: optional column, depending on value of
-    `.user_missing_col`, with value labels for user missing values
+    `.user_missing_col`, showing user missing values, with labels if
+    applicable
 
   - `missing`: proportion missing
 
