@@ -1,5 +1,11 @@
 # Changelog
 
+## lighthouse.codebook 0.2.1
+
+- Suppressed warning about missing styles in
+  [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  emitted by openxlsx2 \>= v1.23.0.
+
 ## lighthouse.codebook 0.2.0
 
 ### New feature
