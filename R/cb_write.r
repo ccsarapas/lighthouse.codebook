@@ -194,7 +194,10 @@ wb_cond_row_borders <- function(wb,
                                 color = openxlsx2::wb_color("404040"),
                                 border = "thin") {
   style_nm <- paste0(border, color)
-  existing <- wb$styles_mgr$get_dxf_id(style_nm)
+  existing <- lighthouse::suppress_warnings_if(
+    wb$styles_mgr$get_dxf_id(style_nm),
+    "Could not find style(s)"
+  )
   if (is.null(existing) || is.na(existing)) {
     style <- openxlsx2::create_dxfs_style(
       border = TRUE, border_style = NULL, border_color = NULL,
