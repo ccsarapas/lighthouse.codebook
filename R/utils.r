@@ -2,7 +2,7 @@ is_codebook <- function(x) "li_codebook" %in% class(x)
 check_codebook <- function(x) {
   arg <- as.character(rlang::ensym(x))
   if (!is_codebook(x)) {
-    cli::cli_abort('{.arg arg} must be an object of class `"li_codebook"`.')
+    cli::cli_abort('{.arg {arg}} must be an object of class `"li_codebook"`.')
   }
 }
 check_user_missing_arg <- function(x) {
@@ -10,7 +10,7 @@ check_user_missing_arg <- function(x) {
   if (!(
       rlang::is_formula(x) || (is.list(x) && all(sapply(x, rlang::is_formula)))
     )) {
-    cli::cli_abort("{.arg arg} must be a formula or list of formulas.")
+    cli::cli_abort("{.arg {arg}} must be a formula or list of formulas.")
   }
   if (rlang::is_formula(x)) x <- list(x)
   x

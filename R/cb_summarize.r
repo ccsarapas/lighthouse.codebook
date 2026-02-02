@@ -57,8 +57,9 @@ cb_summarize_numeric_impl <- function(cb,
   # only include `label_stem` if not empty
   if ("label_stem" %in% names(out) && all(is.na(out$label_stem))) {
     out$label_stem <- NULL
+    id_cols <- setdiff(id_cols, "label_stem")    
   }
-    
+  
   res <- lighthouse::summary_table(
       data,
       valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
@@ -232,7 +233,10 @@ cb_summarize_categorical_impl <- function(cb,
   label_cols <- intersect(c("name", "label_stem", "label"), names(cb))
   var_labs <- cb[, label_cols, with = FALSE]
   ls <- var_labs[["label_stem"]]
-  if (!is.null(ls) && all(is.na(ls))) var_labs[, label_stem := NULL]
+  if (!is.null(ls) && all(is.na(ls))) {
+    var_labs[, label_stem := NULL]
+    label_cols <- setdiff(label_cols, "label_stem")
+  }
 
   all_vals <- data.table::data.table(
     name = rep(names(val_labs), val_labs_len),
@@ -388,7 +392,10 @@ cb_summarize_text_impl <- function(cb,
   label_cols <- intersect(c("name", "label_stem", "label"), names(cb))
   var_labs <- cb[, label_cols, with = FALSE]
   ls <- var_labs[["label_stem"]]
-  if (!is.null(ls) && all(is.na(ls))) var_labs[, label_stem := NULL]
+  if (!is.null(ls) && all(is.na(ls))) {
+    var_labs[, label_stem := NULL]
+    label_cols <- setdiff(label_cols, "label_stem")
+  }
   
   user_missings <- list()
   if (detail_missing) {
