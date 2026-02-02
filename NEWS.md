@@ -1,3 +1,7 @@
+# lighthouse.codebook 0.2.2
+
+* `cb_write()` no longer throws an error when codebook contains split variable labels but some summary tabs have no label stems.
+
 # lighthouse.codebook 0.2.1
 
 * Suppressed warning about missing styles in `cb_write()` emitted by openxlsx2 >= 
