@@ -1,5 +1,14 @@
 # Changelog
 
+## lighthouse.codebook 0.2.2
+
+- [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  no longer throws an error when codebook contains split variable labels
+  but some summary tabs have no label stems.
+
+- Error messages now correctly report calling arguments (fixes
+  [\#21](https://github.com/ccsarapas/lighthouse.codebook/issues/21)).
+
 ## lighthouse.codebook 0.2.1
 
 - Suppressed warning about missing styles in
