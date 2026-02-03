@@ -64,10 +64,10 @@ separates value/label pairs. e.g., if value labels are in format \code{"1, First
 set \code{.val_labs_sep1} to \code{","} and \code{.val_labs_sep2} to \code{"\\\\|"}.}
 
 \item{.rmv_html}{Should HTML tags be removed from metadata (e.g., from variable
-and value lables)?}
+and value labels)?}
 
 \item{.rmv_line_breaks}{Should line breaks be removed from metadata (e.g., from
-variable and value lables)? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
+variable and value labels)? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
 
 \item{.coerce_integers}{Should variables listed as "integer" in \code{metedata$text_validation_type_or_show_slider_number}
 be coerced to integer?}

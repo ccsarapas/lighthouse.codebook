@@ -34,9 +34,9 @@
 #'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
 #'   set `.val_labs_sep1` to `","` and `.val_labs_sep2` to `"\\|"`.
 #' @param .rmv_html Should HTML tags be removed from metadata (e.g., from variable 
-#'   and value lables)?
+#'   and value labels)?
 #' @param .rmv_line_breaks Should line breaks be removed from metadata (e.g., from
-#'   variable and value lables)? If `TRUE`, line breaks will be replaced with `" / "`.
+#'   variable and value labels)? If `TRUE`, line breaks will be replaced with `" / "`.
 #' @param .user_missing_col Include value labels for user missing values in a separate
 #'   column? The default, `"if_any"`, adds the column only if user missings are
 #'   specified for at least one variable.
