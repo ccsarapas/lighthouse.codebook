@@ -10,6 +10,8 @@ cb_create_spss(
   .split_var_labels = NULL,
   .include_types = !.include_r_classes,
   .include_r_classes = FALSE,
+  .rmv_html = TRUE,
+  .rmv_line_breaks = TRUE,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("val_label", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -34,6 +36,11 @@ be extracted into a separate column.}
 
 \item{.include_r_classes}{Include a column listing class(es) of each variable?
 (e.g., \code{"factor"}, \code{"POSIXct, POSIXt"}.)}
+
+\item{.rmv_html}{Should HTML tags be removed from variable and value labels?}
+
+\item{.rmv_line_breaks}{Should line breaks be removed from variable and value
+labels? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
 
 \item{.user_missing_col}{Include value labels for user missing values in a separate
 column? The default, \code{"if_any"}, adds the column only if user missings are

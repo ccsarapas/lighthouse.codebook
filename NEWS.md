@@ -1,13 +1,18 @@
 # lighthouse.codebook 0.2.3
 
+* `cb_create_spss()` now accepts `.rmv_html` and `.rmv_line_breaks` arguments, consistent
+  with `cb_create()` and `cb_create_redcap()`. If `TRUE` (the default), HTML tags 
+  and line breaks are removed from variable and value labels.
+
 * `cb_create_spss()` now handles user missing value ranges correctly (fixes #23).
 
 * `detail_missing = "if_any"` in `cb_write()` now includes detailed missing values 
-when user missings are only included in SPSS metadata (fixes #24).
+  when user missings are only included in SPSS metadata (fixes #24).
 
 # lighthouse.codebook 0.2.2
 
-* `cb_write()` no longer throws an error when codebook contains split variable labels but some summary tabs have no label stems.
+* `cb_write()` no longer throws an error when codebook contains split variable labels 
+  but some summary tabs have no label stems.
 
 * Error messages now correctly report calling arguments (fixes #21).
 
