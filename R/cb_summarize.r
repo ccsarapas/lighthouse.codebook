@@ -157,7 +157,7 @@ cb_summarize_categorical_impl <- function(cb,
   data <- attr(cb, "data_labelled")
   data_dt <- data.table::as.data.table(data)
   val_labs <- labelled::val_labels(data)
-  user_missings <- labelled::na_values(data)
+  user_missings <- attr(cb, "user_missing")
 
   ## define column groups
   val_labs <- attr(cb, "vals_by_label")
@@ -399,7 +399,7 @@ cb_summarize_text_impl <- function(cb,
   
   user_missings <- list()
   if (detail_missing) {
-    user_missings <- labelled::na_values(data_labelled)
+    user_missings <- attr(cb, "user_missing")
     user_missings <- user_missings[intersect(cols_chr, names(user_missings))]
   }
   if (length(user_missings)) {

@@ -19,6 +19,9 @@
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
 #'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
 #'   See "Specifying user missing values" in [`cb_create()`] documentation for examples.
+#' @param .rmv_html Should HTML tags be removed from variable and value labels?
+#' @param .rmv_line_breaks Should line breaks be removed from variable and value 
+#' labels? If `TRUE`, line breaks will be replaced with `" / "`.
 #' @param .user_missing_conflict If labels passed to `.user_missing` conflicts with
 #'   a value label in `data`, which should be used?
 #' 
@@ -47,15 +50,18 @@ cb_create_spss <- function(data,
                            .split_var_labels = NULL,
                            .include_types = !.include_r_classes,
                            .include_r_classes = FALSE,
-                           # these would require a different implementation -- omitted for now
-                           #   .rmv_html = TRUE,
-                           #   .rmv_line_breaks = TRUE,
+                           .rmv_html = TRUE,
+                           .rmv_line_breaks = TRUE,
                            .user_missing_col = c("if_any", "yes", "no"),
                            .user_missing_conflict = c("val_label", "missing_label"),
                            .user_missing_incompatible = c("ignore", "warn", "error")
                            ) {
   data |>
     cb_init() |>
+    cb_clean_fields_spss(
+      rmv_html = .rmv_html, 
+      rmv_line_breaks = .rmv_line_breaks
+    ) |> 
     cb_add_label_col_spss() |>
     cb_update_labels_spss(
       user_missing = .user_missing,
@@ -74,8 +80,25 @@ cb_create_spss <- function(data,
 }
 
 cb_user_missings_from_spss <- function(cb) {
-  user_missings <- labelled::na_values(attr(cb, "data"))
-  user_missings <- user_missings[!sapply(user_missings, is.null)]
+  data <- attr(cb, "data")
+  user_missings <- labelled::na_values(data) |> purrr::compact()
+  user_missings_range <- labelled::na_range(data) |> purrr::compact()
+
+  if (length(user_missings_range)) {
+    cli::cli_warn(c(
+      "!" = "User missing ranges will be treated as discrete user missing values."
+    ))
+    for (nm in names(user_missings_range)) {
+      miss_range <- user_missings_range[[nm]]
+      vals <- data[[nm]] |>
+        unique() |>
+        labelled::remove_user_na() |>
+        haven::zap_labels()
+      miss_vals <- vals[vals >= miss_range[[1]] & vals <= miss_range[[2]]]
+      user_missings[[nm]] <- c(user_missings[[nm]], miss_vals)      
+    }
+  }
+  
   if (length(user_missings)) attr(cb, "user_missing") <- user_missings
   cb
 }
@@ -87,6 +110,7 @@ cb_update_labels_spss <- function(cb,
   data <- attr(cb, "data")
   if (is.null(user_missing)) {
     cb |>
+      cb_user_missings_from_spss() |>
       cb_add_lookups() |>
       set_attrs(data_labelled = data)
   } else {
@@ -145,10 +169,26 @@ cb_zap_data_spss <- function(cb) {
     haven::zap_labels()
   set_attrs(cb, data_values = data_values, data_zapped = data_zapped)
 }
+
 cb_add_label_col_spss <- function(cb) {
   var_labs <- cb |> 
     attr("data") |> 
     labelled::var_label() |>
     lighthouse::null_to_na(unlist = TRUE)
   dplyr::mutate(cb, label = var_labs[name], .before = values)
+}
+
+cb_clean_fields_spss <- function(cb, rmv_html = TRUE, rmv_line_breaks = TRUE) {
+  data <- attr(cb, "data")
+  if (rmv_html) {
+    data <- data |>
+      labelled::update_variable_labels_with(strip_html) |>
+      labelled::update_value_labels_with(strip_html)
+  }
+  if (rmv_line_breaks) {
+    data <- data |>
+      labelled::update_variable_labels_with(strip_line_breaks) |>
+      labelled::update_value_labels_with(strip_line_breaks)
+  }
+  set_attrs(cb, data = data)
 }
