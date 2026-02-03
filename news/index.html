@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,9 +29,15 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.2.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.3" id="lighthousecodebook-023">lighthouse.codebook 0.2.3<a class="anchor" aria-label="anchor" href="#lighthousecodebook-023"></a></h2>
+<ul><li><p><code><a href="../reference/cb_create_spss.html">cb_create_spss()</a></code> now accepts <code>.rmv_html</code> and <code>.rmv_line_breaks</code> arguments, consistent with <code><a href="../reference/cb_create.html">cb_create()</a></code> and <code><a href="../reference/cb_create_redcap.html">cb_create_redcap()</a></code>. If <code>TRUE</code> (the default), HTML tags and line breaks are removed from variable and value labels.</p></li>
+<li><p><code><a href="../reference/cb_create_spss.html">cb_create_spss()</a></code> now handles user missing value ranges correctly (fixes <a href="https://github.com/ccsarapas/lighthouse.codebook/issues/23" class="external-link">#23</a>).</p></li>
+<li><p><code>detail_missing = "if_any"</code> in <code><a href="../reference/cb_write.html">cb_write()</a></code> now includes detailed missing values when user missings are only included in SPSS metadata (fixes <a href="https://github.com/ccsarapas/lighthouse.codebook/issues/24" class="external-link">#24</a>).</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.2" id="lighthousecodebook-022">lighthouse.codebook 0.2.2<a class="anchor" aria-label="anchor" href="#lighthousecodebook-022"></a></h2>
 <ul><li><p><code><a href="../reference/cb_write.html">cb_write()</a></code> no longer throws an error when codebook contains split variable labels but some summary tabs have no label stems.</p></li>

@@ -121,12 +121,12 @@ cb_create_redcap(
 - .rmv_html:
 
   Should HTML tags be removed from metadata (e.g., from variable and
-  value lables)?
+  value labels)?
 
 - .rmv_line_breaks:
 
   Should line breaks be removed from metadata (e.g., from variable and
-  value lables)? If `TRUE`, line breaks will be replaced with `" / "`.
+  value labels)? If `TRUE`, line breaks will be replaced with `" / "`.
 
 - .coerce_integers:
 

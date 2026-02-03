@@ -24,6 +24,8 @@ cb_create_spss(
   .split_var_labels = NULL,
   .include_types = !.include_r_classes,
   .include_r_classes = FALSE,
+  .rmv_html = TRUE,
+  .rmv_line_breaks = TRUE,
   .user_missing_col = c("if_any", "yes", "no"),
   .user_missing_conflict = c("val_label", "missing_label"),
   .user_missing_incompatible = c("ignore", "warn", "error")
@@ -67,6 +69,15 @@ cb_create_spss(
 
   Include a column listing class(es) of each variable? (e.g.,
   `"factor"`, `"POSIXct, POSIXt"`.)
+
+- .rmv_html:
+
+  Should HTML tags be removed from variable and value labels?
+
+- .rmv_line_breaks:
+
+  Should line breaks be removed from variable and value labels? If
+  `TRUE`, line breaks will be replaced with `" / "`.
 
 - .user_missing_col:
 

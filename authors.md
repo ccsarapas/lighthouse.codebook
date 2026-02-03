@@ -12,16 +12,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/ccsarapas/lighthouse.codebook/blob/v0.2.2/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/ccsarapas/lighthouse.codebook/blob/main/DESCRIPTION)
 
 Sarapas C (2026). *lighthouse.codebook: Summarize Datasets for
-Lighthouse Institute Projects*. R package version 0.2.2,
+Lighthouse Institute Projects*. R package version 0.2.3,
 <https://github.com/ccsarapas/lighthouse.codebook>.
 
     @Manual{,
       title = {lighthouse.codebook: Summarize Datasets for Lighthouse Institute Projects},
       author = {Casey Sarapas},
       year = {2026},
-      note = {R package version 0.2.2},
+      note = {R package version 0.2.3},
       url = {https://github.com/ccsarapas/lighthouse.codebook},
     }

@@ -1,5 +1,26 @@
 # Changelog
 
+## lighthouse.codebook 0.2.3
+
+- [`cb_create_spss()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_spss.md)
+  now accepts `.rmv_html` and `.rmv_line_breaks` arguments, consistent
+  with
+  [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
+  and
+  [`cb_create_redcap()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_redcap.md).
+  If `TRUE` (the default), HTML tags and line breaks are removed from
+  variable and value labels.
+
+- [`cb_create_spss()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_spss.md)
+  now handles user missing value ranges correctly (fixes
+  [\#23](https://github.com/ccsarapas/lighthouse.codebook/issues/23)).
+
+- `detail_missing = "if_any"` in
+  [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  now includes detailed missing values when user missings are only
+  included in SPSS metadata (fixes
+  [\#24](https://github.com/ccsarapas/lighthouse.codebook/issues/24)).
+
 ## lighthouse.codebook 0.2.2
 
 - [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)

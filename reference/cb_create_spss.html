@@ -21,7 +21,7 @@ cb_summarize_text()).'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +43,7 @@ cb_summarize_text()).'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Generate a codebook object from an SPSS dataset</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.2.2/R/cb_create_spss.r" class="external-link"><code>R/cb_create_spss.r</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/R/cb_create_spss.r" class="external-link"><code>R/cb_create_spss.r</code></a></small>
       <div class="d-none name"><code>cb_create_spss.Rd</code></div>
     </div>
 
@@ -66,6 +66,8 @@ or generate dataset summaries (<code><a href="cb_summarize_numeric.html">cb_summ
 <span>  .split_var_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  .include_types <span class="op">=</span> <span class="op">!</span><span class="va">.include_r_classes</span>,</span>
 <span>  .include_r_classes <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  .rmv_html <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  .rmv_line_breaks <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  .user_missing_col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"if_any"</span>, <span class="st">"yes"</span>, <span class="st">"no"</span><span class="op">)</span>,</span>
 <span>  .user_missing_conflict <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"val_label"</span>, <span class="st">"missing_label"</span><span class="op">)</span>,</span>
 <span>  .user_missing_incompatible <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ignore"</span>, <span class="st">"warn"</span>, <span class="st">"error"</span><span class="op">)</span></span>
@@ -103,6 +105,15 @@ be extracted into a separate column.</p></dd>
 <dt id="arg--include-r-classes">.include_r_classes<a class="anchor" aria-label="anchor" href="#arg--include-r-classes"></a></dt>
 <dd><p>Include a column listing class(es) of each variable?
 (e.g., <code>"factor"</code>, <code>"POSIXct, POSIXt"</code>.)</p></dd>
+
+
+<dt id="arg--rmv-html">.rmv_html<a class="anchor" aria-label="anchor" href="#arg--rmv-html"></a></dt>
+<dd><p>Should HTML tags be removed from variable and value labels?</p></dd>
+
+
+<dt id="arg--rmv-line-breaks">.rmv_line_breaks<a class="anchor" aria-label="anchor" href="#arg--rmv-line-breaks"></a></dt>
+<dd><p>Should line breaks be removed from variable and value
+labels? If <code>TRUE</code>, line breaks will be replaced with <code>" / "</code>.</p></dd>
 
 
 <dt id="arg--user-missing-col">.user_missing_col<a class="anchor" aria-label="anchor" href="#arg--user-missing-col"></a></dt>
