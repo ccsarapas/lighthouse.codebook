@@ -74,8 +74,25 @@ cb_create_spss <- function(data,
 }
 
 cb_user_missings_from_spss <- function(cb) {
-  user_missings <- labelled::na_values(attr(cb, "data"))
-  user_missings <- user_missings[!sapply(user_missings, is.null)]
+  data <- attr(cb, "data")
+  user_missings <- labelled::na_values(data) |> purrr::compact()
+  user_missings_range <- labelled::na_range(data) |> purrr::compact()
+
+  if (length(user_missings_range)) {
+    cli::cli_warn(c(
+      "!" = "User missing ranges will be treated as discrete user missing values."
+    ))
+    for (nm in names(user_missings_range)) {
+      miss_range <- user_missings_range[[nm]]
+      vals <- data[[nm]] |>
+        unique() |>
+        labelled::remove_user_na() |>
+        haven::zap_labels()
+      miss_vals <- vals[vals >= miss_range[[1]] & vals <= miss_range[[2]]]
+      user_missings[[nm]] <- c(user_missings[[nm]], miss_vals)      
+    }
+  }
+  
   if (length(user_missings)) attr(cb, "user_missing") <- user_missings
   cb
 }
@@ -87,6 +104,7 @@ cb_update_labels_spss <- function(cb,
   data <- attr(cb, "data")
   if (is.null(user_missing)) {
     cb |>
+      cb_user_missings_from_spss() |>
       cb_add_lookups() |>
       set_attrs(data_labelled = data)
   } else {
@@ -152,3 +170,4 @@ cb_add_label_col_spss <- function(cb) {
     lighthouse::null_to_na(unlist = TRUE)
   dplyr::mutate(cb, label = var_labs[name], .before = values)
 }
+

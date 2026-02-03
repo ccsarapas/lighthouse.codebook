@@ -526,7 +526,8 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
   user_missing_col <- match.arg(user_missing_col)
   data <- attr(cb, "data_labelled")[cb$name]
   val_labs <- labelled::val_labels(data)
-  missings <- labelled::na_values(data)
+  missings <- attr(cb, "user_missing")[cb$name] |>
+    setNames(cb$name)    
   user_missing_col <- user_missing_col == "yes" || (
     user_missing_col == "if_any" & !(
       rlang::is_empty(missings) || all(vapply(missings, rlang::is_empty, logical(1)))
@@ -536,7 +537,7 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
     missings <- lapply(missings, try_sort_numeric)
     val_labs <- mapply(
       \(v, m) v[!(v %in% m)],
-      v = val_labs, m = missings, 
+      v = val_labs, m = missings,
       SIMPLIFY = FALSE
     )
     missings <- string_from_lookups(missings)
