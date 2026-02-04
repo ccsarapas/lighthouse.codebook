@@ -8,12 +8,27 @@ check_codebook <- function(x) {
 check_user_missing_arg <- function(x) {
   arg <- as.character(rlang::ensym(x))
   if (!(
-      rlang::is_formula(x) || (is.list(x) && all(sapply(x, rlang::is_formula)))
-    )) {
+    rlang::is_formula(x) || (is.list(x) && all(sapply(x, rlang::is_formula)))
+  )) {
     cli::cli_abort("{.arg {arg}} must be a formula or list of formulas.")
   }
   if (rlang::is_formula(x)) x <- list(x)
   x
+}
+check_group_rows_arg <- function(group_rows, group_by) {
+  arg <- as.character(rlang::ensym(group_rows))
+  if (!is.null(group_rows)) {
+    if (is.null(group_by)) {
+      cli::cli_abort(
+        "If {.arg {arg}} is specified, {.arg group_by} must also be specified."
+      )
+    }
+    if (length(setdiff(group_rows, group_by))) {
+      cli::cli_abort(
+        "All columns specified in {.arg {arg}} must also be included in {.arg group_by}."
+      )
+    }
+  }
 }
 set_attrs <- function(x, ...) {
   dots <- rlang::list2(...)

@@ -1,3 +1,13 @@
+# lighthouse.codebook 0.3.0
+
+## New feature
+
+* Added options to `cb_write()` to show grouping variables for categorical summaries 
+  in rows (which was previously only possible for numeric summaries.) `cb_write()` 
+  now includes three arguments for showing some or all grouping variables in rows:
+  `group_rows` controls both numeric and categorical summaries, while `group_rows_numeric` 
+  and `group_rows_categorical` control numeric and categorical summaries, respectively.
+
 # lighthouse.codebook 0.2.3
 
 * `cb_create_spss()` now accepts `.rmv_html` and `.rmv_line_breaks` arguments, consistent

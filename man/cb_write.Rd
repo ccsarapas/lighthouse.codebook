@@ -12,7 +12,9 @@ cb_write(
   incl_dims = TRUE,
   hyperlinks = TRUE,
   group_by = NULL,
-  group_rows_numeric = NULL,
+  group_rows = NULL,
+  group_rows_numeric = group_rows,
+  group_rows_categorical = group_rows,
   detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
   overwrite = TRUE
@@ -34,13 +36,18 @@ to corresponding rows on summary tabs and vice versa.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
 by. If specified, additional numeric and categorical summary tabs will be included
-with grouped summaries. Subgroups are shown in columns by default. For the numeric
-summary tab, subgroups for some or all grouping variables can instead be shown
-in rows if specified in \code{group_rows_numeric}.}
+with grouped summaries. Subgroups are shown in columns by default. Some or all
+grouping variables can instead be shown in rows if specified in \code{group_rows},
+\code{group_rows_numeric}, or \code{group_rows_categorical}.}
 
-\item{group_rows_numeric}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns
-to group by in rows on the grouped numeric summary tab. All columns must also
-be specified in \code{group_by}.}
+\item{group_rows}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
+by in rows on grouped summary tabs. All columns must also be specified in \code{group_by}.
+Will apply to both numeric and categorical summary tabs unless otherwise specified
+in \code{group_rows_numeric} or \code{group_rows_categorical}.}
+
+\item{group_rows_numeric, group_rows_categorical}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}>
+Column or columns to group by in rows on grouped numeric or categorical summary
+tab.}
 
 \item{detail_missing}{Include detailed missing value information on ungrouped
 categorical and text summary tabs? (Detailed missing information for grouped
