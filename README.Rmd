@@ -17,40 +17,69 @@ knitr::opts_chunk$set(
 
 # lighthouse.codebook
 
-The lighthouse.codebook package includes tools to summarize a dataset into a 
-formatted Excel workbook, including a data dictionary and summaries. It 
-incorporates external metadata (such as variable labels, value labels, and user 
-missing / non-response codes), with convenience functions for using metadata from 
-SPSS and REDCap datasets. Codebooks can be customized in a number of ways, 
-including options for grouped summaries.
+The lighthouse.codebook package includes tools to summarize a dataset into a formatted 
+Excel workbook, including a data dictionary and summaries. It incorporates external 
+metadata (such as variable labels, value labels, and user missing / non-response codes), 
+with functions for using metadata from SPSS and REDCap datasets. Codebooks can be 
+customized in a number of ways, including options for grouped summaries.
 
 ## Installation
 
 You can install lighthouse.codebook by running:
 
-``` r
+```r
 # install.packages("remotes")
 remotes::install_github("ccsarapas/lighthouse.codebook")
 ```
 
-## Creating a codebook
+## Creating codebooks
 <!-- 1485 x 525 -->
 <!-- 1275 x 525 -->
 <!-- 1405 x 570 -->
 Creating a codebook involves two general steps:
 
-1) Create a a "codebook" object in R from a data frame (and, optionally, metadata),
- using `cb_create()` or a specialized variant (such as `cb_create_spss()` or `cb_create_redcap()`).
+1.  Create a a “codebook” object in R from a data frame (and,
+    optionally, metadata), using `cb_create()` or a specialized variant
+    (such as `cb_create_spss()` or `cb_create_redcap()`).
 
-2) Write the codebook to disk using `cb_write()`.
+2.  Write the codebook to disk using `cb_write()`.
 
-Thus, in the simplest case, to create a codebook and write it to disk:.
-```r
-gain_q4 |> cb_create() |> cb_write("q4.xlsx")
+``` r
+library(lighthouse.codebook)
+
+# create and write a codebook without metadata
+dat |> 
+  cb_create() |> 
+  cb_write("cb.xlsx")
+
+# with metadata
+dat |> 
+  cb_create(metadata = dat1_metadata) |> 
+  cb_write("cb.xlsx")
+
+# from SPSS data
+dat_spss <- haven::read_sav("dat_spss.sav", user_na = TRUE)
+
+dat_spss |> 
+  cb_create_spss() |> 
+  cb_write("cb_spss.xlsx")
+
+# from REDCap data
+dat_rc <- REDCapR::redcap_read(redcap_uri = rc_uri, token = rc_token)
+meta_rc <- REDCapR::redcap_metadata_read(redcap_uri = rc_uri, token = rc_token)
+
+dat_rc$data |> 
+  cb_create_redcap(metadata = meta_rc$data) |> 
+  cb_write("cb_rc.xlsx")
 ```
 
-`cb_create()` and `cb_write()` include a number of options for controlling how data 
-is interpreted, summarized, and presented. 
+## Customizing codebooks
+
+There are many options for controlling how data is interpreted, summarized, and 
+presented. See [**Introduction to lighthouse.codebook**](lighthouse-codebook.html) for 
+some of the most useful options, including grouped data summaries and specifying 
+user missing codes. Further options are detailed in the documentation for `cb_create()` 
+and `cb_write()`. 
 <!-- - The "Creating Codebooks" vignette covers options for controlling how data and 
 metadata are _interpreted,_ such as by applying value labels, specifying user missing 
 or nonresponse codes, and taking advantage of specialized metadata (e.g., from SPSS 
@@ -60,12 +89,13 @@ in the codebook written to disk, including options for grouped summaries and mis
 data. -->
 
 ## Codebook contents
-The codebook written to disk will include an Overview tab listing all variables 
-in the dataset; Summary tabs for numeric, categorical, and text variables; and, 
-if grouping variables are specified, Grouped Summary tabs for numeric and categorical 
+
+The codebook written to disk will include an _overview_ tab listing all variables 
+in the dataset; _summary_ tabs for numeric, categorical, and text variables; and, 
+if grouping variables are specified, _grouped summary_ tabs for numeric and categorical 
 variables.
 
-The Overview tab includes one row for each variable in the dataset, with information 
+The _overview_ tab includes one row for each variable in the dataset, with information 
 on variable types, labels, values, and missingness. By default, each variable is 
 hyperlinked to its location on the relevant summary tab.
 
@@ -73,27 +103,30 @@ hyperlinked to its location on the relevant summary tab.
 knitr::include_graphics("man/figures/README-overview.png")
 ```
 
-The numeric summary tab includes descriptive statistics for all numeric variables 
+The _numeric summary_ tab includes descriptive statistics for all numeric variables 
 in the dataset:
 
 ```{r, numeric, echo = FALSE, eval = TRUE}
 knitr::include_graphics("man/figures/README-numeric.png")
 ```
 
-The categorical summary tab includes frequencies for all categorical variables, 
+The _categorical summary_ tab includes frequencies for all categorical variables, 
 optionally with separate rows for user missing values:
 
 ```{r, categorical, echo = FALSE, eval = TRUE}
 knitr::include_graphics("man/figures/README-categorical.png")
 ```
 
-The text summary tab includes frequencies for the most common values for all text 
-variables in the dataset. 
+Finally, the _text summary_ tab includes frequencies for the most common values for all 
+text variables in the dataset. (The number of values shown can be adjusted using 
+the `n_text_vals` argument to `cb_write()`.)
 
 ```{r, text, echo = FALSE, eval = TRUE}
 knitr::include_graphics("man/figures/README-text.png")
 ```
 
+If `group_by` is specified in `cb_write()`, additional numeric and categorical summary
+tabs will be included grouped by the specified variables.
 
 ## SPSS extension
 
