@@ -144,10 +144,12 @@ User missing values may optionally be named to set value labels:
 If labels set in \code{.user_missing} conflict with those in \code{metadata}, \code{.user_missing_conflict}
 controls which labels are used.
 
-User missing values are not compatible with logical, date, or datetime (POSIXt)
-variables. By default, these variables will be ignored if specified in \code{.user_missing}.
-(i.e., user missing values will be applied only to compatible variables.) This behavior
-can be changed using the \code{.user_missing_incompatible} argument.
+User missings may be set for numeric, character, factor/ordered factor, and haven_labelled/haven_labelled_spss
+vectors. For factors, user missings are set based on factor labels (not the underlying
+integer codes). For \code{"haven_labelled"} vectors, user missings are set based on
+values (not value labels). By default, variables with incompatible classes (e.g.,
+logical, Date, POSIXt) will be ignored if specified in \code{.user_missing}. This
+behavior can be changed using the \code{.user_missing_incompatible} argument.
 }
 
 \examples{
@@ -170,7 +172,7 @@ diamonds2 |>
   transform(
     carat_group = factor(carat_group),
     price_group = factor(price_group)
-  ) |> 
+  ) |>
   cb_create()
 
 # provide metadata for variable and value labels

@@ -23,17 +23,17 @@
 #'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
 #'   See "Specifying user missing values" below for examples.
 #' @param .split_var_labels A [`tidyselect`][dplyr_tidy_select] expression or list of tidyselect
-#'   expressions, indicating (sets of) variable labels with a common stem that should 
+#'   expressions, indicating (sets of) variable labels with a common stem that should
 #'   be extracted into a separate column.
-#' @param .include_r_classes Include a column listing class(es) of each variable? 
+#' @param .include_r_classes Include a column listing class(es) of each variable?
 #'   (e.g., `"factor"`, `"POSIXct, POSIXt"`.)
 #' @param .include_types Include a column listing simplified type for each variable?
 #'   (e.g,. `"categorical"`, `"date-time"`.)
 #' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
-#'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2` 
+#'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2`
 #'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
 #'   set `.val_labs_sep1` to `","` and `.val_labs_sep2` to `"\\|"`.
-#' @param .rmv_html Should HTML tags be removed from metadata (e.g., from variable 
+#' @param .rmv_html Should HTML tags be removed from metadata (e.g., from variable
 #'   and value labels)?
 #' @param .rmv_line_breaks Should line breaks be removed from metadata (e.g., from
 #'   variable and value labels)? If `TRUE`, line breaks will be replaced with `" / "`.
@@ -42,9 +42,9 @@
 #'   specified for at least one variable.
 #' @param .user_missing_conflict If different labels for a value are provided in
 #'   metadata and user missings, which should be used?
-#' @param .user_missing_incompatible How to handle variables specified in `.user_missing` 
+#' @param .user_missing_incompatible How to handle variables specified in `.user_missing`
 #'   that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?
-#' 
+#'
 #' @return
 #' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
 #' dataset and (2) attributes containing the passed dataset (in several formats)
@@ -53,7 +53,7 @@
 #'     - `name`: variable name
 #'     - `type`: optional column containing simplified variable type
 #'     - `class`: optional column containing class(es) of each variable
-#'     - `label_stem`: optional column containing variable label stems, if any variables 
+#'     - `label_stem`: optional column containing variable label stems, if any variables
 #'       are specified in `.split_var_labels`
 #'     - `label`: variable label
 #'     - `values`: values, with labels if applicable
@@ -72,7 +72,7 @@
 #' \preformatted{
 #' cb <- cb_create(data, metadata, .user_missing = var1 ~ 99)
 #' }
-#' The same user missings can be applied to multiple variables using [tidyselect][dplyr_tidy_select] 
+#' The same user missings can be applied to multiple variables using [tidyselect][dplyr_tidy_select]
 #' expressions.
 #' \preformatted{
 #' # for variables `var1` through `var5`
@@ -80,7 +80,7 @@
 #'
 #' # for all numeric variables, plus `var6` and `var7`
 #' .user_missing = c(where(is.numeric), var6, var7) ~ c(-9, -8, -7)
-#' 
+#'
 #' # omitted left-hand side defaults to `tidyselect::everything()`
 #' .user_missing = ~ -99
 #' }
@@ -98,14 +98,14 @@
 #' }
 #' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
 #' controls which labels are used.
-#' 
-#' User missings may be set for numeric, character, factor/ordered factor, and haven_labelled/haven_labelled_spss 
-#' vectors. For factors, user missings are set based on factor labels (not the underlying 
-#' integer codes). For `"haven_labelled"` vectors, user missings are set based on 
-#' values (not value labels). By default, variables with incompatible classes (e.g., 
-#' logical, Date, POSIXt) will be ignored if specified in `.user_missing`. This 
+#'
+#' User missings may be set for numeric, character, factor/ordered factor, and haven_labelled/haven_labelled_spss
+#' vectors. For factors, user missings are set based on factor labels (not the underlying
+#' integer codes). For `"haven_labelled"` vectors, user missings are set based on
+#' values (not value labels). By default, variables with incompatible classes (e.g.,
+#' logical, Date, POSIXt) will be ignored if specified in `.user_missing`. This
 #' behavior can be changed using the `.user_missing_incompatible` argument.
-#' 
+#'
 #' @examples
 #' diamonds2 <- ggplot2::diamonds |>
 #'   transform(
@@ -117,18 +117,18 @@
 #'       right = FALSE
 #'     ))
 #'   )
-#' 
+#'
 #' # basic codebook
 #' cb_create(diamonds2)
-#' 
+#'
 #' # convert variables to factor to treat as categorical
 #' diamonds2 |>
 #'   transform(
 #'     carat_group = factor(carat_group),
 #'     price_group = factor(price_group)
-#'   ) |> 
+#'   ) |>
 #'   cb_create()
-#' 
+#'
 #' # provide metadata for variable and value labels
 #' diamonds_meta <- data.frame(
 #'   name = names(diamonds2),
@@ -153,7 +153,7 @@
 #'     "1 = <$500; 2 = $500-$999; 3 = $1,000-$1,999; 4 = $2,000-$4,999; 5 = $5,000-$9,999; 6 = $10,000+"
 #'   )
 #' )
-#' 
+#'
 #' cb_create(
 #'   diamonds2, diamonds_meta,
 #'   .val_labs_sep1 = " = ", .val_labs_sep2 = "; "
@@ -208,27 +208,37 @@ cb_create <- function(data,
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
-#' @param format Format of the returned data; see below for details.
+#' @param format Format of the returned data, either `"factors"` or `"haven"`; 
+#'   see below for details.
 #'
 #' @return
 #' A tibble with variables formatted based on the `format` argument.
-#' - For `format = "values"`, all variables retain the same values as the original
-#'   dataset, including values for user missings. The data may reflect transformations
-#'   made by variants of [`cb_create()`] -- e.g., for [`cb_create_redcap()`], integer coercion 
-#'   and propagation of user missings across checkbox variables.
-#' - For `"haven"`, value labels and user missings are encoded using class 
-#'   [`"haven_labelled"`][haven::labelled]`
 #' - For `"factors"`, all variables with value labels are converted to factors, 
 #'   and all user missings are converted to `NA`.
+#' - For `"haven"`, variable labels, value labels, and user missings are encoded 
+#'   using class [`"haven_labelled_spss"`][haven::labelled]`.
+#' 
+#' Both formats may also reflect transformations made by variants of [`cb_create()`].
+#' In particular, for codebooks created using [`cb_create_redcap()`], integer coercion 
+#' and propagation of user missings across checkbox variables.
 #' 
 #' @export
-cb_get_data <- function(cb, format = c("factors", "haven", "values")) {
+cb_get_data <- function(cb, format = c("factors", "haven")) {
   check_codebook(cb)
-  switch(match.arg(format),
-    factors = attr(cb, "data_zapped"),
-    haven = attr(cb, "data_labelled"),
-    values = attr(cb, "data")
+  tryCatch(
+    format <- match.arg(format),
+    error = \(e) {
+      if (format == "values") {
+        cli::cli_abort(
+          '`format = "values"` is no longer supported.',
+          call = parent.frame(4)
+        )
+      }
+      stop(e)
+    }
   )
+  if (format == "factors") attr(cb, "data_zapped")
+  else attr(cb, "data_labelled")
 }
 
 cb_init <- function(data, 

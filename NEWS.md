@@ -14,6 +14,10 @@
 
 * Expanded the README.
   
+## Lifecycle changes
+
+* The `format = "values"` option in `cb_get_data()` has been removed (see #26).
+
 # lighthouse.codebook 0.2.3
 
 * `cb_create_spss()` now accepts `.rmv_html` and `.rmv_line_breaks` arguments, consistent

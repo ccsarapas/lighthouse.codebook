@@ -4,26 +4,27 @@
 \alias{cb_get_data}
 \title{Extract data from a codebook object}
 \usage{
-cb_get_data(cb, format = c("factors", "haven", "values"))
+cb_get_data(cb, format = c("factors", "haven"))
 }
 \arguments{
 \item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
 a variant.}
 
-\item{format}{Format of the returned data; see below for details.}
+\item{format}{Format of the returned data, either \code{"factors"} or \code{"haven"};
+see below for details.}
 }
 \value{
 A tibble with variables formatted based on the \code{format} argument.
 \itemize{
-\item For \code{format = "values"}, all variables retain the same values as the original
-dataset, including values for user missings. The data may reflect transformations
-made by variants of \code{\link[=cb_create]{cb_create()}} -- e.g., for \code{\link[=cb_create_redcap]{cb_create_redcap()}}, integer coercion
-and propagation of user missings across checkbox variables.
-\item For \code{"haven"}, value labels and user missings are encoded using class
-\code{\link[haven:labelled]{"haven_labelled"}}`
 \item For \code{"factors"}, all variables with value labels are converted to factors,
 and all user missings are converted to \code{NA}.
+\item For \code{"haven"}, variable labels, value labels, and user missings are encoded
+using class \code{\link[haven:labelled]{"haven_labelled_spss"}}`.
 }
+
+Both formats may also reflect transformations made by variants of \code{\link[=cb_create]{cb_create()}}.
+In particular, for codebooks created using \code{\link[=cb_create_redcap]{cb_create_redcap()}}, integer coercion
+and propagation of user missings across checkbox variables.
 }
 \description{
 Codebook objects created by \code{\link[=cb_create]{cb_create()}} and friends contain several transformed
