@@ -21,10 +21,6 @@ remotes::install_github("ccsarapas/lighthouse.codebook")
 
 ## Creating codebooks
 
-<!-- 1485 x 525 -->
-<!-- 1275 x 525 -->
-<!-- 1405 x 570 -->
-
 Creating a codebook involves two general steps:
 
 1.  Create a a “codebook” object in R from a data frame (and,
