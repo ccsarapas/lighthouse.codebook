@@ -8,6 +8,12 @@
   `group_rows` controls both numeric and categorical summaries, while `group_rows_numeric` 
   and `group_rows_categorical` control numeric and categorical summaries, respectively.
 
+## New documentation
+
+* Added an introductory vignette (see `vignette("lighthouse-codebook")`).
+
+* Expanded the README.
+  
 # lighthouse.codebook 0.2.3
 
 * `cb_create_spss()` now accepts `.rmv_html` and `.rmv_line_breaks` arguments, consistent

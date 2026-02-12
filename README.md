@@ -5,10 +5,11 @@
 
 The lighthouse.codebook package includes tools to summarize a dataset
 into a formatted Excel workbook, including a data dictionary and
-summaries. It incorporates external metadata (such as variable labels,
-value labels, and user missing / non-response codes), with functions for
-using metadata from SPSS and REDCap datasets. Codebooks can be
-customized in a number of ways, including options for grouped summaries.
+vrariable summaries. It incorporates external metadata (such as variable
+labels, value labels, and user missing / non-response codes), with
+functions for using metadata from SPSS and REDCap datasets. Codebooks
+can be customized in a number of ways, including options for grouped
+summaries.
 
 ## Installation
 
@@ -23,9 +24,9 @@ remotes::install_github("ccsarapas/lighthouse.codebook")
 
 Creating a codebook involves two general steps:
 
-1.  Create a a “codebook” object in R from a data frame (and,
-    optionally, metadata), using `cb_create()` or a specialized variant
-    (such as `cb_create_spss()` or `cb_create_redcap()`).
+1.  Create a “codebook” object in R from a data frame (and, optionally,
+    metadata) using `cb_create()` or a specialized variant (such as
+    `cb_create_spss()` or `cb_create_redcap()`).
 
 2.  Write the codebook to disk using `cb_write()`.
 
@@ -61,11 +62,11 @@ dat_rc$data |>
 ## Customizing codebooks
 
 There are many options for controlling how data is interpreted,
-summarized, and presented. See [**Introduction to
-lighthouse.codebook**](lighthouse-codebook.html) for some of the most
-useful options, including grouped data summaries and specifying user
-missing codes. Further options are detailed in the documentation for
-`cb_create()` and `cb_write()`.
+summarized, and presented. See `vignette("lighthouse-codebook")` for
+some of the most useful options, including grouped data summaries and
+specifying user missing codes. Further options are detailed in the help
+pages for `cb_create()` and `cb_write()`.
+
 <!-- - The "Creating Codebooks" vignette covers options for controlling how data and 
 metadata are _interpreted,_ such as by applying value labels, specifying user missing 
 or nonresponse codes, and taking advantage of specialized metadata (e.g., from SPSS 
@@ -105,8 +106,8 @@ shown can be adjusted using the `n_text_vals` argument to `cb_write()`.)
 <img src="man/figures/README-text.png" width="100%" style="display: block; margin: auto;" />
 
 If `group_by` is specified in `cb_write()`, additional numeric and
-categorical summary tabs will be included grouped by the specified
-variables.
+categorical summary tabs grouped by the specified variables will be
+included.
 
 ## SPSS extension
 
