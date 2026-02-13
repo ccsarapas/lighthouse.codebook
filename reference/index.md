@@ -4,6 +4,9 @@
 
 - [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
   : Generate a codebook object
+- [`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md)
+  [`cb_create_redcap_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md)
+  : Additional options for codebook creation
 - [`cb_create_redcap()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_redcap.md)
   : Generate a codebook object from REDCap data
 - [`cb_create_spss()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_spss.md)

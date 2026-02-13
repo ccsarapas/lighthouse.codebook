@@ -23,15 +23,9 @@ cb_create(
   .val_labels = val_labels,
   .user_missing = NULL,
   .split_var_labels = NULL,
-  .include_types = !.include_r_classes,
-  .include_r_classes = FALSE,
   .val_labs_sep1 = NULL,
   .val_labs_sep2 = NULL,
-  .rmv_html = TRUE,
-  .rmv_line_breaks = TRUE,
-  .user_missing_col = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("metadata", "missing_label"),
-  .user_missing_incompatible = c("ignore", "warn", "error")
+  .options = cb_create_options()
 )
 ```
 
@@ -78,85 +72,49 @@ cb_create(
   variable labels with a common stem that should be extracted into a
   separate column.
 
-- .include_types:
-
-  Include a column listing simplified type for each variable? (e.g,.
-  `"categorical"`, `"date-time"`.)
-
-- .include_r_classes:
-
-  Include a column listing class(es) of each variable? (e.g.,
-  `"factor"`, `"POSIXct, POSIXt"`.)
-
 - .val_labs_sep1, .val_labs_sep2:
 
   Regex patterns separating value labels in `metadata`. `.val_labs_sep1`
   separates values from labels, and `.val_labs_sep2` separates
-  value/label pairs. e.g., if value labels are in format
-  `"1, First label|2, Second label"`, set `.val_labs_sep1` to `","` and
-  `.val_labs_sep2` to `"\\|"`.
+  value/label pairs from one another. e.g., if value labels are in the
+  format `"1, First label|2, Second label"`, set `.val_labs_sep1` to
+  `","` and `.val_labs_sep2` to `"\\|"`.
 
-- .rmv_html:
+- .options:
 
-  Should HTML tags be removed from metadata (e.g., from variable and
-  value labels)?
-
-- .rmv_line_breaks:
-
-  Should line breaks be removed from metadata (e.g., from variable and
-  value labels)? If `TRUE`, line breaks will be replaced with `" / "`.
-
-- .user_missing_col:
-
-  Include value labels for user missing values in a separate column? The
-  default, `"if_any"`, adds the column only if user missings are
-  specified for at least one variable.
-
-- .user_missing_conflict:
-
-  If different labels for a value are provided in metadata and user
-  missings, which should be used?
-
-- .user_missing_incompatible:
-
-  How to handle variables specified in `.user_missing` that aren't
-  compatible with user missing values (e.g., logical, Date, or POSIXt)?
+  Additional options to use for codebook creation. Must be the result
+  from a call to
+  [`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md).
+  See that function's help page for available options.
 
 ## Value
 
-An `"li_codebook"` object, consisting of (1) a tibble summarizing the
-passed dataset and (2) attributes containing the passed dataset (in
-several formats) and additional metadata. Specifically:
+An `"li_codebook"` object, consisting of a tibble summarizing the passed
+dataset and attributes containing additional metadata. The tibble
+includes columns:
 
-- A tibble with columns:
+- `name`: variable name
 
-  - `name`: variable name
+- `type`: column containing simplified variable type
 
-  - `type`: optional column containing simplified variable type
+- `class`: optional column containing class(es) of each variable
 
-  - `class`: optional column containing class(es) of each variable
+- `label_stem`: optional column containing variable label stems, if any
+  variables are specified in `.split_var_labels`
 
-  - `label_stem`: optional column containing variable label stems, if
-    any variables are specified in `.split_var_labels`
+- `label`: variable label
 
-  - `label`: variable label
+- `values`: values, with labels if applicable
 
-  - `values`: values, with labels if applicable
+- `user_missing`: optional column showing user missing values, with
+  labels if applicable. By default, this column is included only if user
+  missings are specified for at least one variable. This behavior can be
+  changed using the `user_missing_col` argument to
+  [`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md).
 
-  - `user_missing`: optional column, depending on value of
-    `.user_missing_col`, showing user missing values, with labels if
-    applicable
+- `missing`: proportion missing
 
-  - `missing`: proportion missing
-
-  - additional columns if specified in `...`
-
-- Attributes:
-
-  - Transformed versions of the passed dataset. See
-    [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)
-
-  - Lookup tables and other metadata used internally.
+- additional columns if specified in `...`
 
 ## Specifying user missing values
 
@@ -192,14 +150,20 @@ User missing values may optionally be named to set value labels:
 
     .user_missing = ~ c(Declined = -98, "Not applicable" = -99)
 
-If labels set in `.user_missing` conflict with those in `metadata`,
-`.user_missing_conflict` controls which labels are used.
+If labels set in `.user_missing` conflict with those in `metadata`, the
+`user_missing_conflict` argument to
+[`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md)
+controls which labels are used.
 
-User missing values are not compatible with logical, date, or datetime
-(POSIXt) variables. By default, these variables will be ignored if
-specified in `.user_missing`. (i.e., user missing values will be applied
-only to compatible variables.) This behavior can be changed using the
-`.user_missing_incompatible` argument.
+User missings may be set for numeric, character, factor/ordered factor,
+and haven_labelled/haven_labelled_spss vectors. For factors, user
+missings are set based on factor labels (not the underlying integer
+codes). For `"haven_labelled"` vectors, user missings are set based on
+values (not value labels). By default, variables with incompatible
+classes (e.g., logical, Date, POSIXt) will be ignored if specified in
+`.user_missing`. This behavior can be changed using the
+`.user_missing_incompatible` argument to
+[`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md).
 
 ## Examples
 
@@ -238,7 +202,7 @@ diamonds2 |>
   transform(
     carat_group = factor(carat_group),
     price_group = factor(price_group)
-  ) |> 
+  ) |>
   cb_create()
 #> # A tibble: 12 × 4
 #>    name        type        values                                 missing

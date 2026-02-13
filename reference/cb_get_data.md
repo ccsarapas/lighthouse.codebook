@@ -8,7 +8,7 @@ passed dataset. These can be extracted using `cb_get_data()`.
 ## Usage
 
 ``` r
-cb_get_data(cb, format = c("factors", "haven", "values"))
+cb_get_data(cb, format = c("factors", "haven"))
 ```
 
 ## Arguments
@@ -21,23 +21,23 @@ cb_get_data(cb, format = c("factors", "haven", "values"))
 
 - format:
 
-  Format of the returned data; see below for details.
+  Format of the returned data, either `"factors"` or `"haven"`; see
+  below for details.
 
 ## Value
 
 A tibble with variables formatted based on the `format` argument.
 
-- For `format = "values"`, all variables retain the same values as the
-  original dataset, including values for user missings. The data may
-  reflect transformations made by variants of
-  [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
-  – e.g., for
-  [`cb_create_redcap()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_redcap.md),
-  integer coercion and propagation of user missings across checkbox
-  variables.
-
-- For `"haven"`, value labels and user missings are encoded using class
-  [`"haven_labelled"`](https://haven.tidyverse.org/reference/labelled.html)\`
-
 - For `"factors"`, all variables with value labels are converted to
   factors, and all user missings are converted to `NA`.
+
+- For `"haven"`, variable labels, value labels, and user missings are
+  encoded using class
+  [`"haven_labelled_spss"`](https://haven.tidyverse.org/reference/labelled.html)\`.
+
+Both formats may also reflect transformations made by variants of
+[`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md).
+In particular, for codebooks created using
+[`cb_create_redcap()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_redcap.md),
+integer coercion and propagation of user missings across checkbox
+variables.

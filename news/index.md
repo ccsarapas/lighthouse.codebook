@@ -1,5 +1,81 @@
 # Changelog
 
+## lighthouse.codebook 0.3.0
+
+### Added
+
+- Added options to
+  [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  to show grouping variables for categorical summaries in rows (which
+  was previously only possible for numeric summaries.)
+  [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  now includes three arguments for showing some or all grouping
+  variables in rows: `group_rows` controls both numeric and categorical
+  summaries, while `group_rows_numeric` and `group_rows_categorical`
+  control numeric and categorical summaries, respectively.
+
+- Added an introductory vignette (see
+  [`vignette("lighthouse-codebook")`](https://ccsarapas.github.io/lighthouse.codebook/articles/lighthouse-codebook.md)).
+
+- Expanded the README.
+
+### Changed
+
+- [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md),
+  [`cb_create_spss()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_spss.md),
+  and
+  [`cb_create_redcap()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_redcap.md)
+  now use a single `.options` argument for less commonly used settings.
+  Arguments for those settings have been moved into an options object
+  created with
+  [`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md)
+  or
+  [`cb_create_redcap_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md).
+
+  ``` r
+  # previously
+  cb <- cb_create(
+    dat, metadata = metadata, 
+    .rmv_html = FALSE, .include_r_classes = TRUE
+  )
+
+  # now
+  cb <- cb_create(
+    dat, metadata = metadata, 
+    .options = cb_create_options(rmv_html = FALSE, include_r_classes = TRUE)
+  )
+
+  ### `cb_create_spss()` also uses `cb_create_options()`
+  # previously
+  cb_spss <- cb_create_spss(dat_spss, .rmv_line_breaks = FALSE)
+
+  # now
+  cb_spss <- cb_create_spss(
+    dat_spss, 
+    .options = cb_create_options(rmv_line_breaks = FALSE)
+  )
+
+  ### Note that `cb_create_redcap()` has its own options constructor
+  # previously
+  cb <- cb_create_redcap(
+    dat_rc, metadata = metadata_rc, 
+    .form = NULL, .rmv_html = FALSE
+  )
+
+  # now
+  cb <- cb_create_redcap(
+    dat_rc, metadata = metadata_rc, 
+    .options = cb_create_redcap_options(form = NULL, rmv_html = FALSE)
+  )
+  ```
+
+### Removed
+
+- The `format = "values"` option in
+  [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)
+  has been removed (see
+  [\#26](https://github.com/ccsarapas/lighthouse.codebook/issues/26)).
+
 ## lighthouse.codebook 0.2.3
 
 - [`cb_create_spss()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_spss.md)
