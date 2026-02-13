@@ -152,7 +152,8 @@ cb_summarize_categorical_impl <- function(cb,
                                           prefixed = TRUE,
                                           detail_missing = missing(group_by),
                                           detail_na_label = "NA",
-                                          warn_if_none = FALSE) {
+                                          warn_if_none = FALSE,
+                                          group_rows = NULL) {
   force(detail_missing)
   data <- attr(cb, "data_labelled")
   data_dt <- data.table::as.data.table(data)
@@ -307,14 +308,18 @@ cb_summarize_categorical_impl <- function(cb,
   )
   freqs <- freqs[, cols_out, with = FALSE]
   
+  group_cols <- setdiff(group_by, group_rows)
+  if (!length(group_cols)) group_cols <- NULL
+  
   freqs |>
     tibble::as_tibble() |>
     set_attrs(
       detail_missing = detail_missing,
       id_cols = c("name", label_cols, "value"),
       group_by = group_by, 
-      group_cols = group_by,
-      group_counts = group_counts(cb, group_by)
+      group_rows = group_rows,
+      group_cols = group_cols,
+      group_counts = group_counts(cb, group_cols)
     )
 }
 

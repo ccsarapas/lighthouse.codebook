@@ -15,24 +15,28 @@
 #'   a variant.
 #' @param file Path to write to.
 #' @param dataset_name Name of the dataset to display in workbook headers.
-#' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
-#'   in the Overview tab header?
-#' @param hyperlinks If `TRUE`, variable names on the Overview sheet will link 
-#'   to corresponding rows on summary tabs and vice versa.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by. If specified, additional numeric and categorical summary tabs will be included
-#'   with grouped summaries. Subgroups are shown in columns by default. For the numeric 
-#'   summary tab, subgroups for some or all grouping variables can instead be shown 
-#'   in rows if specified in `group_rows_numeric`.
-#' @param group_rows_numeric <[`tidy-select`][dplyr_tidy_select]> Column or columns
-#'   to group by in rows on the grouped numeric summary tab. All columns must also 
-#'   be specified in `group_by`.
+#'   with grouped summaries. Subgroups are shown in columns by default. Some or all 
+#'   grouping variables can instead be shown in rows if specified in `group_rows`, 
+#' `group_rows_numeric`, or `group_rows_categorical`.
+#' @param group_rows <[`tidy-select`][dplyr_tidy_select]> Column or columns to group 
+#'   by in rows on grouped summary tabs. All columns must also be specified in `group_by`. 
+#'   Will apply to both numeric and categorical summary tabs unless otherwise specified 
+#'   in `group_rows_numeric` or `group_rows_categorical`.
+#' @param group_rows_numeric,group_rows_categorical <[`tidy-select`][dplyr_tidy_select]> 
+#'   Column or columns to group by in rows on grouped numeric or categorical summary 
+#'   tab.
 #' @param detail_missing Include detailed missing value information on ungrouped 
 #'   categorical and text summary tabs? (Detailed missing information for grouped 
 #'   summary tabs is not currently supported.)
 #' @param n_text_vals On the text summary tab, how many unique non-missing values 
 #'   should be included for each variable? If there are more than `n_text_vals` + 1 
 #'   unique values, the `n_text_vals` most common non-missing values will be included. 
+#' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
+#'   in the Overview tab header?
+#' @param hyperlinks If `TRUE`, variable names on the Overview sheet will link 
+#'   to corresponding rows on summary tabs and vice versa.
 #' @param overwrite Overwrite existing file?
 #'
 #' @return 
@@ -54,13 +58,15 @@
 cb_write <- function(cb, 
                      file, 
                      dataset_name = NULL,
+                     group_by = NULL,
+                     group_rows = NULL,
+                     group_rows_numeric = group_rows,
+                     group_rows_categorical = group_rows,
+                     detail_missing = c("if_any_user_missing", "yes", "no"),
+                     n_text_vals = 5,
                      incl_date = TRUE,
                      incl_dims = TRUE,
                      hyperlinks = TRUE,
-                     group_by = NULL,
-                     group_rows_numeric = NULL,
-                     detail_missing = c("if_any_user_missing", "yes", "no"),
-                     n_text_vals = 5,
                      overwrite = TRUE) {
   check_codebook(cb)
   detail_missing <- match.arg(detail_missing)
@@ -71,32 +77,38 @@ cb_write <- function(cb,
     num = cb_summarize_numeric_impl(cb),
     cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
     txt = cb_summarize_text_impl(
-      cb, 
-      n_text_vals = n_text_vals, 
+      cb,
+      n_text_vals = n_text_vals,
       detail_missing = detail_missing
     )
   )
   group_by <- cb_untidyselect(cb, {{ group_by }})
-  group_rows_numeric <- cb_untidyselect(cb, {{ group_rows_numeric }})
-  if (!is.null(group_rows_numeric)) {
-    if (is.null(group_by)) {
-      cli::cli_abort(
-        "If `group_rows_numeric` is specified, `group_by` must also be specified."
-      )
-    }
-    if (length(setdiff(group_rows_numeric, group_by))) {
-      cli::cli_abort(
-        "All columns specified in `group_rows_numeric` must also be included in `group_by`."
-      )
-    }
+  group_rows <- cb_untidyselect(cb, {{ group_rows }})
+  if (missing(group_rows_numeric)) {
+    group_rows_numeric <- group_rows
+  } else {
+    group_rows_numeric <- cb_untidyselect(cb, {{ group_rows_numeric }})
   }
+  if (missing(group_rows_categorical)) {
+    group_rows_categorical <- group_rows
+  } else {
+    group_rows_categorical <- cb_untidyselect(cb, {{ group_rows_categorical }})
+  }
+  check_group_rows_arg(group_rows, group_by)
+  check_group_rows_arg(group_rows_numeric, group_by)
+  check_group_rows_arg(group_rows_categorical, group_by)
+  
   if (!is.null(group_by)) {
     summaries$num_grp <- cb_summarize_numeric_impl(
       cb, 
       group_by = group_by, 
       group_rows = group_rows_numeric
     )
-    summaries$cat_grp <- cb_summarize_categorical_impl(cb, group_by = group_by)
+    summaries$cat_grp <- cb_summarize_categorical_impl(
+      cb,
+      group_by = group_by,
+      group_rows = group_rows_categorical
+    )
   }
   cb_write_codebook(
     cb, summaries,
@@ -768,7 +780,13 @@ cb_write_codebook <- function(cb,
     summaries$cat_grp <- summaries$cat_grp |>
       cb_format_names(skip = group_by, attrs = "id_cols")
     cols_pct <- untidyselect(summaries$cat_grp, tidyselect::starts_with("%"))
-    clear_repeats <- setdiff(attr(summaries$cat_grp, "id_cols"), "Value")
+    group_rows <- attr(summaries$cat_grp, "group_rows")
+    id_cols <- attr(summaries$cat_grp, "id_cols")
+    clear_repeats <- c(setdiff(id_cols, "Value"), group_rows)
+    if (!is.null(group_rows)) {
+      attr(summaries$cat_grp, "group_rows") <- c(group_rows, "Value")
+      attr(summaries$cat_grp, "id_cols") <- setdiff(id_cols, "Value")
+    }
     sheet_nms$cat_grp <- paste0("Grouped ", sheet_nms$cat)
     headers$cat_grp <- c(headers$cat, paste("By ", toString(group_by)))
     params$cat_grp <- summaries$cat_grp |>

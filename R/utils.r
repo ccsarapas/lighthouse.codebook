@@ -1,19 +1,55 @@
-is_codebook <- function(x) "li_codebook" %in% class(x)
+is_codebook <- function(x) inherits(x, "li_codebook")
 check_codebook <- function(x) {
   arg <- as.character(rlang::ensym(x))
   if (!is_codebook(x)) {
     cli::cli_abort('{.arg {arg}} must be an object of class `"li_codebook"`.')
   }
 }
+check_options <- function(x, redcap = FALSE) {
+  if (redcap) {
+    opts_class <- "cb_create_redcap_options"
+    opts_class_wrong <- "cb_create_options"
+  } else {
+    opts_class <- "cb_create_options"
+    opts_class_wrong <- "cb_create_redcap_options"
+  }
+  if (inherits(x, opts_class_wrong)) {
+    msg <- c(
+      "!" = "`.options` must be created from `{opts_class}()`, not `{opts_class_wrong}()`."
+    )
+    if (!redcap) {
+      msg <- c(msg, "i" = "Did you mean to call `cb_create_redcap()`?")
+    }
+    cli::cli_abort(msg)
+  }
+  if (!inherits(x, opts_class)) {
+    cli::cli_abort("`.options` must be created from `{opts_class}()`")
+  }
+}
 check_user_missing_arg <- function(x) {
   arg <- as.character(rlang::ensym(x))
   if (!(
-      rlang::is_formula(x) || (is.list(x) && all(sapply(x, rlang::is_formula)))
-    )) {
+    rlang::is_formula(x) || (is.list(x) && all(sapply(x, rlang::is_formula)))
+  )) {
     cli::cli_abort("{.arg {arg}} must be a formula or list of formulas.")
   }
   if (rlang::is_formula(x)) x <- list(x)
   x
+}
+check_group_rows_arg <- function(group_rows, group_by) {
+  arg <- as.character(rlang::ensym(group_rows))
+  if (!is.null(group_rows)) {
+    if (is.null(group_by)) {
+      cli::cli_abort(
+        "If {.arg {arg}} is specified, {.arg group_by} must also be specified."
+      )
+    }
+    if (length(setdiff(group_rows, group_by))) {
+      cli::cli_abort(
+        "All columns specified in {.arg {arg}} must also be included in {.arg group_by}."
+      )
+    }
+  }
 }
 set_attrs <- function(x, ...) {
   dots <- rlang::list2(...)

@@ -1,7 +1,10 @@
 url: https://ccsarapas.github.io/lighthouse.codebook/
 template:
   bootstrap: 5
-  bootswatch: sandstone
+  bslib:
+    base_font: {google: "Roboto"}
+    code_font: {google: "Roboto Mono"}
+    font_scale: 1.2
 footer:
   structure:
     left: package
