@@ -64,8 +64,8 @@ dat_rc$data |>
 ## Customizing codebooks
 
 There are many options for controlling how data is interpreted,
-summarized, and presented. See
-[`vignette("lighthouse-codebook")`](https://ccsarapas.github.io/lighthouse.codebook/articles/lighthouse-codebook.md)
+summarized, and presented. See the [introduction to
+lighthouse.codebook](https://ccsarapas.github.io/lighthouse.codebook/articles/lighthouse-codebook.html)
 for some of the most useful options, including grouped data summaries
 and specifying user missing codes. Further options are detailed in the
 help pages for
