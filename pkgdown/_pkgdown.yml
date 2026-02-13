@@ -14,3 +14,20 @@ authors:
     href: "https://chestnut.org/li/scientists-and-project-directors/category/research-scientists/profile/casey-sarapas-phd"
   Chestnut Health Systems:
     href: "https://chestnut.org/"
+reference:
+- title: Core functions
+  desc:  Functions to create and write codebooks
+  contents:
+  - cb_create
+  - cb_create_spss
+  - cb_create_redcap
+  - cb_write
+- title: Other functions
+  desc: Functions to set options or get information from codebook objects
+  contents:
+  - cb_get_data
+  - cb_summarize_numeric
+  - cb_summarize_categorical
+  - cb_summarize_text
+  - cb_create_options
+  - cb_create_redcap_options
