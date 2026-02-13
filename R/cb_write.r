@@ -77,15 +77,23 @@ cb_write <- function(cb,
     num = cb_summarize_numeric_impl(cb),
     cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
     txt = cb_summarize_text_impl(
-      cb, 
-      n_text_vals = n_text_vals, 
+      cb,
+      n_text_vals = n_text_vals,
       detail_missing = detail_missing
     )
   )
   group_by <- cb_untidyselect(cb, {{ group_by }})
   group_rows <- cb_untidyselect(cb, {{ group_rows }})
-  group_rows_numeric <- cb_untidyselect(cb, {{ group_rows_numeric }})
-  group_rows_categorical <- cb_untidyselect(cb, {{ group_rows_categorical }})
+  if (missing(group_rows_numeric)) {
+    group_rows_numeric <- group_rows
+  } else {
+    group_rows_numeric <- cb_untidyselect(cb, {{ group_rows_numeric }})
+  }
+  if (missing(group_rows_categorical)) {
+    group_rows_categorical <- group_rows
+  } else {
+    group_rows_categorical <- cb_untidyselect(cb, {{ group_rows_categorical }})
+  }
   check_group_rows_arg(group_rows, group_by)
   check_group_rows_arg(group_rows_numeric, group_by)
   check_group_rows_arg(group_rows_categorical, group_by)
