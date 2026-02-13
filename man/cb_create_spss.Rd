@@ -8,13 +8,7 @@ cb_create_spss(
   data,
   .user_missing = NULL,
   .split_var_labels = NULL,
-  .include_types = !.include_r_classes,
-  .include_r_classes = FALSE,
-  .rmv_html = TRUE,
-  .rmv_line_breaks = TRUE,
-  .user_missing_col = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("val_label", "missing_label"),
-  .user_missing_incompatible = c("ignore", "warn", "error")
+  .options = cb_create_options()
 )
 }
 \arguments{
@@ -31,50 +25,26 @@ See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} do
 expressions, indicating (sets of) variable labels with a common stem that should
 be extracted into a separate column.}
 
-\item{.include_types}{Include a column listing simplified type for each variable?
-(e.g,. \code{"categorical"}, \code{"date-time"}.)}
-
-\item{.include_r_classes}{Include a column listing class(es) of each variable?
-(e.g., \code{"factor"}, \code{"POSIXct, POSIXt"}.)}
-
-\item{.rmv_html}{Should HTML tags be removed from variable and value labels?}
-
-\item{.rmv_line_breaks}{Should line breaks be removed from variable and value
-labels? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
-
-\item{.user_missing_col}{Include value labels for user missing values in a separate
-column? The default, \code{"if_any"}, adds the column only if user missings are
-specified for at least one variable.}
-
-\item{.user_missing_conflict}{If labels passed to \code{.user_missing} conflicts with
-a value label in \code{data}, which should be used?}
-
-\item{.user_missing_incompatible}{How to handle variables specified in \code{.user_missing}
-that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?}
+\item{.options}{Additional options to use for codebook creation. Must be the result
+from a call to \code{cb_create_options()}. See that function's help page for available
+options.}
 }
 \value{
-An \code{"li_codebook"} object, consisting of (1) a tibble summarizing the passed
-dataset and (2) attributes containing the passed dataset (in several formats)
-and additional metadata. Specifically:
-\itemize{
-\item A tibble with columns:
+An \code{"li_codebook"} object, consisting of a tibble summarizing the passed
+dataset and attributes containing additional metadata. The tibble includes columns:
 \itemize{
 \item \code{name}: variable name
-\item \code{type}: optional column containing simplified variable type
+\item \code{type}: column containing simplified variable type
 \item \code{class}: optional column containing class(es) of each variable
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label
 \item \code{values}: values, with labels if applicable
-\item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
-showing user missing values, with labels if applicable
+\item \code{user_missing}: optional column showing user missing values, with labels
+if applicable. By default, this column is included only if user missings
+are specified for at least one variable. This behavior can be changed using
+the \code{user_missing_col} argument to \code{cb_create_options()}.
 \item \code{missing}: proportion missing
-}
-\item Attributes:
-\itemize{
-\item Transformed versions of the passed dataset. See \code{\link[=cb_get_data]{cb_get_data()}}.
-\item Lookup tables and other metadata used internally.
-}
 }
 }
 \description{

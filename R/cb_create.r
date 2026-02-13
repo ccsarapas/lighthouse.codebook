@@ -8,8 +8,8 @@
 #' [`cb_summarize_text()`]).
 #'
 #' @param data A data frame.
-#' @param metadata A data frame containing metadata, such as variable labels and value
-#' labels.
+#' @param metadata A data frame containing metadata, such as variable labels and 
+#'   value labels.
 #' @param ... Additional columns from `metadata` to preserve in the final codebook.
 #'   New names can be assigned by passing named arguments. Columns for variable
 #'   name, form, variable label, and value labels are included by default.
@@ -25,45 +25,31 @@
 #' @param .split_var_labels A [`tidyselect`][dplyr_tidy_select] expression or list of tidyselect
 #'   expressions, indicating (sets of) variable labels with a common stem that should
 #'   be extracted into a separate column.
-#' @param .include_r_classes Include a column listing class(es) of each variable?
-#'   (e.g., `"factor"`, `"POSIXct, POSIXt"`.)
-#' @param .include_types Include a column listing simplified type for each variable?
-#'   (e.g,. `"categorical"`, `"date-time"`.)
 #' @param .val_labs_sep1,.val_labs_sep2 Regex patterns separating value labels
 #'   in `metadata`. `.val_labs_sep1` separates values from labels, and `.val_labs_sep2`
-#'   separates value/label pairs. e.g., if value labels are in format `"1, First label|2, Second label"`,
-#'   set `.val_labs_sep1` to `","` and `.val_labs_sep2` to `"\\|"`.
-#' @param .rmv_html Should HTML tags be removed from metadata (e.g., from variable
-#'   and value labels)?
-#' @param .rmv_line_breaks Should line breaks be removed from metadata (e.g., from
-#'   variable and value labels)? If `TRUE`, line breaks will be replaced with `" / "`.
-#' @param .user_missing_col Include value labels for user missing values in a separate
-#'   column? The default, `"if_any"`, adds the column only if user missings are
-#'   specified for at least one variable.
-#' @param .user_missing_conflict If different labels for a value are provided in
-#'   metadata and user missings, which should be used?
-#' @param .user_missing_incompatible How to handle variables specified in `.user_missing`
-#'   that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?
+#'   separates value/label pairs from one another. e.g., if value labels are in 
+#'   the format `"1, First label|2, Second label"`, set `.val_labs_sep1` to `","` 
+#'   and `.val_labs_sep2` to `"\\|"`.
+#' @param .options Additional options to use for codebook creation. Must be the result 
+#'   from a call to `cb_create_options()`. See that function's help page for available 
+#'   options.
 #'
 #' @return
-#' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
-#' dataset and (2) attributes containing the passed dataset (in several formats)
-#' and additional metadata. Specifically:
-#' - A tibble with columns:
-#'     - `name`: variable name
-#'     - `type`: optional column containing simplified variable type
-#'     - `class`: optional column containing class(es) of each variable
-#'     - `label_stem`: optional column containing variable label stems, if any variables
-#'       are specified in `.split_var_labels`
-#'     - `label`: variable label
-#'     - `values`: values, with labels if applicable
-#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
-#'        showing user missing values, with labels if applicable
-#'     - `missing`: proportion missing
-#'     - additional columns if specified in `...`
-#' - Attributes:
-#'     - Transformed versions of the passed dataset. See [`cb_get_data()`]
-#'     - Lookup tables and other metadata used internally.
+#' An `"li_codebook"` object, consisting of a tibble summarizing the passed
+#' dataset and attributes containing additional metadata. The tibble includes columns:
+#' - `name`: variable name
+#' - `type`: column containing simplified variable type
+#' - `class`: optional column containing class(es) of each variable
+#' - `label_stem`: optional column containing variable label stems, if any variables
+#'   are specified in `.split_var_labels`
+#' - `label`: variable label
+#' - `values`: values, with labels if applicable
+#' - `user_missing`: optional column showing user missing values, with labels 
+#'   if applicable. By default, this column is included only if user missings 
+#'   are specified for at least one variable. This behavior can be changed using 
+#'   the `user_missing_col` argument to `cb_create_options()`.
+#' - `missing`: proportion missing
+#' - additional columns if specified in `...`
 #'
 #' @section Specifying user missing values:
 #' User missing values are defined by passing a formula or list of formulas to the
@@ -96,15 +82,15 @@
 #' \preformatted{
 #' .user_missing = ~ c(Declined = -98, "Not applicable" = -99)
 #' }
-#' If labels set in `.user_missing` conflict with those in `metadata`, `.user_missing_conflict`
-#' controls which labels are used.
+#' If labels set in `.user_missing` conflict with those in `metadata`, the `user_missing_conflict`
+#' argument to `cb_create_options()` controls which labels are used.
 #'
 #' User missings may be set for numeric, character, factor/ordered factor, and haven_labelled/haven_labelled_spss
 #' vectors. For factors, user missings are set based on factor labels (not the underlying
 #' integer codes). For `"haven_labelled"` vectors, user missings are set based on
 #' values (not value labels). By default, variables with incompatible classes (e.g.,
 #' logical, Date, POSIXt) will be ignored if specified in `.user_missing`. This
-#' behavior can be changed using the `.user_missing_incompatible` argument.
+#' behavior can be changed using the `.user_missing_incompatible` argument to `cb_create_options()`.
 #'
 #' @examples
 #' diamonds2 <- ggplot2::diamonds |>
@@ -167,38 +153,78 @@ cb_create <- function(data,
                       .val_labels = val_labels,
                       .user_missing = NULL,
                       .split_var_labels = NULL,
-                      .include_types = !.include_r_classes,
-                      .include_r_classes = FALSE,
                       .val_labs_sep1 = NULL,
                       .val_labs_sep2 = NULL,
-                      .rmv_html = TRUE,
-                      .rmv_line_breaks = TRUE,
-                      .user_missing_col = c("if_any", "yes", "no"),
-                      .user_missing_conflict = c("metadata", "missing_label"),
-                      .user_missing_incompatible = c("ignore", "warn", "error")
-                      ) {
+                      .options = cb_create_options()) {
+  check_options(.options)
   data |>
     cb_init(
       metadata,
       meta_var_name = {{ .name }}, meta_var_label = {{ .var_label }},
       meta_val_labels = {{ .val_labels }}, ...
     ) |>
-    cb_clean_fields(rmv_html = .rmv_html, rmv_line_breaks = .rmv_line_breaks) |>
+    cb_clean_fields(
+      rmv_html = .options$rmv_html, 
+      rmv_line_breaks = .options$rmv_line_breaks
+    ) |>
     cb_user_missings(
       user_missing = .user_missing,
-      incompatible = .user_missing_incompatible
+      incompatible = .options$user_missing_incompatible
     ) |>
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
-    cb_label_data(conflict = .user_missing_conflict) |>
+    cb_label_data(conflict = .options$user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
-    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
+    cb_add_val_labels_col(user_missing_col = .options$user_missing_col) |>
     cb_add_type_col(
-      include_r_classes = .include_r_classes,
-      include_types = .include_types
+      include_r_classes = .options$include_r_classes,
+      include_types = .options$include_types
     ) |>
     cb_add_missing_col() |>
     cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels))
+}
+
+#' Additional options for codebook creation
+#'
+#' @description
+#' Additional options for use by `cb_create()`. 
+#'
+#' @inheritParams rlang::args_dots_empty
+#' @param include_types Include a column listing simplified type for each variable?
+#'   (e.g,. `"categorical"`, `"date-time"`.)
+#' @param include_r_classes Include a column listing class(es) of each variable?
+#'   (e.g., `"factor"`, `"POSIXct, POSIXt"`.)
+#' @param rmv_html Should HTML tags be removed from metadata (e.g., from variable
+#'   and value labels)?
+#' @param rmv_line_breaks Should line breaks be removed from metadata (e.g., from
+#'   variable and value labels)? If `TRUE`, line breaks will be replaced with `" / "`.
+#' @param user_missing_col Include value labels for user missing values in a separate
+#'   column? The default, `"if_any"`, adds the column only if user missings are
+#'   specified for at least one variable.
+#' @param user_missing_conflict If labels passed to `.user_missing` conflict with
+#'   value labels in metadata, which should be used?
+#' @param user_missing_incompatible How to handle variables specified in `.user_missing`
+#'   that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?
+#' 
+#' @export
+cb_create_options <- function(
+    ...,
+    include_types = TRUE,
+    include_r_classes = FALSE,
+    rmv_html = TRUE,
+    rmv_line_breaks = TRUE,
+    user_missing_col = c("if_any", "yes", "no"),
+    user_missing_conflict = c("metadata", "missing_label"),
+    user_missing_incompatible = c("ignore", "warn", "error")) {
+  rlang::check_dots_empty()
+  out <- list(
+    include_types = include_types, include_r_classes = include_r_classes,
+    rmv_html = rmv_html, rmv_line_breaks = rmv_line_breaks,
+    user_missing_col = user_missing_col,
+    user_missing_conflict = user_missing_conflict,
+    user_missing_incompatible = user_missing_incompatible
+  )
+  structure(out, class = "cb_create_options")
 }
 
 #' Extract data from a codebook object
@@ -266,8 +292,8 @@ cb_init <- function(data,
     out <- out |>
       dplyr::mutate(values = NA_character_)
   }
+  out <- structure(out, class = c("li_codebook", class(out)))
   out <- set_attrs(out, data = data)
-  class(out) <- c("li_codebook", class(out))
   out
 }
 
@@ -305,7 +331,7 @@ cb_user_missings_by_var <- function(cb,
     )
     if (length(bad_vars) > 4) bad_vars <- c(head(bad_vars, 3), "...")
     bad_vars <- paste(bad_vars, collapse = ", ")
-    msg <- "{n_bad} variable{?s} specified in {.arg .user_missing} are not compatible with user missing values"
+    msg <- "{n_bad} variable{?s} specified in {.arg .user_missing} {?is/are} not compatible with user missing values"
     if (incompatible == "error") cli::cli_abort(c("!" = msg, "*" = bad_vars))
     cli::cli_warn(c("!" = paste0(msg, " and will be ignored"), "*" = bad_vars))
   }
@@ -468,7 +494,6 @@ reconcile_missing_labels <- function(val_labs,
 }
 
 cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
-  conflict <- match.arg(conflict)
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
   factors <- attr(cb, "factors")

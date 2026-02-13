@@ -1,5 +1,5 @@
 #' Generate a codebook object from REDCap data
-#'
+#' 
 #' @description
 #' `cb_create_redcap()` builds an object of class `"li_codebook"` from a dataset and
 #' corresponding codebook exported from REDCap. The resulting object can be used
@@ -14,156 +14,199 @@
 #' - Unpacking, labelling, and optional missing propagation for checkbox data
 #' - Optional coercion for character variables marked as "integer" in `metedata$text_validation_type_or_show_slider_number`
 #' 
+#' All of these behaviors can be controlled using the `.options` argument.
+#' 
 #' @inheritParams cb_create
 #' @param data A data frame exported or retrieved from REDCap.
 #' @param metadata A data frame containing the REDCap codebook associated with `data`.
 #' @param ... Additional columns from `metadata` to preserve in the final codebook.
 #'   New names can be assigned by passing named arguments. Columns for variable
 #'   name, form, variable label, and value labels are included by default.
-#' @param .name,.var_label,.val_labels Columns in `metadata` containing variable
-#'   name, variable label, and value labels, respectively.
-#' @param .form Column in `metadata` containing form names. (Set to `NULL` to omit.)
 #' @param .user_missing A formula or list of formulas specifying user missing values.
 #'   Formulas should specify variables on the left-hand side (as variable names
 #'   or [tidyselect][dplyr_tidy_select] expressions), and missing values on the
 #'   right-hand side. If left-hand side is omitted, defaults to `tidyselect::everything()`.
 #'   See "Specifying user missing values" in [`cb_create()`] documentation  for examples.
-#' @param .coerce_integers Should variables listed as "integer" in `metedata$text_validation_type_or_show_slider_number` 
-#'   be coerced to integer?
-#' @param .checkbox_resp_values Should checkbox values use labels in `metadata` 
-#'   (`TRUE`) or "Yes" / "No" (`FALSE`)? See "Checkbox data handling" below.
-#' @param .propagate_checkbox_missings Should user missing values in a checkbox 
-#'   group be propagated across all variables in the group? See "Checkbox data handling" 
-#'   below.
+#' @param .options Additional options to use for codebook creation. Must be the result 
+#'   from a call to `cb_create_redcap_options()` or `cb_create_options()`. See `?cb_create_redcap_options` 
+#'   for available options.
 #'
 #' @return
-#' An `"li_codebook"` object, consisting of (1) a tibble summarizing the passed
-#' dataset and (2) attributes containing the passed dataset (in several formats)
-#' and additional metadata. Specifically:
-#' - A tibble with columns:
-#'     - `name`: variable name
-#'     - `form`: form name
-#'     - `type`: optional column containing simplified variable type
-#'     - `class`: optional column containing class(es) of each variable
-#'     - `label_stem`: optional column containing variable label stems, if any variables
-#'       are specified in `.split_var_labels`
-#'     - `label`: variable label
-#'     - `values`: values, with labels if applicable
-#'     - `user_missing`: optional column, depending on value of `.user_missing_col`,
-#'        showing user missing values, with labels if applicable
-#'     - `missing`: proportion missing
-#'     - additional columns if specified in `...`
-#' - Attributes:
-#'     - Transformed versions of the passed dataset. See [`cb_get_data()`].
-#'     - Lookup tables and other metadata used internally.
+#' An `"li_codebook"` object, consisting of a tibble summarizing the passed
+#' dataset and attributes containing additional metadata. The tibble includes columns:
+#' - `name`: variable name
+#' - `form`: form name
+#' - `type`: column containing simplified variable type
+#' - `class`: optional column containing class(es) of each variable
+#' - `label_stem`: optional column containing variable label stems, if any variables
+#'   are specified in `.split_var_labels`
+#' - `label`: variable label
+#' - `values`: values, with labels if applicable
+#' - `user_missing`: optional column showing user missing values, with labels 
+#'   if applicable. By default, this column is included only if user missings 
+#'   are specified for at least one variable. This behavior can be changed using 
+#'   the `user_missing_col` argument to `cb_create_options()`.
+#' - `missing`: proportion missing
+#' - additional columns if specified in `...`
 #'
 #' @section Checkbox data handling:
 #' ## Value labels
 #' Data from REDCap checkboxes yields one variable in the dataset for each response
-#' option. These will be labelled generically with `"Yes"` or `"No"`, unless `.checkbox_resp_values`
-#' is `TRUE`, in which case response-specific labels from `metadata` will be used.
-#' For example, if a checkbox group has options "In the past year," "More than a
+#' option. By default, these will be labelled generically with `"Yes"` or `"No"`.
+#' For example, consider a checkbox group with options "In the past year," "More than a
 #' year ago," and "Never," corresponding to variables `chk_var1___0`, `chk_var1___1`,
-#' and `chk_var1___2`: if `.checkbox_resp_values` is `FALSE`, all of these will
-#' have values:
+#' and `chk_var1___2`. By default, all of these will be given the same value labels:
 #'   - `chk_var1___0`, `chk_var1___1`, `chk_var1___2`: 0 = "No"; 1 =  "Yes". 
-#' 
-#' If `.checkbox_resp_values` is `TRUE`, each variable will have unique labels:
+#' This behavior can be changed by setting `checkbox_resp_values = TRUE` in `cb_create_options()`. 
+#' In this case, response-specific labels from `metadata` will be used, so that 
+#' each variable will have unique labels:
 #'   - `chk_var1___0`: 0 = "Not selected," 1 = "In the past year"
 #'   - `chk_var1___1`: 0 = "Not selected," 1 = "More than a year ago"
 #'   - `chk_var1___2`: 0 = "Not selected," 0 = "Never"
 #'
 #' ## Missing value propagation
-#' If `.propagate_checkbox_missings` is `TRUE`, missing values in a checkbox group
-#' variable will be propagated to all variables in the group. For example, given
-#' a checkbox group with options "Pregnant," "Not pregnant," and "Not applicable,"
-#' corresponding to variables `chk_preg_0___0`, `chk_preg_0___1`, and `chk_preg_0____9`,
-#' and assuming that `-9` is specified as a user missing value. If `.propagate_checkbox_missings`
-#' is `TRUE`, `chk_preg_0___0` and `chk_preg_0___1` will be set to `-9` if `chk_preg_0____9`
-#' is `1`. Otherwise, these columns will remain as `0` where `chk_preg_0____9` is `1`.
+#' By default, missing values in a checkbox group will be propagated to all variables 
+#' in the group. For example, consider a checkbox group with options "Pregnant," 
+#' "Not pregnant," and "Not applicable," corresponding to variables `chk_preg_0___0`, 
+#' `chk_preg_0___1`, and `chk_preg_0____9`, and assuming that `-9` is specified 
+#' as a user missing value. By default, `chk_preg_0___0` and `chk_preg_0___1` will 
+#' be set to `-9` if `chk_preg_0____9` is `1`. This behavior can be overridden by 
+#' setting `propagate_checkbox_missings = FALSE` in `cb_create_options()`, in which 
+#' case no values will be changed.
 #'
 #' @export
 cb_create_redcap <- function(data,
                              metadata,
                              ...,
-                             .name = field_name,
-                             .var_label = field_label,
-                             .val_labels = select_choices_or_calculations,
-                             .form = form_name,
                              .user_missing = NULL,
                              .split_var_labels = NULL,
-                             .include_types = !.include_r_classes,
-                             .include_r_classes = FALSE,
-                             .val_labs_sep1 = ", ",
-                             .val_labs_sep2 = "\\|",
-                             .rmv_html = TRUE,
-                             .rmv_line_breaks = TRUE,
-                             .coerce_integers = TRUE,
-                             .checkbox_resp_values = FALSE,
-                             .propagate_checkbox_missings = TRUE,
-                             .user_missing_col = c("if_any", "yes", "no"),
-                             .user_missing_conflict = c("metadata", "missing_label"),
-                             .user_missing_incompatible = c("ignore", "warn", "error")
-                             ) {
-  .user_missing_col <- match.arg(.user_missing_col)
-  .user_missing_conflict <- match.arg(.user_missing_conflict)
-  meta <- meta_expand_checkboxes_rc(metadata, data)
+                             .options = cb_create_redcap_options()) {
+  check_options(.options, redcap = TRUE)
+  meta <- meta_expand_checkboxes_rc(
+    metadata, data,
+    name = !!.options$name, type = !!.options$type
+  )
   cb <- data |>
     cb_init(
       meta,
-      meta_var_name = {{ .name }}, meta_var_label = {{ .var_label }},
-      meta_val_labels = {{ .val_labels }}, form = {{ .form }}, ...,
-      ..rc_type = field_type,
+      meta_var_name = !!.options$name, meta_var_label = !!.options$var_label,
+      meta_val_labels = !!.options$val_labels, form = !!.options$form, ...,
+      ..rc_type = !!.options$type,
       ..rc_validate_type = text_validation_type_or_show_slider_number,
     )
-  if (.coerce_integers) cb <- cb_coerce_integers_rc(cb)
+  if (.options$coerce_integers) cb <- cb_coerce_integers_rc(cb)
   cb$..rc_validate_type <- NULL
   cb <- cb |>
-    cb_clean_fields(rmv_html = .rmv_html, rmv_line_breaks = .rmv_line_breaks) |>
+    cb_clean_fields(
+      rmv_html = .options$rmv_html, 
+      rmv_line_breaks = .options$rmv_line_breaks
+    ) |>
     cb_user_missings(
       user_missing = .user_missing,
-      incompatible = .user_missing_incompatible
+      incompatible = .options$user_missing_incompatible
     ) |>
-    cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
-    cb_relabel_checkboxes_rc(use_resp_values = .checkbox_resp_values)
+    cb_add_lookups(
+      sep1 = .options$val_labs_sep1, 
+      sep2 = .options$val_labs_sep2
+    ) |>
+    cb_relabel_checkboxes_rc(use_resp_values = .options$checkbox_resp_values)
   if ("form" %in% names(cb)) cb <- cb_complete_label_rc(cb)
-  if (.propagate_checkbox_missings) {
+  if (.options$propagate_checkbox_missings) {
     cb <- cb_propagate_user_missing_checkboxes_rc(cb)
   }
   cb |>
-    cb_label_data(conflict = .user_missing_conflict) |>
+    cb_label_data(conflict = .options$user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
-    cb_add_val_labels_col(user_missing_col = .user_missing_col) |>
+    cb_add_val_labels_col(user_missing_col = .options$user_missing_col) |>
     cb_add_type_col(
-      include_r_classes = .include_r_classes,
-      include_types = .include_types
+      include_r_classes = .options$include_r_classes,
+      include_types = .options$include_types
     ) |>
     cb_add_missing_col() |>
     cb_split_labels_col(split_var_labels = rlang::enexpr(.split_var_labels)) |> 
     dplyr::relocate(any_of(c("form", "type", "class")), .after = name)
 }
 
-## `field_name` and `field_type` are hard-coded -- do they always have these names?
-meta_expand_checkboxes_rc <- function(meta, data) {
-  if (!("checkbox" %in% meta$field_type)) return(meta)
+#' @rdname cb_create_options
+#' 
+#' @param name,var_label,val_labels,type For REDCap data, columns in `metadata` containing variable
+#'   name, variable label, value labels, and variable type, respectively.
+#' @param form For REDCap data, column in `metadata` containing form names. (Set to `NULL` to omit.)
+#' @param val_labs_sep1,val_labs_sep2 For REDCap data, regex patterns separating value labels
+#'   in `metadata`. `val_labs_sep1` separates values from labels, and `val_labs_sep2`
+#'   separates value/label pairs from one another. e.g., if value labels are in 
+#'   the format `"1, First label|2, Second label"`, set `val_labs_sep1` to `","` 
+#'   and `val_labs_sep2` to `"\\|"`.
+#' @param coerce_integers For REDCap data, should variables listed as "integer" in `metedata$text_validation_type_or_show_slider_number` 
+#'   be coerced to integer?
+#' @param checkbox_resp_values For REDCap data, should checkbox values use labels in `metadata` (`TRUE`) 
+#'   or "Yes" / "No" (`FALSE`)? See "Checkbox data handling"  on the `cb_create_redcap()` 
+#'   help page.
+#' @param propagate_checkbox_missings For REDCap data, should user missing values in a checkbox group 
+#'   be propagated across all variables in the group? See "Checkbox data handling" 
+#'   on the `cb_create_redcap()` help page.
+#' 
+#' @export
+cb_create_redcap_options <- function(
+    ...,
+    include_types = TRUE,
+    include_r_classes = FALSE,
+    rmv_html = TRUE,
+    rmv_line_breaks = TRUE,
+    user_missing_col = c("if_any", "yes", "no"),
+    user_missing_conflict = c("metadata", "missing_label"),
+    user_missing_incompatible = c("ignore", "warn", "error"),
+    name = field_name,
+    var_label = field_label,
+    val_labels = select_choices_or_calculations,
+    type = field_type,
+    form = form_name,
+    val_labs_sep1 = ", ",
+    val_labs_sep2 = "\\|",
+    coerce_integers = TRUE,
+    checkbox_resp_values = FALSE,
+    propagate_checkbox_missings = TRUE) {
+  rlang::check_dots_empty()
+  out <- list(
+    include_types = include_types, include_r_classes = include_r_classes,
+    rmv_html = rmv_html, rmv_line_breaks = rmv_line_breaks,
+    user_missing_col = user_missing_col,
+    user_missing_conflict = user_missing_conflict,
+    user_missing_incompatible = user_missing_incompatible, 
+    name = rlang::enquo(name), var_label = rlang::enquo(var_label), 
+    val_labels = rlang::enquo(val_labels), type = rlang::enquo(type), 
+    form = rlang::enquo(form), val_labs_sep1 = val_labs_sep1, 
+    val_labs_sep2 = val_labs_sep2, coerce_integers = coerce_integers,
+    checkbox_resp_values = checkbox_resp_values,
+    propagate_checkbox_missings = propagate_checkbox_missings
+  )
+  structure(out, class = "cb_create_redcap_options")
+}
+
+meta_expand_checkboxes_rc <- function(meta, data, name, type) {
+  name_chr <- as.character(rlang::ensym(name))
+  type_chr <- as.character(rlang::ensym(type))
+  if (!("checkbox" %in% meta[[type_chr]])) return(meta)
   datanames <- names(data)
+  meta <- dplyr::rename(meta, ..name = {{ name }}, ..type = {{ type }})
   checkbox_names <- meta |>
-    dplyr::filter(field_type == "checkbox") |>
-    dplyr::select(field_name) |>
+    dplyr::filter(..type == "checkbox") |>
+    dplyr::select(..name) |>
     dplyr::reframe(
       .chk_name = datanames[
-        stringr::str_starts(datanames, stringr::str_c(field_name, "___"))
+        stringr::str_starts(datanames, stringr::str_c(..name, "___"))
       ],
-      .by = field_name
+      .by = ..name
     )
   meta |>
-    dplyr::left_join(checkbox_names, dplyr::join_by(field_name)) |>
+    dplyr::left_join(checkbox_names, dplyr::join_by(..name)) |>
     dplyr::mutate(
       # .chk_name_stem = ifelse(!is.na(.chk_name), field_name, NA),
-      field_name = dplyr::coalesce(.chk_name, field_name),
+      ..name = dplyr::coalesce(.chk_name, ..name),
       .keep = "unused"
-    )
+    ) |>
+    dplyr::rename("{name_chr}" := ..name, "{type_chr}" := ..type)
 }
 
 cb_coerce_integers_rc <- function(cb) {

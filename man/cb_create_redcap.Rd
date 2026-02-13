@@ -8,24 +8,9 @@ cb_create_redcap(
   data,
   metadata,
   ...,
-  .name = field_name,
-  .var_label = field_label,
-  .val_labels = select_choices_or_calculations,
-  .form = form_name,
   .user_missing = NULL,
   .split_var_labels = NULL,
-  .include_types = !.include_r_classes,
-  .include_r_classes = FALSE,
-  .val_labs_sep1 = ", ",
-  .val_labs_sep2 = "\\\\|",
-  .rmv_html = TRUE,
-  .rmv_line_breaks = TRUE,
-  .coerce_integers = TRUE,
-  .checkbox_resp_values = FALSE,
-  .propagate_checkbox_missings = TRUE,
-  .user_missing_col = c("if_any", "yes", "no"),
-  .user_missing_conflict = c("metadata", "missing_label"),
-  .user_missing_incompatible = c("ignore", "warn", "error")
+  .options = cb_create_redcap_options()
 )
 }
 \arguments{
@@ -37,11 +22,6 @@ cb_create_redcap(
 New names can be assigned by passing named arguments. Columns for variable
 name, form, variable label, and value labels are included by default.}
 
-\item{.name, .var_label, .val_labels}{Columns in \code{metadata} containing variable
-name, variable label, and value labels, respectively.}
-
-\item{.form}{Column in \code{metadata} containing form names. (Set to \code{NULL} to omit.)}
-
 \item{.user_missing}{A formula or list of formulas specifying user missing values.
 Formulas should specify variables on the left-hand side (as variable names
 or \link[dplyr:dplyr_tidy_select]{tidyselect} expressions), and missing values on the
@@ -52,68 +32,28 @@ See "Specifying user missing values" in \code{\link[=cb_create]{cb_create()}} do
 expressions, indicating (sets of) variable labels with a common stem that should
 be extracted into a separate column.}
 
-\item{.include_types}{Include a column listing simplified type for each variable?
-(e.g,. \code{"categorical"}, \code{"date-time"}.)}
-
-\item{.include_r_classes}{Include a column listing class(es) of each variable?
-(e.g., \code{"factor"}, \code{"POSIXct, POSIXt"}.)}
-
-\item{.val_labs_sep1, .val_labs_sep2}{Regex patterns separating value labels
-in \code{metadata}. \code{.val_labs_sep1} separates values from labels, and \code{.val_labs_sep2}
-separates value/label pairs. e.g., if value labels are in format \code{"1, First label|2, Second label"},
-set \code{.val_labs_sep1} to \code{","} and \code{.val_labs_sep2} to \code{"\\\\|"}.}
-
-\item{.rmv_html}{Should HTML tags be removed from metadata (e.g., from variable
-and value labels)?}
-
-\item{.rmv_line_breaks}{Should line breaks be removed from metadata (e.g., from
-variable and value labels)? If \code{TRUE}, line breaks will be replaced with \code{" / "}.}
-
-\item{.coerce_integers}{Should variables listed as "integer" in \code{metedata$text_validation_type_or_show_slider_number}
-be coerced to integer?}
-
-\item{.checkbox_resp_values}{Should checkbox values use labels in \code{metadata}
-(\code{TRUE}) or "Yes" / "No" (\code{FALSE})? See "Checkbox data handling" below.}
-
-\item{.propagate_checkbox_missings}{Should user missing values in a checkbox
-group be propagated across all variables in the group? See "Checkbox data handling"
-below.}
-
-\item{.user_missing_col}{Include value labels for user missing values in a separate
-column? The default, \code{"if_any"}, adds the column only if user missings are
-specified for at least one variable.}
-
-\item{.user_missing_conflict}{If different labels for a value are provided in
-metadata and user missings, which should be used?}
-
-\item{.user_missing_incompatible}{How to handle variables specified in \code{.user_missing}
-that aren't compatible with user missing values (e.g., logical, Date, or POSIXt)?}
+\item{.options}{Additional options to use for codebook creation. Must be the result
+from a call to \code{cb_create_redcap_options()} or \code{cb_create_options()}. See \code{?cb_create_redcap_options}
+for available options.}
 }
 \value{
-An \code{"li_codebook"} object, consisting of (1) a tibble summarizing the passed
-dataset and (2) attributes containing the passed dataset (in several formats)
-and additional metadata. Specifically:
-\itemize{
-\item A tibble with columns:
+An \code{"li_codebook"} object, consisting of a tibble summarizing the passed
+dataset and attributes containing additional metadata. The tibble includes columns:
 \itemize{
 \item \code{name}: variable name
 \item \code{form}: form name
-\item \code{type}: optional column containing simplified variable type
+\item \code{type}: column containing simplified variable type
 \item \code{class}: optional column containing class(es) of each variable
 \item \code{label_stem}: optional column containing variable label stems, if any variables
 are specified in \code{.split_var_labels}
 \item \code{label}: variable label
 \item \code{values}: values, with labels if applicable
-\item \code{user_missing}: optional column, depending on value of \code{.user_missing_col},
-showing user missing values, with labels if applicable
+\item \code{user_missing}: optional column showing user missing values, with labels
+if applicable. By default, this column is included only if user missings
+are specified for at least one variable. This behavior can be changed using
+the \code{user_missing_col} argument to \code{cb_create_options()}.
 \item \code{missing}: proportion missing
 \item additional columns if specified in \code{...}
-}
-\item Attributes:
-\itemize{
-\item Transformed versions of the passed dataset. See \code{\link[=cb_get_data]{cb_get_data()}}.
-\item Lookup tables and other metadata used internally.
-}
 }
 }
 \description{
@@ -131,24 +71,23 @@ and metadata, including:
 \item Unpacking, labelling, and optional missing propagation for checkbox data
 \item Optional coercion for character variables marked as "integer" in \code{metedata$text_validation_type_or_show_slider_number}
 }
+
+All of these behaviors can be controlled using the \code{.options} argument.
 }
 \section{Checkbox data handling}{
 
 \subsection{Value labels}{
 
 Data from REDCap checkboxes yields one variable in the dataset for each response
-option. These will be labelled generically with \code{"Yes"} or \code{"No"}, unless \code{.checkbox_resp_values}
-is \code{TRUE}, in which case response-specific labels from \code{metadata} will be used.
-For example, if a checkbox group has options "In the past year," "More than a
+option. By default, these will be labelled generically with \code{"Yes"} or \code{"No"}.
+For example, consider a checkbox group with options "In the past year," "More than a
 year ago," and "Never," corresponding to variables \code{chk_var1___0}, \code{chk_var1___1},
-and \code{chk_var1___2}: if \code{.checkbox_resp_values} is \code{FALSE}, all of these will
-have values:
+and \code{chk_var1___2}. By default, all of these will be given the same value labels:
 \itemize{
 \item \code{chk_var1___0}, \code{chk_var1___1}, \code{chk_var1___2}: 0 = "No"; 1 =  "Yes".
-}
-
-If \code{.checkbox_resp_values} is \code{TRUE}, each variable will have unique labels:
-\itemize{
+This behavior can be changed by setting \code{checkbox_resp_values = TRUE} in \code{cb_create_options()}.
+In this case, response-specific labels from \code{metadata} will be used, so that
+each variable will have unique labels:
 \item \code{chk_var1___0}: 0 = "Not selected," 1 = "In the past year"
 \item \code{chk_var1___1}: 0 = "Not selected," 1 = "More than a year ago"
 \item \code{chk_var1___2}: 0 = "Not selected," 0 = "Never"
@@ -157,13 +96,14 @@ If \code{.checkbox_resp_values} is \code{TRUE}, each variable will have unique l
 
 \subsection{Missing value propagation}{
 
-If \code{.propagate_checkbox_missings} is \code{TRUE}, missing values in a checkbox group
-variable will be propagated to all variables in the group. For example, given
-a checkbox group with options "Pregnant," "Not pregnant," and "Not applicable,"
-corresponding to variables \code{chk_preg_0___0}, \code{chk_preg_0___1}, and \code{chk_preg_0____9},
-and assuming that \code{-9} is specified as a user missing value. If \code{.propagate_checkbox_missings}
-is \code{TRUE}, \code{chk_preg_0___0} and \code{chk_preg_0___1} will be set to \code{-9} if \code{chk_preg_0____9}
-is \code{1}. Otherwise, these columns will remain as \code{0} where \code{chk_preg_0____9} is \code{1}.
+By default, missing values in a checkbox group will be propagated to all variables
+in the group. For example, consider a checkbox group with options "Pregnant,"
+"Not pregnant," and "Not applicable," corresponding to variables \code{chk_preg_0___0},
+\code{chk_preg_0___1}, and \code{chk_preg_0____9}, and assuming that \code{-9} is specified
+as a user missing value. By default, \code{chk_preg_0___0} and \code{chk_preg_0___1} will
+be set to \code{-9} if \code{chk_preg_0____9} is \code{1}. This behavior can be overridden by
+setting \code{propagate_checkbox_missings = FALSE} in \code{cb_create_options()}, in which
+case no values will be changed.
 }
 }
 

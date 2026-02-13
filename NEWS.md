@@ -1,6 +1,6 @@
 # lighthouse.codebook 0.3.0
 
-## New feature
+## Added
 
 * Added options to `cb_write()` to show grouping variables for categorical summaries 
   in rows (which was previously only possible for numeric summaries.) `cb_write()` 
@@ -8,13 +8,53 @@
   `group_rows` controls both numeric and categorical summaries, while `group_rows_numeric` 
   and `group_rows_categorical` control numeric and categorical summaries, respectively.
 
-## New documentation
-
 * Added an introductory vignette (see `vignette("lighthouse-codebook")`).
 
 * Expanded the README.
+
+## Changed
+
+* `cb_create()`, `cb_create_spss()`, and `cb_create_redcap()` now use a single `.options` 
+  argument for less commonly used settings. Arguments for those settings have been 
+  moved into an options object created with `cb_create_options()` or `cb_create_redcap_options()`.
+  ```r
+  # previously
+  cb <- cb_create(
+    dat, metadata = metadata, 
+    .rmv_html = FALSE, .include_r_classes = TRUE
+  )
   
-## Lifecycle changes
+  # now
+  cb <- cb_create(
+    dat, metadata = metadata, 
+    .options = cb_create_options(rmv_html = FALSE, include_r_classes = TRUE)
+  )
+  
+  ### `cb_create_spss()` also uses `cb_create_options()`
+  # previously
+  cb_spss <- cb_create_spss(dat_spss, .rmv_line_breaks = FALSE)
+
+  # now
+  cb_spss <- cb_create_spss(
+    dat_spss, 
+    .options = cb_create_options(rmv_line_breaks = FALSE)
+  )
+  
+  ### Note that `cb_create_redcap()` has its own options constructor
+  # previously
+  cb <- cb_create_redcap(
+    dat_rc, metadata = metadata_rc, 
+    .form = NULL, .rmv_html = FALSE
+  )
+  
+  # now
+  cb <- cb_create_redcap(
+    dat_rc, metadata = metadata_rc, 
+    .options = cb_create_redcap_options(form = NULL, rmv_html = FALSE)
+  )
+  ```
+
+## Removed
 
 * The `format = "values"` option in `cb_get_data()` has been removed (see #26).
 

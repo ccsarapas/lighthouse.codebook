@@ -1,8 +1,29 @@
-is_codebook <- function(x) "li_codebook" %in% class(x)
+is_codebook <- function(x) inherits(x, "li_codebook")
 check_codebook <- function(x) {
   arg <- as.character(rlang::ensym(x))
   if (!is_codebook(x)) {
     cli::cli_abort('{.arg {arg}} must be an object of class `"li_codebook"`.')
+  }
+}
+check_options <- function(x, redcap = FALSE) {
+  if (redcap) {
+    opts_class <- "cb_create_redcap_options"
+    opts_class_wrong <- "cb_create_options"
+  } else {
+    opts_class <- "cb_create_options"
+    opts_class_wrong <- "cb_create_redcap_options"
+  }
+  if (inherits(x, opts_class_wrong)) {
+    msg <- c(
+      "!" = "`.options` must be created from `{opts_class}()`, not `{opts_class_wrong}()`."
+    )
+    if (!redcap) {
+      msg <- c(msg, "i" = "Did you mean to call `cb_create_redcap()`?")
+    }
+    cli::cli_abort(msg)
+  }
+  if (!inherits(x, opts_class)) {
+    cli::cli_abort("`.options` must be created from `{opts_class}()`")
   }
 }
 check_user_missing_arg <- function(x) {

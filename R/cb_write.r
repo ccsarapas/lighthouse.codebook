@@ -15,10 +15,6 @@
 #'   a variant.
 #' @param file Path to write to.
 #' @param dataset_name Name of the dataset to display in workbook headers.
-#' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
-#'   in the Overview tab header?
-#' @param hyperlinks If `TRUE`, variable names on the Overview sheet will link 
-#'   to corresponding rows on summary tabs and vice versa.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by. If specified, additional numeric and categorical summary tabs will be included
 #'   with grouped summaries. Subgroups are shown in columns by default. Some or all 
@@ -37,6 +33,10 @@
 #' @param n_text_vals On the text summary tab, how many unique non-missing values 
 #'   should be included for each variable? If there are more than `n_text_vals` + 1 
 #'   unique values, the `n_text_vals` most common non-missing values will be included. 
+#' @param incl_date,incl_dims Should the date and/or dataset dimensions be included 
+#'   in the Overview tab header?
+#' @param hyperlinks If `TRUE`, variable names on the Overview sheet will link 
+#'   to corresponding rows on summary tabs and vice versa.
 #' @param overwrite Overwrite existing file?
 #'
 #' @return 
@@ -58,15 +58,15 @@
 cb_write <- function(cb, 
                      file, 
                      dataset_name = NULL,
-                     incl_date = TRUE,
-                     incl_dims = TRUE,
-                     hyperlinks = TRUE,
                      group_by = NULL,
                      group_rows = NULL,
                      group_rows_numeric = group_rows,
                      group_rows_categorical = group_rows,
                      detail_missing = c("if_any_user_missing", "yes", "no"),
                      n_text_vals = 5,
+                     incl_date = TRUE,
+                     incl_dims = TRUE,
+                     hyperlinks = TRUE,
                      overwrite = TRUE) {
   check_codebook(cb)
   detail_missing <- match.arg(detail_missing)
