@@ -155,7 +155,7 @@ cb_create_redcap_options <- function(
     rmv_html = TRUE,
     rmv_line_breaks = TRUE,
     user_missing_col = c("if_any", "yes", "no"),
-    user_missing_conflict = c("metadata", "missing_label"),
+    user_missing_conflict = c("val_label", "missing_label"),
     user_missing_incompatible = c("ignore", "warn", "error"),
     name = field_name,
     var_label = field_label,

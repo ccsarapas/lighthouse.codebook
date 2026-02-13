@@ -100,7 +100,6 @@ cb_update_labels_spss <- function(cb,
       cb_add_lookups() |>
       set_attrs(data_labelled = data)
   } else {
-    conflict <- sub("val_label", "metadata", match.arg(user_missing_conflict))
     user_missing <- check_user_missing_arg(user_missing)
     user_missing_vars <- user_missing |>
       lapply(\(um) {
@@ -126,7 +125,7 @@ cb_update_labels_spss <- function(cb,
         user_missing = attr_user_missing[names(attr_user_missing) %in% user_missing_vars],
         vals_by_label = attr_vals_by_label[names(attr_vals_by_label) %in% user_missing_vars]
       ) |>
-      cb_label_data(conflict = conflict) |>
+      cb_label_data(conflict = user_missing_conflict) |>
       # then restore full missing and val attributes
       set_attrs(
         user_missing = attr_user_missing,

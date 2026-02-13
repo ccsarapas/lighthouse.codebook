@@ -214,7 +214,7 @@ cb_create_options <- function(
     rmv_html = TRUE,
     rmv_line_breaks = TRUE,
     user_missing_col = c("if_any", "yes", "no"),
-    user_missing_conflict = c("metadata", "missing_label"),
+    user_missing_conflict = c("val_label", "missing_label"),
     user_missing_incompatible = c("ignore", "warn", "error")) {
   rlang::check_dots_empty()
   out <- list(
@@ -464,7 +464,7 @@ cb_add_lookups <- function(cb, sep1, sep2) {
 
 reconcile_missing_labels <- function(val_labs, 
                                      missings, 
-                                     conflict = c("metadata", "missing_label")) {
+                                     conflict = c("val_label", "missing_label")) {
   conflict <- match.arg(conflict)
   
   labs_in_missing <- val_labs[match(missings, val_labs)]
@@ -485,7 +485,7 @@ reconcile_missing_labels <- function(val_labs,
   names(missings)[label_miss] <- lab_name[label_miss]
   ### if na is labelled and in vals and labels don't match
   # relabel based on `conflict`
-  if (conflict == "metadata") {
+  if (conflict == "val_label") {
     names(missings)[mismatch] <- lab_name[mismatch]
   } else if (conflict == "missing_label") {
     names(val_labs)[match(lab_val[mismatch], val_labs)] <- miss_name[mismatch]
@@ -493,7 +493,7 @@ reconcile_missing_labels <- function(val_labs,
   list(val_labs = val_labs, missings = missings)
 }
 
-cb_label_data <- function(cb, conflict = c("metadata", "missing_label")) {
+cb_label_data <- function(cb, conflict = c("val_label", "missing_label")) {
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
   factors <- attr(cb, "factors")
