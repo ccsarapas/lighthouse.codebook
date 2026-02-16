@@ -1,3 +1,9 @@
+# lighthouse.codebook 0.3.1
+
+## Fixed
+
+* `cb_create_spss()` no longer throws an error when `.user_missing = NULL`.
+
 # lighthouse.codebook 0.3.0
 
 ## Added
