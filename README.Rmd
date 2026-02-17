@@ -10,7 +10,6 @@ knitr::opts_chunk$set(
   comment = "#",
   out.width = "100%",
   fig.align = "center",
-  fig.path = "man/figures/",
   eval = FALSE
 )
 ```
@@ -18,7 +17,7 @@ knitr::opts_chunk$set(
 # lighthouse.codebook
 
 The lighthouse.codebook package includes tools to summarize a dataset into a formatted 
-Excel workbook, including a data dictionary and vrariable summaries. It incorporates external 
+Excel workbook, including a data dictionary and variable summaries. It incorporates external 
 metadata (such as variable labels, value labels, and user missing / non-response codes), 
 with functions for using metadata from SPSS and REDCap datasets. Codebooks can be 
 customized in a number of ways, including options for grouped summaries.
@@ -98,21 +97,21 @@ on variable types, labels, values, and missingness. By default, each variable is
 hyperlinked to its location on the relevant summary tab.
 
 ```{r, overview, echo = FALSE, eval = TRUE}
-knitr::include_graphics("man/figures/README-overview.png")
+knitr::include_graphics("vignettes/img/overview.png")
 ```
 
 The _numeric summary_ tab includes descriptive statistics for all numeric variables 
 in the dataset:
 
 ```{r, numeric, echo = FALSE, eval = TRUE}
-knitr::include_graphics("man/figures/README-numeric.png")
+knitr::include_graphics("vignettes/img/numeric.png")
 ```
 
 The _categorical summary_ tab includes frequencies for all categorical variables, 
 optionally with separate rows for user missing values:
 
 ```{r, categorical, echo = FALSE, eval = TRUE}
-knitr::include_graphics("man/figures/README-categorical.png")
+knitr::include_graphics("vignettes/img/categorical.png")
 ```
 
 Finally, the _text summary_ tab includes frequencies for the most common values for all 
@@ -120,7 +119,7 @@ text variables in the dataset. (The number of values shown can be adjusted using
 the `n_text_vals` argument to `cb_write()`.)
 
 ```{r, text, echo = FALSE, eval = TRUE}
-knitr::include_graphics("man/figures/README-text.png")
+knitr::include_graphics("vignettes/img/text.png")
 ```
 
 If `group_by` is specified in `cb_write()`, additional numeric and categorical summary

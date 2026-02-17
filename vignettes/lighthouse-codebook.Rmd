@@ -11,6 +11,7 @@ vignette: >
 knitr::opts_chunk$set(
   eval = FALSE,
   comment = "#",
+  fig.align = "center",
   out.width = "100%"
 )
 ```
@@ -52,10 +53,46 @@ dat_rc$data |>
   cb_create_redcap(metadata = meta_rc$data) |> 
   cb_write("cb_rc.xlsx")
 ```
-The codebook written to disk will include an overview tab listing all variables 
-in the dataset; summary tabs for numeric, categorical, and text variables; and, 
-if grouping variables are specified, grouped summary tabs for numeric and categorical 
+
+## Codebook contents
+
+The codebook written to disk will include an _overview_ tab listing all variables 
+in the dataset; _summary_ tabs for numeric, categorical, and text variables; and, 
+if grouping variables are specified, _grouped summary_ tabs for numeric and categorical 
 variables.
+
+The _overview_ tab includes one row for each variable in the dataset, with information 
+on variable types, labels, values, and missingness. By default, each variable is 
+hyperlinked to its location on the relevant summary tab.
+
+```{r, overview, echo = FALSE, eval = TRUE}
+knitr::include_graphics("img/overview.png")
+```
+
+The _numeric summary_ tab includes descriptive statistics for all numeric variables 
+in the dataset:
+
+```{r, numeric, echo = FALSE, eval = TRUE}
+knitr::include_graphics("img/numeric.png")
+```
+
+The _categorical summary_ tab includes frequencies for all categorical variables, 
+optionally with separate rows for user missing values:
+
+```{r, categorical, echo = FALSE, eval = TRUE}
+knitr::include_graphics("img/categorical.png")
+```
+
+Finally, the _text summary_ tab includes frequencies for the most common values for all 
+text variables in the dataset. (The number of values shown can be adjusted using 
+the `n_text_vals` argument to `cb_write()`.)
+
+```{r, text, echo = FALSE, eval = TRUE}
+knitr::include_graphics("img/text.png")
+```
+
+If `group_by` is specified in `cb_write()`, additional numeric and categorical summary
+tabs grouped by the specified variables will be included.
 
 ## Customizing codebooks
 
