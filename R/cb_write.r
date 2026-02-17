@@ -70,18 +70,6 @@ cb_write <- function(cb,
                      overwrite = TRUE) {
   check_codebook(cb)
   detail_missing <- match.arg(detail_missing)
-  detail_missing <- detail_missing == "yes" || (
-    detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
-  )
-  summaries <- list(
-    num = cb_summarize_numeric_impl(cb),
-    cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
-    txt = cb_summarize_text_impl(
-      cb,
-      n_text_vals = n_text_vals,
-      detail_missing = detail_missing
-    )
-  )
   group_by <- cb_untidyselect(cb, {{ group_by }})
   group_rows <- cb_untidyselect(cb, {{ group_rows }})
   if (missing(group_rows_numeric)) {
@@ -97,7 +85,48 @@ cb_write <- function(cb,
   check_group_rows_arg(group_rows, group_by)
   check_group_rows_arg(group_rows_numeric, group_by)
   check_group_rows_arg(group_rows_categorical, group_by)
-  
+  cb_write_impl(
+    cb = cb, 
+    file = file, 
+    dataset_name = dataset_name,
+    group_by = group_by,
+    group_rows = group_rows,
+    group_rows_numeric = group_rows_numeric,
+    group_rows_categorical = group_rows_categorical,
+    detail_missing = detail_missing,
+    n_text_vals = n_text_vals,
+    incl_date = incl_date,
+    incl_dims = incl_dims,
+    hyperlinks = hyperlinks,
+    overwrite = overwrite
+  )
+}
+
+cb_write_impl <- function(cb, 
+                          file, 
+                          dataset_name = NULL,
+                          group_by = NULL,
+                          group_rows = NULL,
+                          group_rows_numeric = group_rows,
+                          group_rows_categorical = group_rows,
+                          detail_missing = c("if_any_user_missing", "yes", "no"),
+                          n_text_vals = 5,
+                          incl_date = TRUE,
+                          incl_dims = TRUE,
+                          hyperlinks = TRUE,
+                          overwrite = TRUE) {
+  detail_missing <- detail_missing == "yes" || (
+    detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
+  )
+  summaries <- list(
+    num = cb_summarize_numeric_impl(cb),
+    cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
+    txt = cb_summarize_text_impl(
+      cb,
+      n_text_vals = n_text_vals,
+      detail_missing = detail_missing
+    )
+  )
   if (!is.null(group_by)) {
     summaries$num_grp <- cb_summarize_numeric_impl(
       cb, 
@@ -393,6 +422,27 @@ var_name_hyperlinks <- function(params) {
   params
 }
 
+wb_set_col_auto_min_max <- function(wb,
+                                    sheet = openxlsx2::current_sheet(),
+                                    cols,
+                                    min_width = 7,
+                                    max_width = 70,
+                                    hidden = FALSE) {
+  # note `wb_set_col_auto_min_max()` must be used before setting any column 
+  # widths outside [min_width, max_width]. otherwise those columns will be reset
+  # to within [min_width, max_width].
+  
+  opts <- options(
+    openxlsx2.minWidth = min_width,
+    openxlsx2.maxWidth = max_width
+  )
+  on.exit(options(opts))
+
+  openxlsx2::wb_set_col_widths(
+    wb, sheet = sheet, cols = cols, widths = "auto", hidden = hidden
+  )
+}
+
 cb_prep_sheet_data <- function(data,
                                sheet_name = NULL, 
                                header = NULL,
@@ -434,6 +484,9 @@ cb_prep_sheet_data <- function(data,
     num = which(data_nms %in% cols_num),
     pct = which(data_nms %in% cols_pct),
     int = which(data_nms %in% cols_int),
+    spacer = which(
+      data_nms == "" & vapply(data, \(x) all(is.na(x)), logical(1))
+    ),
     border = lapply(
       rows_border_by, 
       \(rbb) compute_border_cols(data, cols = all, start_col = rbb)
@@ -634,7 +687,8 @@ cb_write_sheet <- function(wb, data, params) {
   
   # Set column widths and freeze panes
   wb <- wb |>
-    openxlsx2::wb_set_col_widths(cols = pm$cols$all, widths = "auto") |>
+    wb_set_col_auto_min_max(cols = setdiff(pm$cols$all, pm$cols$spacer)) |>
+    openxlsx2::wb_set_col_widths(cols = pm$cols$spacer, widths = 2.6) |>
     openxlsx2::wb_freeze_pane(
       first_active_row = pm$rows$dat_start + 1,  first_active_col = 2
     )
@@ -667,9 +721,7 @@ cb_write_codebook <- function(cb,
                               incl_date = TRUE,
                               incl_dims = TRUE,
                               hyperlinks = TRUE,
-                              overwrite = TRUE,
-                              min_col_width = 7,
-                              max_col_width = 70) {
+                              overwrite = TRUE) {
   # create headers
   cb_name <- cb_dims <- cb_date <- NULL
   if (!is.null(dataset_name)) cb_name <- glue_chr("Dataset: {dataset_name}")
@@ -802,12 +854,6 @@ cb_write_codebook <- function(cb,
   }
   
   if (hyperlinks) params <- var_name_hyperlinks(params)
-
-  opts <- options(
-    openxlsx2.minWidth = min_col_width,
-    openxlsx2.maxWidth = max_col_width
-  )
-  on.exit(options(opts))
     
   # initialize workbook 
   wb <- openxlsx2::wb_workbook()
