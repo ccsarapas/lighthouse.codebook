@@ -57,7 +57,7 @@
       <h1>Introduction to lighthouse.codebook</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.3.1/vignettes/lighthouse-codebook.Rmd" class="external-link"><code>vignettes/lighthouse-codebook.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/vignettes/lighthouse-codebook.Rmd" class="external-link"><code>vignettes/lighthouse-codebook.Rmd</code></a></small>
       <div class="d-none name"><code>lighthouse-codebook.Rmd</code></div>
     </div>
 
@@ -102,10 +102,35 @@ variant (such as <code><a href="../reference/cb_create_spss.html">cb_create_spss
 <span><span class="va">dat_rc</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/cb_create_redcap.html">cb_create_redcap</a></span><span class="op">(</span>metadata <span class="op">=</span> <span class="va">meta_rc</span><span class="op">$</span><span class="va">data</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span><span class="st">"cb_rc.xlsx"</span><span class="op">)</span></span></code></pre></div>
-<p>The codebook written to disk will include an overview tab listing all
-variables in the dataset; summary tabs for numeric, categorical, and
-text variables; and, if grouping variables are specified, grouped
-summary tabs for numeric and categorical variables.</p>
+</div>
+<div class="section level2">
+<h2 id="codebook-contents">Codebook contents<a class="anchor" aria-label="anchor" href="#codebook-contents"></a>
+</h2>
+<p>The codebook written to disk will include an <em>overview</em> tab
+listing all variables in the dataset; <em>summary</em> tabs for numeric,
+categorical, and text variables; and, if grouping variables are
+specified, <em>grouped summary</em> tabs for numeric and categorical
+variables.</p>
+<p>The <em>overview</em> tab includes one row for each variable in the
+dataset, with information on variable types, labels, values, and
+missingness. By default, each variable is hyperlinked to its location on
+the relevant summary tab.</p>
+<p><img src="img/overview.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>The <em>numeric summary</em> tab includes descriptive statistics for
+all numeric variables in the dataset:</p>
+<p><img src="img/numeric.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>The <em>categorical summary</em> tab includes frequencies for all
+categorical variables, optionally with separate rows for user missing
+values:</p>
+<p><img src="img/categorical.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>Finally, the <em>text summary</em> tab includes frequencies for the
+most common values for all text variables in the dataset. (The number of
+values shown can be adjusted using the <code>n_text_vals</code> argument
+to <code><a href="../reference/cb_write.html">cb_write()</a></code>.)</p>
+<p><img src="img/text.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>If <code>group_by</code> is specified in <code><a href="../reference/cb_write.html">cb_write()</a></code>,
+additional numeric and categorical summary tabs grouped by the specified
+variables will be included.</p>
 </div>
 <div class="section level2">
 <h2 id="customizing-codebooks">Customizing codebooks<a class="anchor" aria-label="anchor" href="#customizing-codebooks"></a>

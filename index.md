@@ -2,7 +2,7 @@
 
 The lighthouse.codebook package includes tools to summarize a dataset
 into a formatted Excel workbook, including a data dictionary and
-vrariable summaries. It incorporates external metadata (such as variable
+variable summaries. It incorporates external metadata (such as variable
 labels, value labels, and user missing / non-response codes), with
 functions for using metadata from SPSS and REDCap datasets. Codebooks
 can be customized in a number of ways, including options for grouped
@@ -85,24 +85,24 @@ with information on variable types, labels, values, and missingness. By
 default, each variable is hyperlinked to its location on the relevant
 summary tab.
 
-![](reference/figures/README-overview.png)
+![](articles/img/overview.png)
 
 The *numeric summary* tab includes descriptive statistics for all
 numeric variables in the dataset:
 
-![](reference/figures/README-numeric.png)
+![](articles/img/numeric.png)
 
 The *categorical summary* tab includes frequencies for all categorical
 variables, optionally with separate rows for user missing values:
 
-![](reference/figures/README-categorical.png)
+![](articles/img/categorical.png)
 
 Finally, the *text summary* tab includes frequencies for the most common
 values for all text variables in the dataset. (The number of values
 shown can be adjusted using the `n_text_vals` argument to
 [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md).)
 
-![](reference/figures/README-text.png)
+![](articles/img/text.png)
 
 If `group_by` is specified in
 [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md),
