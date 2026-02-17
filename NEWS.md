@@ -1,5 +1,9 @@
 # lighthouse.codebook 0.3.2
 
+## Fixed
+
+* Fixed spacing between decked heads on grouped summary tabs (fixes #29).
+
 ## Internal
 
 * Added `cb_create_spss_impl()` and `cb_write_impl()` for SPSS extension command interface / future-proofing.
