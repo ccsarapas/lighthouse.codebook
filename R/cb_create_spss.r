@@ -42,6 +42,18 @@ cb_create_spss <- function(data,
                            .split_var_labels = NULL,
                            .options = cb_create_options()) {
   check_options(.options)
+  cb_create_spss_impl(
+    data = data, 
+    .user_missing = .user_missing, 
+    .split_var_labels = !!rlang::enexpr(.split_var_labels), 
+    .options = .options
+  )
+}
+
+cb_create_spss_impl <- function(data,
+                                .user_missing = NULL,
+                                .split_var_labels = NULL,
+                                .options = cb_create_options()) {
   data |>
     cb_init() |>
     cb_clean_fields_spss(

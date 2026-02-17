@@ -70,18 +70,6 @@ cb_write <- function(cb,
                      overwrite = TRUE) {
   check_codebook(cb)
   detail_missing <- match.arg(detail_missing)
-  detail_missing <- detail_missing == "yes" || (
-    detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
-  )
-  summaries <- list(
-    num = cb_summarize_numeric_impl(cb),
-    cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
-    txt = cb_summarize_text_impl(
-      cb,
-      n_text_vals = n_text_vals,
-      detail_missing = detail_missing
-    )
-  )
   group_by <- cb_untidyselect(cb, {{ group_by }})
   group_rows <- cb_untidyselect(cb, {{ group_rows }})
   if (missing(group_rows_numeric)) {
@@ -97,7 +85,48 @@ cb_write <- function(cb,
   check_group_rows_arg(group_rows, group_by)
   check_group_rows_arg(group_rows_numeric, group_by)
   check_group_rows_arg(group_rows_categorical, group_by)
-  
+  cb_write_impl(
+    cb = cb, 
+    file = file, 
+    dataset_name = dataset_name,
+    group_by = group_by,
+    group_rows = group_rows,
+    group_rows_numeric = group_rows_numeric,
+    group_rows_categorical = group_rows_categorical,
+    detail_missing = detail_missing,
+    n_text_vals = n_text_vals,
+    incl_date = incl_date,
+    incl_dims = incl_dims,
+    hyperlinks = hyperlinks,
+    overwrite = overwrite
+  )
+}
+
+cb_write_impl <- function(cb, 
+                          file, 
+                          dataset_name = NULL,
+                          group_by = NULL,
+                          group_rows = NULL,
+                          group_rows_numeric = group_rows,
+                          group_rows_categorical = group_rows,
+                          detail_missing = c("if_any_user_missing", "yes", "no"),
+                          n_text_vals = 5,
+                          incl_date = TRUE,
+                          incl_dims = TRUE,
+                          hyperlinks = TRUE,
+                          overwrite = TRUE) {
+  detail_missing <- detail_missing == "yes" || (
+    detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
+  )
+  summaries <- list(
+    num = cb_summarize_numeric_impl(cb),
+    cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
+    txt = cb_summarize_text_impl(
+      cb,
+      n_text_vals = n_text_vals,
+      detail_missing = detail_missing
+    )
+  )
   if (!is.null(group_by)) {
     summaries$num_grp <- cb_summarize_numeric_impl(
       cb, 
