@@ -27,6 +27,10 @@
 #' @param group_rows_numeric,group_rows_categorical <[`tidy-select`][dplyr_tidy_select]> 
 #'   Column or columns to group by in rows on grouped numeric or categorical summary 
 #'   tab.
+#' @param stats_numeric A named list of summary functions to include on the numeric 
+#'   summary tab. Defaults include mean and standard deviation (SD); median and 
+#'   median absolute deviation (MAD); minimum, maximum, and range; and adjusted 
+#'   skewness and kurtosis. See `?cb_summarize_numeric` for details and examples.
 #' @param detail_missing Include detailed missing value information on ungrouped 
 #'   categorical and text summary tabs? (Detailed missing information for grouped 
 #'   summary tabs is not currently supported.)
@@ -62,6 +66,17 @@ cb_write <- function(cb,
                      group_rows = NULL,
                      group_rows_numeric = group_rows,
                      group_rows_categorical = group_rows,
+                     stats_numeric = list(
+                        mean = mean, 
+                        SD = sd,
+                        median = median, 
+                        MAD = mad, 
+                        min = min_if_any, 
+                        max = max_if_any,
+                        range = spread,
+                        skew = skew, 
+                        kurt = kurtosis
+                      ),
                      detail_missing = c("if_any_user_missing", "yes", "no"),
                      n_text_vals = 5,
                      incl_date = TRUE,
@@ -93,6 +108,7 @@ cb_write <- function(cb,
     group_rows = group_rows,
     group_rows_numeric = group_rows_numeric,
     group_rows_categorical = group_rows_categorical,
+    stats_numeric = stats_numeric,
     detail_missing = detail_missing,
     n_text_vals = n_text_vals,
     incl_date = incl_date,
@@ -109,6 +125,17 @@ cb_write_impl <- function(cb,
                           group_rows = NULL,
                           group_rows_numeric = group_rows,
                           group_rows_categorical = group_rows,
+                          stats_numeric = list(
+                            mean = mean, 
+                            SD = sd,
+                            median = median, 
+                            MAD = mad, 
+                            min = min_if_any, 
+                            max = max_if_any,
+                            range = spread,
+                            skew = skew, 
+                            kurt = kurtosis
+                          ),
                           detail_missing = c("if_any_user_missing", "yes", "no"),
                           n_text_vals = 5,
                           incl_date = TRUE,
@@ -119,7 +146,7 @@ cb_write_impl <- function(cb,
     detail_missing == "if_any_user_missing" && length(attr(cb, "user_missing"))
   )
   summaries <- list(
-    num = cb_summarize_numeric_impl(cb),
+    num = cb_summarize_numeric_impl(cb, stats = stats_numeric),
     cat = cb_summarize_categorical_impl(cb, detail_missing = detail_missing),
     txt = cb_summarize_text_impl(
       cb,
@@ -131,7 +158,8 @@ cb_write_impl <- function(cb,
     summaries$num_grp <- cb_summarize_numeric_impl(
       cb, 
       group_by = group_by, 
-      group_rows = group_rows_numeric
+      group_rows = group_rows_numeric,
+      stats = stats_numeric
     )
     summaries$cat_grp <- cb_summarize_categorical_impl(
       cb,

@@ -1,5 +1,5 @@
 #' Summarize numeric variables from a codebook object
-#'
+#' 
 #' `cb_summarize_numeric()` generates a summary table for all numeric variables
 #' from a codebook object, optionally by group. Future releases will include options
 #' to specify the summary statistics used. Currently, summary statistics are valid
@@ -7,6 +7,10 @@
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.
+#' @param stats A named list of summary functions to include. The defaults include 
+#'   mean and standard deviation (SD); median and median absolute deviation (MAD); 
+#'   minimum, maximum, and range; and adjusted skewness and kurtosis. See details 
+#'   and examples.
 #' @param group_by <[`tidy-select`][dplyr_tidy_select]> Column or columns to group
 #'   by.
 #' @param warn_if_none Should a warning be issued if there are no numeric variables
@@ -21,21 +25,94 @@
 #'      a non-missing label stem.
 #'   - `label`: variable label
 #'   - `valid_n`, `valid_pct`: number and proportion of non-missing values
-#'   - summary statistic columns: by default, these include `mean` and standard 
-#'     deviation (`SD`); `median`, median absolute deviation (`MAD`), `min`, `max`, 
-#'     and `range`; skewness (`skew`), and kurtosis (`kurt`).
-#'
+#'   - Summary statistic columns as specified in `stats`
+#' 
+#' @details
+#' The `stats` argument controls which summary statistics will be computed. It takes 
+#' a named list of functions, where the names will be used as column names. 
+#' 
+#' `cb_summarize_numeric()` will set `na.rm` to `TRUE` for any function that takes 
+#' a `na.rm` argument. 
+#' 
+#' You can include anonymous functions. If wrapping a function that takes a `na.rm`
+#' argument, it is recommended you explicitly set `na.rm` to `TRUE`. (e.g., to include 
+#' the 25th quantile, use `q25 = \(x) quantile(x, 0.25, na.rm = TRUE)`.
+#' 
+# #' Names will be formatted when written to an Excel codebook:
+# #' - "_" will be replaced with " "
+# #' - "pct" will be replaced with "%"
+# #' - names will generally be changed to Title Case, except that "n" will not be 
+# #' capitalized, and any words already containing capital letters will be left as 
+# #' is.
+# #' 
+#' @examples
+#' cb_storms <- dplyr::storms |>
+#'   dplyr::mutate(year = factor(year)) |>
+#'   dplyr::filter(status %in% c("tropical storm", "hurricane")) |>
+#'   cb_create()
+#' 
+#' # ungrouped summary with default stats
+#' cb_summarize_numeric(cb_storms)
+#' 
+#' # with subset of default stats
+#' cb_summarize_numeric(
+#'   cb_storms,
+#'   stats = list(mean = mean, SD = sd)
+#' )
+#' 
+#' # grouped summary
+#' cb_summarize_numeric(
+#'   cb_storms,
+#'   stats = list(mean = mean, SD = sd),
+#'   group_by = status
+#' )
+#' 
+#' # with custom stats
+#' cb_summarize_numeric(
+#'   cb_storms,
+#'   stats = list(
+#'     median = median,
+#'     q25 = \(x) quantile(x, 0.25, na.rm = TRUE),
+#'     q75 = \(x) quantile(x, 0.75, na.rm = TRUE),
+#'     IQR = IQR
+#'   )
+#' )
+#' 
 #' @export
-cb_summarize_numeric <- function(cb, group_by = NULL, warn_if_none = TRUE) {
+cb_summarize_numeric <- function(cb, 
+                                 group_by = NULL, 
+                                 stats = list(
+                                   mean = mean, 
+                                   SD = sd,
+                                   median = median, 
+                                   MAD = mad, 
+                                   min = min_if_any, 
+                                   max = max_if_any,
+                                   range = spread,
+                                   skew = skew, 
+                                   kurt = kurtosis
+                                 ),
+                                 warn_if_none = TRUE) {
   check_codebook(cb)
   group_by <- cb_untidyselect(cb, {{ group_by }})
   cb_summarize_numeric_impl(
-    cb = cb, group_by = group_by, warn_if_none = warn_if_none
+    cb = cb, group_by = group_by, stats = stats, warn_if_none = warn_if_none
   )
 }
 
 cb_summarize_numeric_impl <- function(cb, 
                                       group_by = NULL, 
+                                      stats = list(
+                                        mean = mean, 
+                                        SD = sd,
+                                        median = median, 
+                                        MAD = mad, 
+                                        min = min_if_any, 
+                                        max = max_if_any,
+                                        range = spread,
+                                        skew = skew, 
+                                        kurt = kurtosis
+                                      ),
                                       warn_if_none = FALSE,
                                       group_rows = NULL) {
   data <- attr(cb, "data_zapped")[cb$name]
@@ -60,17 +137,19 @@ cb_summarize_numeric_impl <- function(cb,
     id_cols <- setdiff(id_cols, "label_stem")    
   }
   
-  res <- lighthouse::summary_table(
-      data,
-      valid_n = lighthouse::n_valid, valid_pct = lighthouse::pct_valid,
-      mean, SD = sd,
-      median, MAD = mad, min = lighthouse::min_if_any, max = lighthouse::max_if_any, 
-      range = spread_if_any,
-      skew = moments::skewness, kurt = moments::kurtosis,
+  args <- c(
+    list(
+      .data = data,
       na.rm = TRUE,
       .vars = all_of(nms_num),
-      .rows_group_by = all_of(group_by)
-    ) |>
+      .rows_group_by = all_of(group_by),
+      valid_n = lighthouse::n_valid,
+      valid_pct = lighthouse::pct_valid
+    ),
+    stats
+  )
+  
+  res <- do.call(lighthouse::summary_table, args) |> 
     dplyr::mutate(dplyr::across(
       all_of(group_by),
       \(x) fct_replace_na(factor(x), "(Missing)")

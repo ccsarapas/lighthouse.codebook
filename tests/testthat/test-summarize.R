@@ -33,7 +33,47 @@ test_that("`cb_summarize_numeric()` supports grouping", {
   expect_true("mh_red" %in% names(num_group))
   expect_gt(nrow(num_group), 0)
 })
-test_that("cb_summarize_categorical toggles detailed missing columns and supports grouping", {
+
+test_that("`cb_summarize_numeric()` `stats` controls included statistic columns", {
+  fx <- fixture_core()
+
+  cb <- cb_create(
+    data = fx$data,
+    metadata = fx$metadata,
+    .val_labs_sep1 = " = ",
+    .val_labs_sep2 = "; "
+  )
+
+  num <- cb_summarize_numeric(
+    cb,
+    stats = list(mean = mean)
+  )
+
+  expect_true(all(c("valid_n", "valid_pct", "mean") %in% names(num)))
+  expect_false("SD" %in% names(num))
+  expect_false("median" %in% names(num))
+})
+
+test_that("`cb_summarize_numeric()` accepts non-default custom stats functions", {
+  fx <- fixture_core()
+
+  cb <- cb_create(
+    data = fx$data,
+    metadata = fx$metadata,
+    .val_labs_sep1 = " = ",
+    .val_labs_sep2 = "; "
+  )
+
+  num <- cb_summarize_numeric(
+    cb,
+    stats = list(q25 = \(x) quantile(x, 0.25, na.rm = TRUE))
+  )
+
+  expect_true("q25" %in% names(num))
+  score <- num[num$name == "num_score", "q25", drop = TRUE]
+  expect_equal(score, quantile(fx$data$num_score, 0.25, na.rm = TRUE))
+})
+
 test_that(
   "`cb_summarize_categorical()` `detail_missing` toggles detailed missing columns", {
   fx <- fixture_core()
