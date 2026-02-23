@@ -1,31 +1,31 @@
-test_that("cb_create and cb_create_redcap enforce options class", {
+test_that("`cb_create()` and `cb_create_redcap()` enforce options class", {
   fx <- fixture_core()
 
   expect_error(
-    lighthouse.codebook::cb_create(
+    cb_create(
       data = fx$data,
       metadata = fx$metadata,
-      .options = lighthouse.codebook::cb_create_redcap_options()
+      .options = cb_create_redcap_options()
     ),
     "Did you mean to call"
   )
 
   rc <- fixture_redcap()
   expect_error(
-    lighthouse.codebook::cb_create_redcap(
+    cb_create_redcap(
       data = rc$data,
       metadata = rc$metadata,
-      .options = lighthouse.codebook::cb_create_options()
+      .options = cb_create_options()
     ),
     "must be created from"
   )
 })
 
-test_that("cb_create validates .user_missing argument type", {
+test_that("`cb_create()` validates `.user_missing` argument type", {
   fx <- fixture_core()
 
   expect_error(
-    lighthouse.codebook::cb_create(
+    cb_create(
       data = fx$data,
       metadata = fx$metadata,
       .val_labs_sep1 = " = ",
@@ -36,9 +36,9 @@ test_that("cb_create validates .user_missing argument type", {
   )
 })
 
-test_that("cb_write validates group_rows arguments", {
+test_that("`cb_write()` validates `group_rows` arguments", {
   fx <- fixture_core()
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -46,7 +46,7 @@ test_that("cb_write validates group_rows arguments", {
   )
 
   expect_error(
-    lighthouse.codebook::cb_write(
+    cb_write(
       cb,
       file = tempfile(fileext = ".xlsx"),
       group_rows = mh_red
@@ -55,7 +55,7 @@ test_that("cb_write validates group_rows arguments", {
   )
 
   expect_error(
-    lighthouse.codebook::cb_write(
+    cb_write(
       cb,
       file = tempfile(fileext = ".xlsx"),
       group_by = mh_red,

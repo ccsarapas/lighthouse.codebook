@@ -1,11 +1,11 @@
-test_that("cb_create_redcap smoke: checkbox relabeling and missing propagation", {
+test_that("`cb_create_redcap()` checkbox relabeling and missing propagation", {
   fx <- fixture_redcap()
 
-  cb <- lighthouse.codebook::cb_create_redcap(
+  cb <- cb_create_redcap(
     data = fx$data,
     metadata = fx$metadata,
     .user_missing = ~ 9,
-    .options = lighthouse.codebook::cb_create_redcap_options(
+    .options = cb_create_redcap_options(
       checkbox_resp_values = TRUE,
       propagate_checkbox_missings = TRUE
     )
@@ -19,7 +19,7 @@ test_that("cb_create_redcap smoke: checkbox relabeling and missing propagation",
   expect_match(vals_0, "Option A")
   expect_match(vals_9, "Not asked")
 
-  dat_haven <- lighthouse.codebook::cb_get_data(cb, format = "haven")
+  dat_haven <- cb_get_data(cb, format = "haven")
   expect_equal(as.numeric(dat_haven$q1___0[3]), 9)
   expect_equal(as.numeric(dat_haven$q1___1[3]), 9)
   expect_true(9 %in% labelled::na_values(dat_haven$q1___0))

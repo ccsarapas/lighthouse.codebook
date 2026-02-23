@@ -1,3 +1,9 @@
+# lighthouse.codebook 0.4.0
+
+## Internal
+
+* Added a test suite.
+
 # lighthouse.codebook 0.3.2
 
 ## Fixed

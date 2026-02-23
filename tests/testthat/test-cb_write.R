@@ -1,7 +1,7 @@
-test_that("cb_write writes workbook and includes core summary sheets", {
+test_that("`cb_write()` writes workbook and includes core summary sheets", {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -10,7 +10,7 @@ test_that("cb_write writes workbook and includes core summary sheets", {
 
   out_file <- tempfile(fileext = ".xlsx")
   on.exit(unlink(out_file), add = TRUE)
-  out <- lighthouse.codebook::cb_write(cb, file = out_file, overwrite = TRUE)
+  out <- cb_write(cb, file = out_file, overwrite = TRUE)
 
   expect_identical(out, out_file)
   expect_true(file.exists(out_file))
@@ -26,10 +26,10 @@ test_that("cb_write writes workbook and includes core summary sheets", {
   ) %in% sheets))
 })
 
-test_that("cb_write grouped mode adds grouped summary sheets", {
+test_that("`cb_write()` `group_by` adds grouped summary sheets", {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -38,7 +38,7 @@ test_that("cb_write grouped mode adds grouped summary sheets", {
 
   out_file <- tempfile(fileext = ".xlsx")
   on.exit(unlink(out_file), add = TRUE)
-  lighthouse.codebook::cb_write(
+  cb_write(
     cb,
     file = out_file,
     group_by = mh_red,

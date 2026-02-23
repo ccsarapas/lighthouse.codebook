@@ -76,10 +76,11 @@ try_sort_numeric <- function(x,
     sort(x, decreasing = decreasing, ...)
   }
 }
-try_sort_numeric(letters)
-  coercible <- lighthouse::is_coercible_numeric(letters, na = "TRUE")
 
-class_collapse <- function(x, sep = ", ") stringr::str_c(class(x), collapse = sep)
+class_collapse <- function(x, sep = ", ") {
+  stringr::str_c(class(x), collapse = sep)
+}
+
 strip_html <- function(x) {
   stopifnot(is.character(x))
   has_tags <- grepl("<[A-Za-z!/]", x)
@@ -171,7 +172,6 @@ cb_match_type <- function(nm,
 }
 
 as_named <- function(x, class) setNames(as(x, class), names(x))
-
 
 has_val_labels <- function(x) !is.null(labelled::val_labels(x))
 

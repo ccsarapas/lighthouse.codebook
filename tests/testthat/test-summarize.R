@@ -1,29 +1,44 @@
-test_that("cb_summarize_numeric returns expected columns and NULL when no numeric vars", {
+test_that("`cb_summarize_numeric()` returns expected columns", {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
     .val_labs_sep2 = "; "
   )
 
-  num <- lighthouse.codebook::cb_summarize_numeric(cb)
+  num <- cb_summarize_numeric(cb)
   expect_true(all(c("name", "valid_n", "valid_pct", "mean", "SD") %in% names(num)))
+})
 
-  dat_chr <- tibble::tibble(a = c("x", "y", NA), b = c("m", "m", "n"))
-  cb_chr <- lighthouse.codebook::cb_create(dat_chr)
-  expect_warning(
-    out <- lighthouse.codebook::cb_summarize_numeric(cb_chr, warn_if_none = TRUE),
-    "No numeric variables"
-  )
+test_that("`cb_summarize_numeric()` returns `NULL` when no numeric vars", {
+  dat_chr <- data.frame(a = c("x", "y", NA), b = c("m", "m", "n"))
+  cb_chr <- cb_create(dat_chr)
+  expect_warning(out <- cb_summarize_numeric(cb_chr), "No numeric variables")
   expect_null(out)
 })
 
-test_that("cb_summarize_categorical toggles detailed missing columns and supports grouping", {
+test_that("`cb_summarize_numeric()` supports grouping", {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
+    data = fx$data,
+    metadata = fx$metadata,
+    .val_labs_sep1 = " = ",
+    .val_labs_sep2 = "; "
+  )
+
+  num_group <- cb_summarize_numeric(cb, group_by = mh_red)
+  expect_true("mh_red" %in% names(num_group))
+  expect_gt(nrow(num_group), 0)
+})
+test_that("cb_summarize_categorical toggles detailed missing columns and supports grouping", {
+test_that(
+  "`cb_summarize_categorical()` `detail_missing` toggles detailed missing columns", {
+  fx <- fixture_core()
+
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -31,30 +46,62 @@ test_that("cb_summarize_categorical toggles detailed missing columns and support
     .user_missing = cat_code ~ c(Skipped = 2)
   )
 
-  cat_detail <- lighthouse.codebook::cb_summarize_categorical(cb, detail_missing = TRUE)
+  cat_detail <- cb_summarize_categorical(cb, detail_missing = TRUE)
   expect_true("is_missing" %in% names(cat_detail))
   expect_true("pct_of_missing" %in% names(cat_detail))
 
-  cat_simple <- lighthouse.codebook::cb_summarize_categorical(cb, detail_missing = FALSE)
+  cat_simple <- cb_summarize_categorical(cb, detail_missing = FALSE)
   expect_false("is_missing" %in% names(cat_simple))
   expect_false("pct_of_missing" %in% names(cat_simple))
+})
 
-  cat_group <- lighthouse.codebook::cb_summarize_categorical(cb, group_by = mh_red)
+test_that("`cb_summarize_categorical()` supports grouping", {
+  fx <- fixture_core()
+
+  cb <- cb_create(
+    data = fx$data,
+    metadata = fx$metadata,
+    .val_labs_sep1 = " = ",
+    .val_labs_sep2 = "; ",
+    .user_missing = cat_code ~ c(Skipped = 2)
+  )
+
+  cat_group <- cb_summarize_categorical(cb, group_by = mh_red)
   expect_true("mh_red" %in% names(cat_group))
   expect_gt(nrow(cat_group), 0)
 })
 
-test_that("cb_summarize_text truncates displayed values with n_text_vals", {
+test_that("`cb_summarize_text()` `detail_missing` toggles detailed missing columns", {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
+    data = fx$data,
+    metadata = fx$metadata,
+    .val_labs_sep1 = " = ",
+    .val_labs_sep2 = "; ",
+    .user_missing = txt_note ~ c(Skipped = "SKIP")
+  )
+
+  txt_detail <- cb_summarize_text(cb, detail_missing = TRUE)
+  expect_true("is_missing" %in% names(txt_detail))
+  expect_true("pct_of_missing" %in% names(txt_detail))
+
+  txt_simple <- cb_summarize_text(cb, detail_missing = FALSE)
+  expect_false("is_missing" %in% names(txt_simple))
+  expect_false("pct_of_missing" %in% names(txt_simple))
+})
+
+test_that("`cb_summarize_text()` truncates displayed values with `n_text_vals`", {
+  fx <- fixture_core()
+
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
     .val_labs_sep2 = "; "
   )
 
-  txt <- lighthouse.codebook::cb_summarize_text(cb, n_text_vals = 1, detail_missing = FALSE)
+  txt <- cb_summarize_text(cb, n_text_vals = 1, detail_missing = FALSE)
 
   txt_note <- txt[txt$name == "txt_note", ]
   expect_true(any(grepl("other values", txt_note$value, fixed = TRUE)))

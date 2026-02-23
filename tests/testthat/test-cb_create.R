@@ -1,7 +1,7 @@
-test_that("cb_create returns li_codebook and preserves variable order", {
+test_that('`cb_create()` returns "li_codebook" and preserves variable order', {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -13,15 +13,15 @@ test_that("cb_create returns li_codebook and preserves variable order", {
   expect_true(all(c("name", "type", "label", "values", "missing") %in% names(cb)))
 })
 
-test_that("cb_create parses metadata value labels and errors without separators", {
+test_that("`cb_create()` parses metadata value labels and errors without separators", {
   fx <- fixture_core()
 
   expect_error(
-    lighthouse.codebook::cb_create(data = fx$data, metadata = fx$metadata),
+    cb_create(data = fx$data, metadata = fx$metadata),
     "sep1"
   )
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -33,12 +33,12 @@ test_that("cb_create parses metadata value labels and errors without separators"
   expect_match(cat_vals, "\\[2\\].*No")
 })
 
-test_that("cb_create handles user missing incompatibility according to options", {
+test_that("`cb_create()` handles user missing incompatibility according to options", {
   fx <- fixture_core()
 
-  opts_warn <- lighthouse.codebook::cb_create_options(user_missing_incompatible = "warn")
+  opts_warn <- cb_create_options(user_missing_incompatible = "warn")
   expect_warning(
-    lighthouse.codebook::cb_create(
+    cb_create(
       data = fx$data,
       metadata = fx$metadata,
       .val_labs_sep1 = " = ",
@@ -49,9 +49,9 @@ test_that("cb_create handles user missing incompatibility according to options",
     "not compatible"
   )
 
-  opts_error <- lighthouse.codebook::cb_create_options(user_missing_incompatible = "error")
+  opts_error <- cb_create_options(user_missing_incompatible = "error")
   expect_error(
-    lighthouse.codebook::cb_create(
+    cb_create(
       data = fx$data,
       metadata = fx$metadata,
       .val_labs_sep1 = " = ",
@@ -63,10 +63,10 @@ test_that("cb_create handles user missing incompatibility according to options",
   )
 })
 
-test_that("cb_create split_var_labels creates label_stem and rejects overlaps", {
+test_that("`cb_create()` `split_var_labels` creates `label_stem` and rejects overlaps", {
   fx <- fixture_core()
 
-  cb <- lighthouse.codebook::cb_create(
+  cb <- cb_create(
     data = fx$data,
     metadata = fx$metadata,
     .val_labs_sep1 = " = ",
@@ -80,7 +80,7 @@ test_that("cb_create split_var_labels creates label_stem and rejects overlaps", 
   expect_setequal(cb$label[mh_idx], c("Red", "Blue"))
 
   expect_error(
-    lighthouse.codebook::cb_create(
+    cb_create(
       data = fx$data,
       metadata = fx$metadata,
       .val_labs_sep1 = " = ",
