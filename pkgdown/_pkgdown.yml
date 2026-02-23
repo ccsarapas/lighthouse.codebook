@@ -22,12 +22,20 @@ reference:
   - cb_create_spss
   - cb_create_redcap
   - cb_write
-- title: Other functions
-  desc: Functions to set options or get information from codebook objects
+- title: Other codebook functions
+  desc: Extract data or generate summaries from codebook objects
   contents:
   - cb_get_data
   - cb_summarize_numeric
   - cb_summarize_categorical
   - cb_summarize_text
+- title: Helpers
+  contents:
   - cb_create_options
   - cb_create_redcap_options
+  - skew
+  - kurtosis
+  - spread
+  - min_if_any
+  - max_if_any
+  - se_mean

@@ -185,9 +185,6 @@ to_labelled_chr <- function(x,
   )
 }
 
-spread_if_any <- function(..., na.rm = TRUE) {
-  lighthouse::max_if_any(..., na.rm = na.rm) - lighthouse::min_if_any(..., na.rm = na.rm)
-}
 
 #' @export
 nan_to_na.default <- function(x) dplyr::if_else(is.nan(x), NA, x)

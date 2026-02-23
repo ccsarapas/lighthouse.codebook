@@ -1,8 +1,14 @@
 # lighthouse.codebook 0.4.0
 
+## Added
+
+* A handful of stats helpers for use in the new `stats` / `stats_numeric` arguments, including `skew()`, `kurtosis()`, `spread()`, and re-exports from the lighthouse package `min_if_any()`, `max_if_any()`, and `se_mean()`.
+
 ## Internal
 
 * Added a test suite.
+
+* Dropped dependency on moments package.
 
 # lighthouse.codebook 0.3.2
 
