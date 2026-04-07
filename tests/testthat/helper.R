@@ -54,12 +54,41 @@ fixture_redcap <- function() {
 }
 
 fixture_spss <- function() {
-  x <- haven::labelled_spss(
-    c(1, 2, 9, 1),
-    labels = c(Yes = 1, No = 2, Refused = 9),
-    na_values = 9,
-    label = "SPSS demo var"
-  )
+  vals <- c(1, 2, -9)
 
-  tibble::tibble(spss_var = x)
+  tibble::tibble(
+    num_na_vals = haven::labelled_spss(
+      vals,
+      na_values = -9,
+      label = "Numeric NA values"
+    ),
+    num_na_range = haven::labelled_spss(
+      vals,
+      na_range = c(-9, -1),
+      label = "Numeric NA range"
+    ),
+    cat_na_vals_unlabelled = haven::labelled_spss(
+      vals,
+      labels = c(Yes = 1, No = 2),
+      na_values = -9,
+      label = "Categorical NA values (unlabelled missing)"
+    ),
+    cat_na_vals_labelled = haven::labelled_spss(
+      vals,
+      labels = c(Yes = 1, No = 2, Refused = -9),
+      na_values = -9,
+      label = "Categorical NA values (labelled missing)"
+    ),
+    cat_na_range = haven::labelled_spss(
+      vals,
+      labels = c(Yes = 1, No = 2),
+      na_range = c(-9, -1),
+      label = "Categorical NA range"
+    ),
+    txt_na_vals = haven::labelled_spss(
+      as.character(vals),
+      na_values = "-9",
+      label = "Text NA values"
+    )
+  )
 }

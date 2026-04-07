@@ -33,6 +33,38 @@ test_that("`cb_create()` parses metadata value labels and errors without separat
   expect_match(cat_vals, "\\[2\\].*No")
 })
 
+test_that("`cb_create()` accepts omitted variable labels from metadata (issue #34)", {
+  meta_no_var_lab <- data.frame(
+    name = "cat_code",
+    val_labels = "1 = Yes; 2 = No"
+  )
+
+  expect_no_error(
+    cb_create(
+      data = fixture_core()$data,
+      metadata = meta_no_var_lab,
+      .var_label = NULL,
+      .val_labs_sep1 = " = ",
+      .val_labs_sep2 = "; "
+    )
+  )
+})
+
+test_that("`cb_create()` accepts omitted value labels from metadata (issue #34)", {
+  meta_no_val_labs <- data.frame(
+    name = "cat_code",
+    label = "Binary category"
+  )
+
+  expect_no_error(
+    cb_create(
+      data = fixture_core()$data,
+      metadata = meta_no_val_labs,
+      .val_labels = NULL
+    )
+  )
+})
+
 test_that("`cb_create()` handles user missing incompatibility according to options", {
   fx <- fixture_core()
 

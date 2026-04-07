@@ -34,6 +34,22 @@ test_that("`cb_summarize_numeric()` supports grouping", {
   expect_gt(nrow(num_group), 0)
 })
 
+test_that("`cb_summarize_numeric()` supports numeric grouping variables (issue #31)", {
+  dat <- data.frame(
+    grp = c(1, 2, 1, 2),
+    num = c(1, 2, 3, 4)
+  )
+
+  cb <- cb_create(dat)
+
+  num_group <- NULL
+  expect_no_error(
+    num_group <- cb_summarize_numeric(cb, group_by = grp)
+  )
+
+  if (!is.null(num_group)) expect_true("grp" %in% names(num_group))
+})
+
 test_that("`cb_summarize_numeric()` `stats` controls included statistic columns", {
   fx <- fixture_core()
 
