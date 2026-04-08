@@ -33,7 +33,7 @@ test_that("`cb_create_spss()` imports variable labels and value labels for issue
 
   expect_match(cb$values[cb$name == "cat_na_vals_unlabelled"], "\\[1\\].*Yes")
   expect_match(cb$values[cb$name == "cat_na_vals_unlabelled"], "\\[2\\].*No")
-  expect_match(cb$values[cb$name == "cat_na_vals_labelled"], "\\[-9\\].*Refused")
+  expect_match(cb$user_missings[cb$name == "cat_na_vals_labelled"], "\\[-9\\].*Refused")
 
   expect_mapequal(
     attr(cb, "vals_by_label")$cat_na_vals_unlabelled,

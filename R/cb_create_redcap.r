@@ -115,6 +115,7 @@ cb_create_redcap <- function(data,
     cb <- cb_propagate_user_missing_checkboxes_rc(cb)
   }
   cb |>
+    cb_reconcile_missing_labels(conflict = .options$user_missing_conflict) |>
     cb_label_data(conflict = .options$user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>

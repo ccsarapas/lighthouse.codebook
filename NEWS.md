@@ -6,6 +6,12 @@
 
 * A handful of stats helpers for use in the new `stats` / `stats_numeric` arguments, including `skew()`, `kurtosis()`, `spread()`, and re-exports from the lighthouse package `min_if_any()`, `max_if_any()`, and `se_mean()`.
 
+## Fixed
+
+* User missing values defined in SPSS datasets or `"haven_labelled"` vectors are now consistently recognized (fixes #32).
+
+* `cb_summarize_categorical()` no longer throws an error when a variable contains no value labels.
+
 ## Internal
 
 * Added a test suite.

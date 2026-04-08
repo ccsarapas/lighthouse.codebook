@@ -172,6 +172,7 @@ cb_create <- function(data,
       incompatible = .options$user_missing_incompatible
     ) |>
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
+    cb_reconcile_missing_labels(conflict = .options$user_missing_conflict) |>
     cb_label_data(conflict = .options$user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
@@ -378,7 +379,10 @@ cb_user_missings <- function(cb,
                              user_missing, 
                              match_type = TRUE,
                              incompatible = c("ignore", "warn", "error")) {
-  if (is.null(user_missing)) return(set_attrs(cb, user_missing = list()))
+  if (is.null(user_missing)) {
+    attr(cb, "user_missing") <- attr(cb, "user_missing") %||% list()
+    return(cb)
+  }
   user_missing <- check_user_missing_arg(user_missing)
   for (um in user_missing) {
     cb <- cb_user_missings_across(
@@ -493,12 +497,36 @@ reconcile_missing_labels <- function(val_labs,
   list(val_labs = val_labs, missings = missings)
 }
 
+cb_reconcile_missing_labels <- function(cb,
+                                        conflict = c("val_label", "missing_label")) {
+  conflict <- match.arg(conflict)
+  vals_by_label <- attr(cb, "vals_by_label")
+  user_missing <- attr(cb, "user_missing")
+  factors <- attr(cb, "factors") %||% character()
+  vars <- setdiff(intersect(names(vals_by_label), names(user_missing)), factors)
+  if (!length(vars)) return(cb)
+
+  for (nm in vars) {
+    if (is.null(vals_by_label[[nm]]) || is.null(user_missing[[nm]])) next
+    vals <- reconcile_missing_labels(
+      val_labs = sort(vals_by_label[[nm]]),
+      missings = sort(user_missing[[nm]]),
+      conflict = conflict
+    )
+    user_missing[[nm]] <- sort(vals$missings)
+    vals_by_label[[nm]] <- vals$val_labs[
+      order(vals$val_labs %in% vals$missings, vals$val_labs)
+    ]
+  }
+  set_attrs(cb, vals_by_label = vals_by_label, user_missing = user_missing)
+}
+
 cb_label_data <- function(cb, conflict = c("val_label", "missing_label")) {
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
   factors <- attr(cb, "factors")
   user_missing <- attr(cb, "user_missing")
-  label_vars <- unique(c(names(vals_by_label), names(user_missing)))
+  label_vars <- union(names(vals_by_label), names(user_missing))
   for (nm in label_vars) {
     missings <- sort(user_missing[[nm]])
     if (nm %in% factors) {
@@ -506,15 +534,7 @@ cb_label_data <- function(cb, conflict = c("val_label", "missing_label")) {
     } else {
       val_labs <- sort(vals_by_label[[nm]])
       if (!is.null(val_labs) && !is.null(missings)) {
-        vals <- reconcile_missing_labels(
-          val_labs = val_labs,
-          missings = missings,
-          conflict = conflict
-        )
-        missings <- sort(vals$missings)
-        val_labs <- vals$val_labs[
-          order(vals$val_labs %in% vals$missings, vals$val_labs)
-        ]
+        val_labs <- val_labs[order(val_labs %in% missings, val_labs)]
       }
       data[[nm]] <- haven::labelled_spss(
         data[[nm]], labels = val_labs, na_values = missings
