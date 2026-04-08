@@ -1,9 +1,7 @@
 #' Summarize numeric variables from a codebook object
 #' 
 #' `cb_summarize_numeric()` generates a summary table for all numeric variables
-#' from a codebook object, optionally by group. Future releases will include options
-#' to specify the summary statistics used. Currently, summary statistics are valid
-#' n and %; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis.
+#' from a codebook object, optionally by group.
 #'
 #' @param cb An object of class `"li_codebook"` as produced by [`cb_create()`] or
 #'   a variant.

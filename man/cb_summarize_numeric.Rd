@@ -43,9 +43,7 @@ a non-missing label stem.
 }
 \description{
 \code{cb_summarize_numeric()} generates a summary table for all numeric variables
-from a codebook object, optionally by group. Future releases will include options
-to specify the summary statistics used. Currently, summary statistics are valid
-n and \%; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis.
+from a codebook object, optionally by group.
 }
 \details{
 The \code{stats} argument controls which summary statistics will be computed. It takes
