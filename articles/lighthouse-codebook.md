@@ -96,11 +96,11 @@ variables by specifying them in the `group_by` argument to
 [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md).
 
 ``` r
-cb_create(data, metadata) |>
-  cb_write("cb.xlsx", group_by = treatment_group)
+cb <- cb_create(data, metadata)
 
-cb_create(data, metadata) |>
-  cb_write("cb.xlsx", group_by = c(treatment_group, timepoint, age_group))
+cb_write(cb, "cb.xlsx", group_by = treatment_group)
+
+cb_write(cb, "cb.xlsx", group_by = c(treatment_group, timepoint, age_group))
 ```
 
 By default, values for each subgroup are shown in separate columns, with
@@ -110,7 +110,7 @@ some or all grouping variables can instead be shown in rows using the
 
 ``` r
 # show `treatment_group` in columns and `timepoint` in rows
-cb_create(data, metadata) |>
+cb |>
   cb_write(
     "cb.xlsx", 
     group_by = c(treatment_group, timepoint),
@@ -125,7 +125,7 @@ categorical summary tabs using the `group_rows_numeric` and
 ``` r
 # for numeric summary, show `treatment_group` in columns and `timepoint` in rows;
 # for categorical summary, show all grouping variables in columns
-cb_create(data, metadata) |>
+cb |>
   cb_write(
     "cb.xlsx", 
     group_by = c(treatment_group, timepoint),
@@ -134,13 +134,43 @@ cb_create(data, metadata) |>
 
 # for numeric summary, show all grouping variables in rows; 
 # for categorical summary, show `treatment_group` in rows
-cb_create(data, metadata) |>
+cb |>
   cb_write(
     "cb.xlsx", 
     group_by = c(treatment_group, timepoint),
     group_rows_numeric = c(treatment_group, timepoint),
     group_rows_categorical = treatment_group
   )
+```
+
+### Statistics for numeric summaries
+
+Summary statistics shown on numeric summary tabs can be customized using
+the `stats_numeric` argument to
+[`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md).
+This argument takes a named list of functions, where names are used as
+column names.
+
+For any function that has a `na.rm` argument,
+[`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+will automatically set `na.rm = TRUE`. Anonymous functions can also be
+used. If wrapping a function that takes a `na.rm` argument, it is
+recommended you explicitly set `na.rm = TRUE`.
+
+``` r
+cb <- cb_create(data, metadata)
+
+cb |> 
+  cb_write(
+  "cb.xlsx",
+  stats_numeric = list(
+    mean = mean,
+    SD = sd,
+    q25 = \(x) quantile(x, 0.25, na.rm = TRUE),
+    q75 = \(x) quantile(x, 0.75, na.rm = TRUE),
+    IQR = IQR
+  )
+)
 ```
 
 ### User missing values

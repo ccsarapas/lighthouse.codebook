@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,9 +30,29 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.3.2/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="lighthousecodebook-040">lighthouse.codebook 0.4.0<a class="anchor" aria-label="anchor" href="#lighthousecodebook-040"></a></h2>
+<div class="section level3">
+<h3 id="added-0-4-0">Added<a class="anchor" aria-label="anchor" href="#added-0-4-0"></a></h3>
+<ul><li><p>Summary statistics returned by <code><a href="../reference/cb_summarize_numeric.html">cb_summarize_numeric()</a></code> can now be specified using the new <code>stats</code> argument. Summary statistics included on the numeric summary tab of workbooks written by <code><a href="../reference/cb_write.html">cb_write()</a></code> can likewise be specified using the <code>stats_numeric</code> argument.</p></li>
+<li><p>A handful of stats helpers for use in the new <code>stats</code> / <code>stats_numeric</code> arguments, including <code><a href="../reference/stats.html">skew()</a></code>, <code><a href="../reference/stats.html">kurtosis()</a></code>, <code><a href="../reference/stats.html">spread()</a></code>, and re-exports from the lighthouse package <code><a href="../reference/stats.html">min_if_any()</a></code>, <code><a href="../reference/stats.html">max_if_any()</a></code>, and <code><a href="../reference/stats.html">se_mean()</a></code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-4-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-4-0"></a></h3>
+<ul><li><p>User missing values defined in SPSS datasets or <code>"haven_labelled"</code> vectors are now consistently recognized (fixes <a href="https://github.com/ccsarapas/lighthouse.codebook/issues/32" class="external-link">#32</a>).</p></li>
+<li><p>Specfying numeric grouping columns no longer throws an error (fixes <a href="https://github.com/ccsarapas/lighthouse.codebook/issues/31" class="external-link">#31</a>).</p></li>
+<li><p><code><a href="../reference/cb_create.html">cb_create()</a></code> no longer throws an error when <code>.val_labels = NULL</code> (fixes <a href="https://github.com/ccsarapas/lighthouse.codebook/issues/34" class="external-link">#34</a>).</p></li>
+<li><p><code><a href="../reference/cb_summarize_categorical.html">cb_summarize_categorical()</a></code> no longer throws an error when a variable contains no value labels.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-0-4-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-4-0"></a></h3>
+<ul><li><p>Added a test suite.</p></li>
+<li><p>Dropped dependency on moments package.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="lighthousecodebook-032">lighthouse.codebook 0.3.2<a class="anchor" aria-label="anchor" href="#lighthousecodebook-032"></a></h2>
 <div class="section level3">

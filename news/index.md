@@ -1,5 +1,49 @@
 # Changelog
 
+## lighthouse.codebook 0.4.0
+
+### Added
+
+- Summary statistics returned by
+  [`cb_summarize_numeric()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_numeric.md)
+  can now be specified using the new `stats` argument. Summary
+  statistics included on the numeric summary tab of workbooks written by
+  [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  can likewise be specified using the `stats_numeric` argument.
+
+- A handful of stats helpers for use in the new `stats` /
+  `stats_numeric` arguments, including
+  [`skew()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
+  [`kurtosis()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
+  [`spread()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
+  and re-exports from the lighthouse package
+  [`min_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
+  [`max_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
+  and
+  [`se_mean()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md).
+
+### Fixed
+
+- User missing values defined in SPSS datasets or `"haven_labelled"`
+  vectors are now consistently recognized (fixes
+  [\#32](https://github.com/ccsarapas/lighthouse.codebook/issues/32)).
+
+- Specfying numeric grouping columns no longer throws an error (fixes
+  [\#31](https://github.com/ccsarapas/lighthouse.codebook/issues/31)).
+
+- [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
+  no longer throws an error when `.val_labels = NULL` (fixes
+  [\#34](https://github.com/ccsarapas/lighthouse.codebook/issues/34)).
+
+- [`cb_summarize_categorical()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_categorical.md)
+  no longer throws an error when a variable contains no value labels.
+
+### Internal
+
+- Added a test suite.
+
+- Dropped dependency on moments package.
+
 ## lighthouse.codebook 0.3.2
 
 ### Fixed

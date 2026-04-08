@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,7 @@
       <h1>Introduction to lighthouse.codebook</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.3.2/vignettes/lighthouse-codebook.Rmd" class="external-link"><code>vignettes/lighthouse-codebook.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/vignettes/lighthouse-codebook.Rmd" class="external-link"><code>vignettes/lighthouse-codebook.Rmd</code></a></small>
       <div class="d-none name"><code>lighthouse-codebook.Rmd</code></div>
     </div>
 
@@ -146,18 +146,18 @@ options. Further options are detailed in the documentation for
 variables by specifying them in the <code>group_by</code> argument to
 <code><a href="../reference/cb_write.html">cb_write()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span><span class="st">"cb.xlsx"</span>, group_by <span class="op">=</span> <span class="va">treatment_group</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span><span class="st">"cb.xlsx"</span>, group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">treatment_group</span>, <span class="va">timepoint</span>, <span class="va">age_group</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span><span class="va">cb</span>, <span class="st">"cb.xlsx"</span>, group_by <span class="op">=</span> <span class="va">treatment_group</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span><span class="va">cb</span>, <span class="st">"cb.xlsx"</span>, group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">treatment_group</span>, <span class="va">timepoint</span>, <span class="va">age_group</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>By default, values for each subgroup are shown in separate columns,
 with decked heads if more than one grouping variable is specified.
 However, some or all grouping variables can instead be shown in rows
 using the <code>group_rows</code> argument.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># show `treatment_group` in columns and `timepoint` in rows</span></span>
-<span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">cb</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span></span>
 <span>    <span class="st">"cb.xlsx"</span>, </span>
 <span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">treatment_group</span>, <span class="va">timepoint</span><span class="op">)</span>,</span>
@@ -169,7 +169,7 @@ categorical summary tabs using the <code>group_rows_numeric</code> and
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># for numeric summary, show `treatment_group` in columns and `timepoint` in rows;</span></span>
 <span><span class="co"># for categorical summary, show all grouping variables in columns</span></span>
-<span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">cb</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span></span>
 <span>    <span class="st">"cb.xlsx"</span>, </span>
 <span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">treatment_group</span>, <span class="va">timepoint</span><span class="op">)</span>,</span>
@@ -178,13 +178,40 @@ categorical summary tabs using the <code>group_rows_numeric</code> and
 <span></span>
 <span><span class="co"># for numeric summary, show all grouping variables in rows; </span></span>
 <span><span class="co"># for categorical summary, show `treatment_group` in rows</span></span>
-<span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">cb</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span></span>
 <span>    <span class="st">"cb.xlsx"</span>, </span>
 <span>    group_by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">treatment_group</span>, <span class="va">timepoint</span><span class="op">)</span>,</span>
 <span>    group_rows_numeric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">treatment_group</span>, <span class="va">timepoint</span><span class="op">)</span>,</span>
 <span>    group_rows_categorical <span class="op">=</span> <span class="va">treatment_group</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="statistics-for-numeric-summaries">Statistics for numeric summaries<a class="anchor" aria-label="anchor" href="#statistics-for-numeric-summaries"></a>
+</h3>
+<p>Summary statistics shown on numeric summary tabs can be customized
+using the <code>stats_numeric</code> argument to
+<code><a href="../reference/cb_write.html">cb_write()</a></code>. This argument takes a named list of functions,
+where names are used as column names.</p>
+<p>For any function that has a <code>na.rm</code> argument,
+<code><a href="../reference/cb_write.html">cb_write()</a></code> will automatically set
+<code>na.rm = TRUE</code>. Anonymous functions can also be used. If
+wrapping a function that takes a <code>na.rm</code> argument, it is
+recommended you explicitly set <code>na.rm = TRUE</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cb</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span></span>
+<span>  <span class="st">"cb.xlsx"</span>,</span>
+<span>  stats_numeric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    mean <span class="op">=</span> <span class="va">mean</span>,</span>
+<span>    SD <span class="op">=</span> <span class="va">sd</span>,</span>
+<span>    q25 <span class="op">=</span> \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.25</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    q75 <span class="op">=</span> \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">0.75</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    IQR <span class="op">=</span> <span class="va">IQR</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="user-missing-values">User missing values<a class="anchor" aria-label="anchor" href="#user-missing-values"></a>
@@ -197,7 +224,7 @@ names or <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" 
 expressions) and values on the right-hand side. If the left-hand side is
 empty, user missings will be set for all compatible variables in the
 dataset.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># set a single missing value for a single variable</span></span>
 <span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span>, .user_missing <span class="op">=</span> <span class="va">var1</span> <span class="op">~</span> <span class="fl">99</span><span class="op">)</span></span>
 <span></span>
@@ -215,7 +242,7 @@ dataset.</p>
 <span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">metadata</span>, .user_missing <span class="op">=</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">98</span>, <span class="fl">99</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>If the user missing values are named, the names will be treated as
 value labels in data summaries.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span></span>
 <span>  <span class="va">data</span>, </span>
 <span>  <span class="va">metadata</span>, </span>
@@ -223,7 +250,7 @@ value labels in data summaries.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>To apply different user missings for different variables, pass a list
 of formulas.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span></span>
 <span>  <span class="va">data</span>, </span>
 <span>  <span class="va">metadata</span>,</span>
@@ -247,7 +274,7 @@ for <code>"[98] Declined"</code> and <code>"[99] Not applicable"</code>.
 All user missing values and <code>NA</code> can instead be collapsed
 into a single <code>"(Missing)"</code> row using the
 <code>detail_missing</code> argument to <code><a href="../reference/cb_write.html">cb_write()</a></code>.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dat</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span>.user_missing <span class="op">=</span> <span class="op">~</span>  <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Declined"</span> <span class="op">=</span> <span class="fl">98</span>, <span class="st">"Not applicable"</span> <span class="op">=</span> <span class="fl">99</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/cb_write.html">cb_write</a></span><span class="op">(</span><span class="st">"cb.xlsx"</span>, detail_missing <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
@@ -300,7 +327,7 @@ variable.</p>
 <p>You can split the labels for these variables, specifying them using a
 <a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidyselect</a>
 expression:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span></span>
 <span>    <span class="va">data</span>, </span>
 <span>    <span class="va">metadata</span>, </span>
@@ -348,7 +375,7 @@ expression:</p>
 </table>
 <p>Multiple sets of variables with common prefixes can be specified by
 passing a list of tidyselect expressions.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_create.html">cb_create</a></span><span class="op">(</span></span>
 <span>    <span class="va">data</span>, </span>
 <span>    <span class="va">metadata</span>, </span>
@@ -390,7 +417,7 @@ datetimes are planned for a future release.</p>
 <code><a href="../reference/cb_create.html">cb_create()</a></code> will most commonly be used to write an Excel
 codebook to disk using <code><a href="../reference/cb_write.html">cb_write()</a></code>. However, it can also be
 used to create other objects in R.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># example data</span></span>
 <span><span class="va">q4_subset</span> <span class="op">&lt;-</span> <span class="va">gain_q4</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span>select <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">XPID</span>, <span class="va">XOBS</span>, <span class="va">XRA</span>, <span class="va">B17</span>, <span class="va">SU4a</span>, <span class="va">SU4b</span>, <span class="va">SU1f99v</span><span class="op">)</span><span class="op">)</span></span>
@@ -425,7 +452,7 @@ used to create other objects in R.</p>
 several formats. <code>format  = "factors"</code> yields a dataset with
 all variables with value labels converted to factors and user missings
 converted to <code>NA</code>.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_get_data.html">cb_get_data</a></span><span class="op">(</span><span class="va">cb</span>, format <span class="op">=</span> <span class="st">"factors"</span><span class="op">)</span></span>
 <span><span class="co"># # A tibble: 104 × 7</span></span>
 <span><span class="co">#    XPID  XOBS    XRA       B17    SU4a  SU4b SU1f99v       </span></span>
@@ -444,7 +471,7 @@ converted to <code>NA</code>.</p>
 <p>Whereas <code>format = "haven"</code> yields a dataset with
 SPSS-style variable labels, value labels, and user missings encoded
 using the <code>"haven_labelled_spss"</code> class.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_get_data.html">cb_get_data</a></span><span class="op">(</span><span class="va">cb</span>, format <span class="op">=</span> <span class="st">"haven"</span><span class="op">)</span></span>
 <span><span class="co"># # A tibble: 104 × 7</span></span>
 <span><span class="co">#    XPID      XOBS        XRA           B17       SU4a      SU4b      SU1f99v    </span></span>
@@ -469,7 +496,7 @@ using the <code>"haven_labelled_spss"</code> class.</p>
 <code><a href="../reference/cb_summarize_text.html">cb_summarize_text()</a></code> return summaries for all variables of
 their respective types. These are the basis of the summary tabs
 generated by <code><a href="../reference/cb_write.html">cb_write()</a></code>.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_summarize_numeric.html">cb_summarize_numeric</a></span><span class="op">(</span><span class="va">cb</span><span class="op">)</span></span>
 <span><span class="co"># # A tibble: 2 × 8</span></span>
 <span><span class="co">#   name  label                         valid_n valid_pct  mean    SD median   MAD</span></span>
@@ -515,7 +542,7 @@ generated by <code><a href="../reference/cb_write.html">cb_write()</a></code>.</
 <p><code><a href="../reference/cb_summarize_numeric.html">cb_summarize_numeric()</a></code> and
 <code><a href="../reference/cb_summarize_categorical.html">cb_summarize_categorical()</a></code> can also return grouped
 summaries:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cb_summarize_numeric.html">cb_summarize_numeric</a></span><span class="op">(</span><span class="va">cb</span>, group_by <span class="op">=</span> <span class="va">XOBS</span><span class="op">)</span></span>
 <span><span class="co"># # A tibble: 6 × 8</span></span>
 <span><span class="co">#   XOBS    name  label                      valid_n valid_pct  mean     SD median</span></span>

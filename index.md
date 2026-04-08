@@ -13,7 +13,8 @@ summaries.
 You can install lighthouse.codebook by running:
 
 ``` r
-# install.packages("remotes")
+## git2r needed only if Git isn't installed on your system
+# install.packages(c("git2r", "remotes"))
 remotes::install_github("ccsarapas/lighthouse.codebook")
 ```
 
@@ -66,9 +67,9 @@ dat_rc$data |>
 There are many options for controlling how data is interpreted,
 summarized, and presented. See the [introduction to
 lighthouse.codebook](https://ccsarapas.github.io/lighthouse.codebook/articles/lighthouse-codebook.html)
-for some of the most useful options, including grouped data summaries
-and specifying user missing codes. Further options are detailed in the
-help pages for
+for some of the most useful options, including grouped data summaries,
+summary statistics for numeric variables, and specifying user missing
+codes. Further options are detailed in the help pages for
 [`cb_create()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create.md)
 and
 [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md).

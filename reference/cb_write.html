@@ -21,7 +21,7 @@ omitted if there are no variables of the relevant type."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lighthouse.codebook</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@ omitted if there are no variables of the relevant type."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Write codebook and data summaries to an Excel workbook</h1>
-      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/v0.3.2/R/cb_write.r" class="external-link"><code>R/cb_write.r</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ccsarapas/lighthouse.codebook/blob/main/R/cb_write.r" class="external-link"><code>R/cb_write.r</code></a></small>
       <div class="d-none name"><code>cb_write.Rd</code></div>
     </div>
 
@@ -69,6 +69,8 @@ omitted if there are no variables of the relevant type.</p>
 <span>  group_rows <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group_rows_numeric <span class="op">=</span> <span class="va">group_rows</span>,</span>
 <span>  group_rows_categorical <span class="op">=</span> <span class="va">group_rows</span>,</span>
+<span>  stats_numeric <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="va">mean</span>, SD <span class="op">=</span> <span class="va">sd</span>, median <span class="op">=</span> <span class="va">median</span>, MAD <span class="op">=</span> <span class="va">mad</span>, min <span class="op">=</span></span>
+<span>    <span class="va">min_if_any</span>, max <span class="op">=</span> <span class="va">max_if_any</span>, range <span class="op">=</span> <span class="va">spread</span>, skew <span class="op">=</span> <span class="va">skew</span>, kurt <span class="op">=</span> <span class="va">kurtosis</span><span class="op">)</span>,</span>
 <span>  detail_missing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"if_any_user_missing"</span>, <span class="st">"yes"</span>, <span class="st">"no"</span><span class="op">)</span>,</span>
 <span>  n_text_vals <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  incl_date <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -114,6 +116,13 @@ in <code>group_rows_numeric</code> or <code>group_rows_categorical</code>.</p></
 <dd><p>&lt;<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a></code>&gt;
 Column or columns to group by in rows on grouped numeric or categorical summary
 tab.</p></dd>
+
+
+<dt id="arg-stats-numeric">stats_numeric<a class="anchor" aria-label="anchor" href="#arg-stats-numeric"></a></dt>
+<dd><p>A named list of summary functions to include on the numeric
+summary tab. Defaults include mean and standard deviation (SD); median and
+median absolute deviation (MAD); minimum, maximum, and range; and adjusted
+skewness and kurtosis. See <code><a href="cb_summarize_numeric.html">?cb_summarize_numeric</a></code> for details and examples.</p></dd>
 
 
 <dt id="arg-detail-missing">detail_missing<a class="anchor" aria-label="anchor" href="#arg-detail-missing"></a></dt>

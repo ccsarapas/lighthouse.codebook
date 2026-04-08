@@ -13,9 +13,9 @@ Functions to create and write codebooks
 - [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
   : Write codebook and data summaries to an Excel workbook
 
-## Other functions
+## Other codebook functions
 
-Functions to set options or get information from codebook objects
+Extract data or generate summaries from codebook objects
 
 - [`cb_get_data()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_get_data.md)
   : Extract data from a codebook object
@@ -25,6 +25,16 @@ Functions to set options or get information from codebook objects
   : Summarize categorical variables from a codebook object
 - [`cb_summarize_text()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_summarize_text.md)
   : Summarize character variables from a codebook object
+
+## Helpers
+
 - [`cb_create_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md)
   [`cb_create_redcap_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md)
   : Additional options for codebook creation
+- [`skew()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  [`kurtosis()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  [`spread()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  [`min_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  [`max_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  [`se_mean()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  : Statistics for numeric summaries
