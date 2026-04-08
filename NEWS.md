@@ -12,9 +12,9 @@
 
 * Specfying numeric grouping columns no longer throws an error (fixes #31).
 
-* `cb_summarize_categorical()` no longer throws an error when a variable contains no value labels.
+* `cb_create()` no longer throws an error when `.val_labels = NULL` (fixes #34).
 
-* `cb_create()` no longer throws an error when metadata when `.val_labels = NULL` (fixes #34).
+* `cb_summarize_categorical()` no longer throws an error when a variable contains no value labels.
 
 ## Internal
 
