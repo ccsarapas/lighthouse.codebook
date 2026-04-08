@@ -414,8 +414,12 @@ lookups_from_string <- function(cb, data, sep1, sep2) {
     labs <- x[, 2]
     setNames(vals, labs)
   }
+  # if (!("values" %in% names(cb))) {
+  #   return(setNames(character(), character()))
+  # }
+  # early return if values col doesn't exist, length 0, or all NA
+  if (!("values" %in% names(cb)) || !sum(!is.na(cb$values))) return(list())
   val_labels <- na.omit(setNames(cb$values, cb$name))
-  if (!length(val_labels)) return(val_labels)
   if (is.null(sep1) || is.null(sep2)) {
     cli::cli_abort(
       "{.arg sep1} and {.arg sep2} must be specified if value labels are provided."
@@ -601,12 +605,23 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
   } else {
     missings <- NULL
   }
-  val_labs <- string_from_lookups(val_labs, no_prefix = attr(cb, "factors"))
-  dplyr::mutate(cb, values = val_labs, user_missings = missings)
+  include_values <- "values" %in% names(cb) ||
+    any(vapply(val_labs, \(x) !is.null(x) && length(x) > 0, logical(1)))
+  if (include_values) {
+    val_labs <- string_from_lookups(val_labs, no_prefix = attr(cb, "factors"))
+    cb <- dplyr::mutate(cb, values = val_labs)
+  }
+  if (user_missing_col) {
+    cb <- dplyr::mutate(cb, user_missings = missings)
+  }
+  cb
 }
 
 cb_split_labels_col <- function(cb, split_var_labels = NULL) {
   if (is.null(split_var_labels)) return(cb)
+  if (!("label" %in% names(cb))) {
+    cli::cli_abort("{.arg .split_var_labels} requires a {.code label} column.")
+  }
   if (rlang::is_call(split_var_labels) && rlang::call_name(split_var_labels) == "list") {
     split_var_labels <- rlang::call_args(split_var_labels)
   } else {

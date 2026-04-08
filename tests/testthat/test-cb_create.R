@@ -39,7 +39,7 @@ test_that("`cb_create()` accepts omitted variable labels from metadata (issue #3
     val_labels = "1 = Yes; 2 = No"
   )
 
-  expect_no_error(
+  cb <- expect_no_error(
     cb_create(
       data = fixture_core()$data,
       metadata = meta_no_var_lab,
@@ -48,6 +48,9 @@ test_that("`cb_create()` accepts omitted variable labels from metadata (issue #3
       .val_labs_sep2 = "; "
     )
   )
+
+  expect_false("label" %in% names(cb))
+  expect_true("values" %in% names(cb))
 })
 
 test_that("`cb_create()` accepts omitted value labels from metadata (issue #34)", {
@@ -56,13 +59,30 @@ test_that("`cb_create()` accepts omitted value labels from metadata (issue #34)"
     label = "Binary category"
   )
 
-  expect_no_error(
+  cb <- expect_no_error(
     cb_create(
       data = fixture_core()$data,
       metadata = meta_no_val_labs,
       .val_labels = NULL
     )
   )
+
+  expect_true("label" %in% names(cb))
+  expect_false("values" %in% names(cb))
+})
+
+test_that("`cb_create()` still adds `values` for data-derived labels when metadata labels are omitted", {
+  dat <- tibble::tibble(cat = factor(c("Yes", "No", "Yes")))
+  meta <- data.frame(name = "cat", label = "Category")
+
+  cb <- cb_create(
+    data = dat,
+    metadata = meta,
+    .val_labels = NULL
+  )
+
+  expect_true("values" %in% names(cb))
+  expect_identical(unname(cb$values), "No; Yes")
 })
 
 test_that("`cb_create()` handles user missing incompatibility according to options", {
@@ -120,6 +140,18 @@ test_that("`cb_create()` `split_var_labels` creates `label_stem` and rejects ove
       .split_var_labels = list(tidyselect::starts_with("mh_"), mh_red)
     ),
     "captured by more than one expression"
+  )
+
+  expect_error(
+    cb_create(
+      data = fx$data,
+      metadata = dplyr::select(fx$metadata, name, val_labels),
+      .var_label = NULL,
+      .val_labs_sep1 = " = ",
+      .val_labs_sep2 = "; ",
+      .split_var_labels = tidyselect::starts_with("mh_")
+    ),
+    "requires a `label` column"
   )
 })
 
