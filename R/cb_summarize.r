@@ -116,7 +116,10 @@ cb_summarize_numeric_impl <- function(cb,
                                       warn_if_none = FALSE,
                                       group_rows = NULL) {
   data <- attr(cb, "data_zapped")[cb$name]
-  nms_num <- names(data)[vapply(data, is.numeric, logical(1))]
+  nms_num <- setdiff(
+    names(data)[vapply(data, is.numeric, logical(1))],
+    group_by
+  )
   id_cols <- intersect(c("name", "label_stem", "label"), names(cb))
   out <- cb |>
     dplyr::filter(name %in% nms_num) |>
@@ -124,9 +127,15 @@ cb_summarize_numeric_impl <- function(cb,
   
   if (!nrow(out)) {
     if (warn_if_none) {
-      cli::cli_warn(c(
-        "!" = "No numeric variables in codebook; returning `NULL`."
-      ))
+      if (is.null(group_by)) {
+        cli::cli_warn(c(
+          "!" = "No numeric variables in codebook; returning `NULL`."
+        ))
+      } else {
+        cli::cli_warn(c(
+          "i" = "No numeric variables in codebook after grouping; returning `NULL`."
+        ))
+      }
     }
     return(NULL)
   }

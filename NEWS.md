@@ -10,6 +10,8 @@
 
 * User missing values defined in SPSS datasets or `"haven_labelled"` vectors are now consistently recognized (fixes #32).
 
+* Specfying numeric grouping columns no longer throws an error (fixes #31).
+
 * `cb_summarize_categorical()` no longer throws an error when a variable contains no value labels.
 
 ## Internal
