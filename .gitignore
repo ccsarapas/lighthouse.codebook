@@ -8,3 +8,5 @@ docs
 inst/doc
 /doc/
 /Meta/
+.vscode/launch.json
+..Rcheck/00check.log

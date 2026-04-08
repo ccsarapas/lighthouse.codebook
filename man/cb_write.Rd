@@ -12,6 +12,8 @@ cb_write(
   group_rows = NULL,
   group_rows_numeric = group_rows,
   group_rows_categorical = group_rows,
+  stats_numeric = list(mean = mean, SD = sd, median = median, MAD = mad, min =
+    min_if_any, max = max_if_any, range = spread, skew = skew, kurt = kurtosis),
   detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
   incl_date = TRUE,
@@ -42,6 +44,11 @@ in \code{group_rows_numeric} or \code{group_rows_categorical}.}
 \item{group_rows_numeric, group_rows_categorical}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}>
 Column or columns to group by in rows on grouped numeric or categorical summary
 tab.}
+
+\item{stats_numeric}{A named list of summary functions to include on the numeric
+summary tab. Defaults include mean and standard deviation (SD); median and
+median absolute deviation (MAD); minimum, maximum, and range; and adjusted
+skewness and kurtosis. See \code{?cb_summarize_numeric} for details and examples.}
 
 \item{detail_missing}{Include detailed missing value information on ungrouped
 categorical and text summary tabs? (Detailed missing information for grouped

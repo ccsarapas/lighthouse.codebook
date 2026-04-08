@@ -96,7 +96,7 @@ cb_user_missings_from_spss <- function(cb) {
       user_missings[[nm]] <- c(user_missings[[nm]], miss_vals)      
     }
   }
-  
+
   if (length(user_missings)) attr(cb, "user_missing") <- user_missings
   cb
 }
@@ -106,13 +106,14 @@ cb_update_labels_spss <- function(cb,
                                   user_missing_conflict = c("val_label", "missing_label"),
                                   user_missing_incompatible = c("ignore", "warn", "error")) {
   data <- attr(cb, "data")
-    cb <- cb |>
-      cb_user_missings_from_spss() |>
-      cb_user_missings(
-        user_missing = user_missing,
-        incompatible = user_missing_incompatible
-      ) |>
-      cb_add_lookups()
+  cb <- cb |>
+    cb_user_missings_from_spss() |>
+    cb_user_missings(
+      user_missing = user_missing,
+      incompatible = user_missing_incompatible
+    ) |>
+    cb_add_lookups() |>
+    cb_reconcile_missing_labels(conflict = user_missing_conflict)
   if (is.null(user_missing)) {
     cb |> set_attrs(data_labelled = data)
   } else {

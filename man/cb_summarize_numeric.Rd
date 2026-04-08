@@ -4,7 +4,13 @@
 \alias{cb_summarize_numeric}
 \title{Summarize numeric variables from a codebook object}
 \usage{
-cb_summarize_numeric(cb, group_by = NULL, warn_if_none = TRUE)
+cb_summarize_numeric(
+  cb,
+  group_by = NULL,
+  stats = list(mean = mean, SD = sd, median = median, MAD = mad, min = min_if_any, max =
+    max_if_any, range = spread, skew = skew, kurt = kurtosis),
+  warn_if_none = TRUE
+)
 }
 \arguments{
 \item{cb}{An object of class \code{"li_codebook"} as produced by \code{\link[=cb_create]{cb_create()}} or
@@ -12,6 +18,11 @@ a variant.}
 
 \item{group_by}{<\code{\link[dplyr:dplyr_tidy_select]{tidy-select}}> Column or columns to group
 by.}
+
+\item{stats}{A named list of summary functions to include. The defaults include
+mean and standard deviation (SD); median and median absolute deviation (MAD);
+minimum, maximum, and range; and adjusted skewness and kurtosis. See details
+and examples.}
 
 \item{warn_if_none}{Should a warning be issued if there are no numeric variables
 in \code{cb}?}
@@ -27,14 +38,55 @@ columns:
 a non-missing label stem.
 \item \code{label}: variable label
 \item \code{valid_n}, \code{valid_pct}: number and proportion of non-missing values
-\item summary statistic columns: by default, these include \code{mean} and standard
-deviation (\code{SD}); \code{median}, median absolute deviation (\code{MAD}), \code{min}, \code{max},
-and \code{range}; skewness (\code{skew}), and kurtosis (\code{kurt}).
+\item Summary statistic columns as specified in \code{stats}
 }
 }
 \description{
 \code{cb_summarize_numeric()} generates a summary table for all numeric variables
-from a codebook object, optionally by group. Future releases will include options
-to specify the summary statistics used. Currently, summary statistics are valid
-n and \%; mean and SD; median, MAD, min, max, and range; skewness, and kurtosis.
+from a codebook object, optionally by group.
+}
+\details{
+The \code{stats} argument controls which summary statistics will be computed. It takes
+a named list of functions, where the names will be used as column names.
+
+\code{cb_summarize_numeric()} will set \code{na.rm} to \code{TRUE} for any function that takes
+a \code{na.rm} argument.
+
+You can include anonymous functions. If wrapping a function that takes a \code{na.rm}
+argument, it is recommended you explicitly set \code{na.rm} to \code{TRUE}. (e.g., to include
+the 25th quantile, use \verb{q25 = \\(x) quantile(x, 0.25, na.rm = TRUE)}.
+}
+\examples{
+cb_storms <- dplyr::storms |>
+  dplyr::mutate(year = factor(year)) |>
+  dplyr::filter(status \%in\% c("tropical storm", "hurricane")) |>
+  cb_create()
+
+# ungrouped summary with default stats
+cb_summarize_numeric(cb_storms)
+
+# with subset of default stats
+cb_summarize_numeric(
+  cb_storms,
+  stats = list(mean = mean, SD = sd)
+)
+
+# grouped summary
+cb_summarize_numeric(
+  cb_storms,
+  stats = list(mean = mean, SD = sd),
+  group_by = status
+)
+
+# with custom stats
+cb_summarize_numeric(
+  cb_storms,
+  stats = list(
+    median = median,
+    q25 = \(x) quantile(x, 0.25, na.rm = TRUE),
+    q75 = \(x) quantile(x, 0.75, na.rm = TRUE),
+    IQR = IQR
+  )
+)
+
 }

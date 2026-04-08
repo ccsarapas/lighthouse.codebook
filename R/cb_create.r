@@ -172,6 +172,7 @@ cb_create <- function(data,
       incompatible = .options$user_missing_incompatible
     ) |>
     cb_add_lookups(sep1 = .val_labs_sep1, sep2 = .val_labs_sep2) |>
+    cb_reconcile_missing_labels(conflict = .options$user_missing_conflict) |>
     cb_label_data(conflict = .options$user_missing_conflict) |>
     cb_zap_data() |>
     cb_add_dims() |>
@@ -378,7 +379,10 @@ cb_user_missings <- function(cb,
                              user_missing, 
                              match_type = TRUE,
                              incompatible = c("ignore", "warn", "error")) {
-  if (is.null(user_missing)) return(set_attrs(cb, user_missing = list()))
+  if (is.null(user_missing)) {
+    attr(cb, "user_missing") <- attr(cb, "user_missing") %||% list()
+    return(cb)
+  }
   user_missing <- check_user_missing_arg(user_missing)
   for (um in user_missing) {
     cb <- cb_user_missings_across(
@@ -410,8 +414,12 @@ lookups_from_string <- function(cb, data, sep1, sep2) {
     labs <- x[, 2]
     setNames(vals, labs)
   }
+  # if (!("values" %in% names(cb))) {
+  #   return(setNames(character(), character()))
+  # }
+  # early return if values col doesn't exist, length 0, or all NA
+  if (!("values" %in% names(cb)) || !sum(!is.na(cb$values))) return(list())
   val_labels <- na.omit(setNames(cb$values, cb$name))
-  if (!length(val_labels)) return(val_labels)
   if (is.null(sep1) || is.null(sep2)) {
     cli::cli_abort(
       "{.arg sep1} and {.arg sep2} must be specified if value labels are provided."
@@ -493,12 +501,36 @@ reconcile_missing_labels <- function(val_labs,
   list(val_labs = val_labs, missings = missings)
 }
 
+cb_reconcile_missing_labels <- function(cb,
+                                        conflict = c("val_label", "missing_label")) {
+  conflict <- match.arg(conflict)
+  vals_by_label <- attr(cb, "vals_by_label")
+  user_missing <- attr(cb, "user_missing")
+  factors <- attr(cb, "factors") %||% character()
+  vars <- setdiff(intersect(names(vals_by_label), names(user_missing)), factors)
+  if (!length(vars)) return(cb)
+
+  for (nm in vars) {
+    if (is.null(vals_by_label[[nm]]) || is.null(user_missing[[nm]])) next
+    vals <- reconcile_missing_labels(
+      val_labs = sort(vals_by_label[[nm]]),
+      missings = sort(user_missing[[nm]]),
+      conflict = conflict
+    )
+    user_missing[[nm]] <- sort(vals$missings)
+    vals_by_label[[nm]] <- vals$val_labs[
+      order(vals$val_labs %in% vals$missings, vals$val_labs)
+    ]
+  }
+  set_attrs(cb, vals_by_label = vals_by_label, user_missing = user_missing)
+}
+
 cb_label_data <- function(cb, conflict = c("val_label", "missing_label")) {
   data <- attr(cb, "data")
   vals_by_label <- attr(cb, "vals_by_label")
   factors <- attr(cb, "factors")
   user_missing <- attr(cb, "user_missing")
-  label_vars <- unique(c(names(vals_by_label), names(user_missing)))
+  label_vars <- union(names(vals_by_label), names(user_missing))
   for (nm in label_vars) {
     missings <- sort(user_missing[[nm]])
     if (nm %in% factors) {
@@ -506,15 +538,7 @@ cb_label_data <- function(cb, conflict = c("val_label", "missing_label")) {
     } else {
       val_labs <- sort(vals_by_label[[nm]])
       if (!is.null(val_labs) && !is.null(missings)) {
-        vals <- reconcile_missing_labels(
-          val_labs = val_labs,
-          missings = missings,
-          conflict = conflict
-        )
-        missings <- sort(vals$missings)
-        val_labs <- vals$val_labs[
-          order(vals$val_labs %in% vals$missings, vals$val_labs)
-        ]
+        val_labs <- val_labs[order(val_labs %in% missings, val_labs)]
       }
       data[[nm]] <- haven::labelled_spss(
         data[[nm]], labels = val_labs, na_values = missings
@@ -581,12 +605,23 @@ cb_add_val_labels_col <- function(cb, user_missing_col = c("if_any", "yes", "no"
   } else {
     missings <- NULL
   }
-  val_labs <- string_from_lookups(val_labs, no_prefix = attr(cb, "factors"))
-  dplyr::mutate(cb, values = val_labs, user_missings = missings)
+  include_values <- "values" %in% names(cb) ||
+    any(vapply(val_labs, \(x) !is.null(x) && length(x) > 0, logical(1)))
+  if (include_values) {
+    val_labs <- string_from_lookups(val_labs, no_prefix = attr(cb, "factors"))
+    cb <- dplyr::mutate(cb, values = val_labs)
+  }
+  if (user_missing_col) {
+    cb <- dplyr::mutate(cb, user_missings = missings)
+  }
+  cb
 }
 
 cb_split_labels_col <- function(cb, split_var_labels = NULL) {
   if (is.null(split_var_labels)) return(cb)
+  if (!("label" %in% names(cb))) {
+    cli::cli_abort("{.arg .split_var_labels} requires a {.code label} column.")
+  }
   if (rlang::is_call(split_var_labels) && rlang::call_name(split_var_labels) == "list") {
     split_var_labels <- rlang::call_args(split_var_labels)
   } else {
