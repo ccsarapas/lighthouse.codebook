@@ -16,7 +16,8 @@ summaries.
 You can install lighthouse.codebook by running:
 
 ``` r
-# install.packages("remotes")
+## git2r needed only if Git isn't installed on your system
+# install.packages(c("git2r", "remotes"))
 remotes::install_github("ccsarapas/lighthouse.codebook")
 ```
 
