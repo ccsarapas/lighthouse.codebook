@@ -14,7 +14,7 @@ Depends:
 Imports:
     cli,
     data.table,
-    dplyr,
+    dplyr (>= 1.2.0),
     haven,
     labelled,
     lighthouse,

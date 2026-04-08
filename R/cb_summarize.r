@@ -150,8 +150,8 @@ cb_summarize_numeric_impl <- function(cb,
     list(
       .data = data,
       na.rm = TRUE,
-      .vars = all_of(nms_num),
-      .rows_group_by = all_of(group_by),
+      .vars = rlang::expr(all_of(nms_num)),
+      .rows_group_by = rlang::expr(all_of(group_by)),
       valid_n = lighthouse::n_valid,
       valid_pct = lighthouse::pct_valid
     ),

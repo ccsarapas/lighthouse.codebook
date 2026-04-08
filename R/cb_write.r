@@ -405,12 +405,12 @@ var_name_hyperlinks <- function(params) {
   hl <- hl_rows$overview |>
     dplyr::mutate(
       overview_nm = params$overview$sheet_name,
-      sheet = dplyr::case_match(
+      sheet = dplyr::recode_values(
         name,
         hl_rows$num$name %||% NA ~ "num",
         hl_rows$cat$name %||% NA ~ "cat",
         hl_rows$txt$name %||% NA ~ "txt",
-        .default = NA
+        default = NA
       ),
     ) |>
     dplyr::mutate(
