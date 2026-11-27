@@ -4,7 +4,7 @@
 #' Functions for computing summary statistics for use in `cb_summarize_numeric()`.
 #' - `skew()` and `kurtosis()` return adjusted skewness and kurtosis. (Unadjusted 
 #'   estimates can be obtained by setting `adjusted = FALSE`.)
-#' - `spread()` returns the difference between a vector's minimum and maximum values.
+#' - `span()` returns the difference between a vector's minimum and maximum values.
 #' - `min_if_any()` and `max_if_any()` return minima and maxima with alternate behavior 
 #'   if all values are missing. (Re-exported from the lighthouse package. See `lighthouse::min_if_any` 
 #'   for more details.)
@@ -73,7 +73,7 @@ kurtosis <- function(x, adjusted = TRUE, excess = TRUE, na.rm = FALSE) {
 #' 
 #' @rdname stats
 #' @export
-spread <- function(x, na.rm = FALSE) {
+span <- function(x, na.rm = FALSE) {
   max_if_any(x, na.rm = na.rm) - min_if_any(x, na.rm = na.rm)
 }
 #' 

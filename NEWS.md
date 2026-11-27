@@ -5,6 +5,7 @@
 * `cb_write()` no longer errors when split variable labels are present (fixes #40).
 
 * Renamed `spread()` to `span()` to avoid masking `tidyr::spread()` (fixes #38).
+
 # lighthouse.codebook 0.4.0
 
 ## Added
