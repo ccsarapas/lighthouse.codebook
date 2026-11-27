@@ -26,6 +26,33 @@ test_that("`cb_write()` writes workbook and includes core summary sheets", {
   ) %in% sheets))
 })
 
+test_that("`cb_write()` preserves split labels in the text summary (#40)", {
+  data <- tibble::tibble(
+    mood_morning = c("Calm", "Tense"),
+    mood_evening = c("Tense", "Calm")
+  )
+  metadata <- tibble::tibble(
+    name = names(data),
+    label = c("Mood: Morning", "Mood: Evening")
+  )
+  cb <- cb_create(
+    data,
+    metadata,
+    .val_labels = NULL,
+    .split_var_labels = tidyselect::starts_with("mood_")
+  )
+
+  out_file <- tempfile(fileext = ".xlsx")
+  on.exit(unlink(out_file), add = TRUE)
+  expect_identical(cb_write(cb, file = out_file), out_file)
+
+  wb <- openxlsx2::wb_load(out_file)
+  txt <- openxlsx2::wb_to_df(wb, sheet = "Summary - Text", start_row = 2)
+  expect_true("Label Stem" %in% names(txt))
+  label_rows <- match(c("Morning", "Evening"), txt$Label)
+  expect_identical(trimws(txt[["Label Stem"]][label_rows]), c("Mood:", "Mood:"))
+})
+
 test_that("`cb_write()` `stats_numeric` controls numeric summary columns", {
   fx <- fixture_core()
 

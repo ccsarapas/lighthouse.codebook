@@ -551,7 +551,7 @@ cb_summarize_text_impl <- function(cb,
 
   # I believe this is to collapse missings when `detail_missing = FALSE`
   by_vars <- intersect(
-    c("name", "label", "unique_n", "is_missing", "value"), names(freqs)
+    c(label_cols, "unique_n", "is_missing", "value"), names(freqs)
   )
   freqs <- freqs |> 
     _[, list(n = sum(n)), by = by_vars] |> 
