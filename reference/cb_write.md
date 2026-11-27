@@ -23,7 +23,7 @@ cb_write(
   group_rows_numeric = group_rows,
   group_rows_categorical = group_rows,
   stats_numeric = list(mean = mean, SD = sd, median = median, MAD = mad, min =
-    min_if_any, max = max_if_any, range = spread, skew = skew, kurt = kurtosis),
+    min_if_any, max = max_if_any, range = span, skew = skew, kurt = kurtosis),
   detail_missing = c("if_any_user_missing", "yes", "no"),
   n_text_vals = 5,
   incl_date = TRUE,

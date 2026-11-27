@@ -33,7 +33,7 @@ Extract data or generate summaries from codebook objects
   : Additional options for codebook creation
 - [`skew()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
   [`kurtosis()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
-  [`spread()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  [`span()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
   [`min_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
   [`max_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
   [`se_mean()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)

@@ -1,5 +1,20 @@
 # Changelog
 
+## lighthouse.codebook 0.4.1
+
+### Fixed
+
+- [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md)
+  no longer errors when split variable labels are present (fixes
+  [\#40](https://github.com/ccsarapas/lighthouse.codebook/issues/40)).
+
+- Renamed `spread()` to
+  [`span()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md)
+  to avoid masking
+  [`tidyr::spread()`](https://tidyr.tidyverse.org/reference/spread.html)
+  (fixes
+  [\#38](https://github.com/ccsarapas/lighthouse.codebook/issues/38)).
+
 ## lighthouse.codebook 0.4.0
 
 ### Added
@@ -15,8 +30,7 @@
   `stats_numeric` arguments, including
   [`skew()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
   [`kurtosis()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
-  [`spread()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
-  and re-exports from the lighthouse package
+  `spread()`, and re-exports from the lighthouse package
   [`min_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
   [`max_if_any()`](https://ccsarapas.github.io/lighthouse.codebook/reference/stats.md),
   and
@@ -96,6 +110,7 @@
   [`cb_create_redcap_options()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_create_options.md).
 
   ``` r
+
   # previously
   cb <- cb_create(
     dat, metadata = metadata, 

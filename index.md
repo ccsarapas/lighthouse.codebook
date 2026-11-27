@@ -13,6 +13,7 @@ summaries.
 You can install lighthouse.codebook by running:
 
 ``` r
+
 ## git2r needed only if Git isn't installed on your system
 # install.packages(c("git2r", "remotes"))
 remotes::install_github("ccsarapas/lighthouse.codebook")
@@ -34,6 +35,7 @@ Creating a codebook involves two general steps:
     [`cb_write()`](https://ccsarapas.github.io/lighthouse.codebook/reference/cb_write.md).
 
 ``` r
+
 library(lighthouse.codebook)
 
 # create and write a codebook without metadata

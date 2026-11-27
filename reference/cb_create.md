@@ -123,11 +123,13 @@ to the `.user_missing` argument. Formulas should specify variables on
 the left-hand side and user missing values for those variables on the
 right-hand side:
 
+
     cb <- cb_create(data, metadata, .user_missing = var1 ~ 99)
 
 The same user missings can be applied to multiple variables using
 [tidyselect](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
 expressions.
+
 
     # for variables `var1` through `var5`
     .user_missing = var1:var5 ~ 99
@@ -141,12 +143,14 @@ expressions.
 Different user missings can be applied to different variables using a
 list of formulas:
 
+
     .user_missing = list(
       starts_with("status") ~ c(98, 99),
       var7:var10 ~ 97
     )
 
 User missing values may optionally be named to set value labels:
+
 
     .user_missing = ~ c(Declined = -98, "Not applicable" = -99)
 
