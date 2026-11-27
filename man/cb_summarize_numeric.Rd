@@ -8,7 +8,7 @@ cb_summarize_numeric(
   cb,
   group_by = NULL,
   stats = list(mean = mean, SD = sd, median = median, MAD = mad, min = min_if_any, max =
-    max_if_any, range = spread, skew = skew, kurt = kurtosis),
+    max_if_any, range = span, skew = skew, kurt = kurtosis),
   warn_if_none = TRUE
 )
 }

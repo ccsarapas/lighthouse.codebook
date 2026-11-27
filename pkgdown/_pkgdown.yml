@@ -35,7 +35,7 @@ reference:
   - cb_create_redcap_options
   - skew
   - kurtosis
-  - spread
+  - span
   - min_if_any
   - max_if_any
   - se_mean

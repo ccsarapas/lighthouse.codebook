@@ -4,7 +4,7 @@
 \alias{stats}
 \alias{skew}
 \alias{kurtosis}
-\alias{spread}
+\alias{span}
 \alias{min_if_any}
 \alias{max_if_any}
 \alias{se_mean}
@@ -14,7 +14,7 @@ skew(x, adjusted = TRUE, na.rm = FALSE)
 
 kurtosis(x, adjusted = TRUE, excess = TRUE, na.rm = FALSE)
 
-spread(x, na.rm = FALSE)
+span(x, na.rm = FALSE)
 
 min_if_any(..., na.rm = TRUE)
 
@@ -42,7 +42,7 @@ Functions for computing summary statistics for use in \code{cb_summarize_numeric
 \itemize{
 \item \code{skew()} and \code{kurtosis()} return adjusted skewness and kurtosis. (Unadjusted
 estimates can be obtained by setting \code{adjusted = FALSE}.)
-\item \code{spread()} returns the difference between a vector's minimum and maximum values.
+\item \code{span()} returns the difference between a vector's minimum and maximum values.
 \item \code{min_if_any()} and \code{max_if_any()} return minima and maxima with alternate behavior
 if all values are missing. (Re-exported from the lighthouse package. See \code{lighthouse::min_if_any}
 for more details.)
